@@ -47,8 +47,133 @@ class MyApp extends StatelessWidget {
             ),
           ],
         ),
-        body: Container(
-          color: Color.fromARGB(255, 37, 29, 29),
+        body: Column(
+          children: [
+            Flexible(
+              flex: 3, // 상단 영역
+              child: Container(
+                color: Colors.black,
+                child: Row(children: [
+                  Image.asset(
+                    'health.jpg',
+                    width: 150,
+                  ),
+                  Container(
+                    width: 350,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
+                          child: Text(
+                            '2024-06-26',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 25.0), // 폰트 크기를 18.0으로 설정합니다.
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
+                          child: Text(
+                            '현재까지 먹은 칼로리: 1200kcal',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
+                          child: Text(
+                            '탄 60g 단 140g 지 20g',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
+                          child: Text(
+                            '오늘 총 운동 볼륨 : 12000 운동시간 : 1h',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
+                          child: Text(
+                            'Im thinking about what to add',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ]), // 상단 영역 배경 색상 설정
+              ),
+            ),
+            Flexible(
+              flex: 7, // 하단 영역
+              child: Stack(
+                children: [
+                  Container(
+                    color: Colors.black, // 하단 영역 배경 색상 설정
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      margin: EdgeInsets.only(
+                          right: 40.0, bottom: 20.0), // margin 추가
+                      width: 200, // FloatingActionButton의 너비 조정
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.red,
+                        ),
+                        label: Text(
+                          "루틴추가",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        backgroundColor: Color.fromARGB(255, 243, 241, 240),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Container(
+                      margin: EdgeInsets.only(
+                          left: 40.0, bottom: 20.0), // margin 추가
+                      width: 200, // FloatingActionButton의 너비 조정
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: () {
+                          print('First FloatingActionButton pressed');
+                        },
+                        icon: Icon(
+                          Icons.accessibility,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          "자유운동",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Color.fromARGB(255, 199, 25, 19),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         bottomNavigationBar: BottomAppBar(
           color: Colors.black,
@@ -101,9 +226,7 @@ class MyApp extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: Icon(Icons.lunch_dining, color: Colors.white),
-                    onPressed: () {
-                      print('Profile icon pressed');
-                    },
+                    onPressed: () {},
                   ),
                   Text(
                     '식단',
@@ -114,7 +237,6 @@ class MyApp extends StatelessWidget {
             ],
           ),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
     );
   }
