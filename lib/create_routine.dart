@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateRoutinePage extends StatefulWidget {
-  const CreateRoutinePage(this.myroutinename, this.notmyid, {Key? key})
-      : super(key: key);
+  const CreateRoutinePage(this.myroutinename, {Key? key}) : super(key: key);
   final String myroutinename;
-  final String notmyid;
 
   @override
   _CreateRoutinePageState createState() => _CreateRoutinePageState();
@@ -27,18 +25,6 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
     });
   }
 
-  void deletedata(String collectionName, String documentId) async {
-    try {
-      // 문서 삭제
-      await FirebaseFirestore.instance
-          .collection(collectionName)
-          .doc(documentId)
-          .delete();
-    } catch (e) {
-      print('Error deleting document: $e');
-    }
-  }
-
   void saveRoutineData() async {
     var db = FirebaseFirestore.instance;
 
@@ -56,7 +42,12 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
 
     try {
       // 지정한 ID로 문서 참조 후 데이터 저장
-      await db.collection(widget.myroutinename).doc(documentId).set(routine);
+      await db
+          .collection('Routine')
+          .doc('Myroutine')
+          .collection(widget.myroutinename)
+          .doc(documentId)
+          .set(routine);
     } catch (e) {
       print('Error adding document: $e');
     }
@@ -222,9 +213,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    deletedata(widget.myroutinename, widget.notmyid);
                     saveRoutineData();
-
                     Navigator.of(context).pop(true);
                   },
                 ),

@@ -12,12 +12,7 @@ class RoutinePage extends StatefulWidget {
 class _RoutinePageState extends State<RoutinePage> {
   TextEditingController nameController = TextEditingController();
   String _title = '';
-  String notmyid = '';
   List<String> collectionNames = [];
-
-  final Map<String, dynamic> user = {
-    "first": "1",
-  };
 
   @override
   void initState() {
@@ -28,55 +23,27 @@ class _RoutinePageState extends State<RoutinePage> {
     });
   }
 
-  void _showDeleteDialog(BuildContext context, String documentId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("루틴 생성 삭제"),
-          content: Text("아 파이어베이스 데이터 한 개도 없으면 날라간대"),
-          actions: [
-            TextButton(
-              child: Text("예"),
-              onPressed: () {
-                deleteData(documentId); // 문서 삭제
-                Navigator.of(context).pop(); // 팝업 닫기
-                Navigator.of(context).pop(); // 이전 화면으로 돌아가기
-              },
-            ),
-            TextButton(
-              child: Text("아니요"),
-              onPressed: () {
-                Navigator.of(context).pop(); // 팝업 닫기
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void deleteData(String documentId) async {
-    if (collectionNames.length == 1) {
-      _showDeleteDialog(context, documentId);
-    } else {
-      try {
-        // 문서 삭제
-        await FirebaseFirestore.instance
-            .collection(nameController.text)
-            .doc(documentId)
-            .delete();
-        myCollectionName();
-      } catch (e) {
-        print('Error deleting document: $e');
-      }
+    try {
+      // 문서 삭제
+      await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Myroutine')
+          .collection(nameController.text)
+          .doc(documentId)
+          .delete();
+      myCollectionName();
+    } catch (e) {
+      print('Error deleting document: $e');
     }
   }
 
   void myCollectionName() async {
     try {
-      // '_title' 컬렉션에서 하위 문서 ID들 가져오기
+      // 내루틴 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Routine')
+          .doc('Myroutine')
           .collection(nameController.text)
           .get();
       List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
@@ -86,22 +53,6 @@ class _RoutinePageState extends State<RoutinePage> {
       });
     } catch (e) {
       print('Error fetching collection names: $e');
-    }
-  }
-
-  void _myRoutineName(String collectionName) async {
-    try {
-      // 문서를 추가하고 DocumentReference를 반환받음
-      DocumentReference docRef =
-          await FirebaseFirestore.instance.collection(collectionName).add(user);
-      // 문서 ID 저장
-      String notmyid = docRef.id;
-      // 필요시 상태 관리 (예: State 변수에 저장)
-      setState(() {
-        this.notmyid = notmyid; // documentId를 클래스 변수로 선언했다고 가정
-      });
-    } catch (e) {
-      print('Error adding document: $e');
     }
   }
 
@@ -143,7 +94,6 @@ class _RoutinePageState extends State<RoutinePage> {
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                _myRoutineName(nameController.text);
                 setState(() {
                   _title = nameController.text;
                 });
@@ -238,7 +188,7 @@ class _RoutinePageState extends State<RoutinePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateRoutinePage(_title, notmyid),
+              builder: (context) => CreateRoutinePage(_title),
             ),
           ).then((value) {
             if (value == true) {
