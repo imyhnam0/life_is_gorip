@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "697245684494",
+    "project_id": "summer-eebb6",
+    "storage_bucket": "summer-eebb6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:697245684494:android:ab5aaf707950fdc08bbd5f",
+        "android_client_info": {
+          "package_name": "com.example.health"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFLdeWusrzIMA_htTEjGdGFtKsLVJqhC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

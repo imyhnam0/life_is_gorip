@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateRoutinePage extends StatefulWidget {
   const CreateRoutinePage({super.key});
@@ -8,6 +9,9 @@ class CreateRoutinePage extends StatefulWidget {
 }
 
 class _CreateRoutinePageState extends State<CreateRoutinePage> {
+  TextEditingController nameController = TextEditingController();
+  List<TextEditingController> _weightControllers = [];
+  List<TextEditingController> _repsControllers = [];
   String _title = '';
   List<Widget> _rows = [];
   int _counter = 1;
@@ -19,11 +23,31 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   //     _showNameInputDialog(context);
   //   });
   // }
-  // 초기 이름 뜨게 해주는 창 일단 비활성화
+
+  void saveRoutineData() async {
+    var db = FirebaseFirestore.instance;
+
+    Map<String, dynamic> routine = {"exercises": []};
+    for (int i = 0; i < _weightControllers.length; i++) {
+      String weight = _weightControllers[i].text;
+      String reps = _repsControllers[i].text;
+
+      routine["exercises"].add({
+        "weight": weight,
+        "reps": reps,
+      });
+    }
+    String documentId = nameController.text;
+
+    try {
+      // 지정한 ID로 문서 참조 후 데이터 저장
+      await db.collection("routine").doc(documentId).set(routine);
+    } catch (e) {
+      print('Error adding document: $e');
+    }
+  }
 
   void _showNameInputDialog(BuildContext context) {
-    TextEditingController nameController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -73,8 +97,25 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
     );
   }
 
+  void _deleteLastRow() {
+    setState(() {
+      if (_rows.isNotEmpty) {
+        _rows.removeLast();
+        _weightControllers.removeLast();
+        _repsControllers.removeLast();
+        _counter--;
+      }
+    });
+  }
+
   void _addTextFields() {
     setState(() {
+      TextEditingController weightController = TextEditingController();
+      TextEditingController repsController = TextEditingController();
+
+      _weightControllers.add(weightController);
+      _repsControllers.add(repsController);
+
       _rows.add(
         Padding(
           padding: const EdgeInsets.all(16.0),
@@ -90,9 +131,35 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                 ),
               ),
               SizedBox(width: 10),
-              CreateTextField(hintText: "무게를 입력하세요"),
+              Expanded(
+                child: TextField(
+                  controller: weightController,
+                  decoration: InputDecoration(
+                    hintText: "무게를 입력하세요",
+                    hintStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    fillColor: Colors.white,
+                    filled: true,
+                  ),
+                ),
+              ),
               SizedBox(width: 10),
-              CreateTextField(hintText: "횟수를 입력하세요"),
+              Expanded(
+                child: TextField(
+                  controller: repsController,
+                  decoration: InputDecoration(
+                    hintText: "횟수를 입력하세요",
+                    hintStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    fillColor: Colors.white,
+                    filled: true,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -125,11 +192,11 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
           actions: [
             IconButton(
               icon: Icon(
-                Icons.account_box,
+                Icons.edit,
                 color: Colors.white,
               ),
               onPressed: () {
-                print('Search icon pressed');
+                _showNameInputDialog(context);
               },
             ),
           ],
@@ -142,64 +209,59 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  children: _rows,
+                  children: [
+                    ..._rows,
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween, // 좌우에 버튼을 배치하기 위해 사용
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(
+                              left: 40.0, bottom: 20.0), // margin 추가
+                          width: 200, // FloatingActionButton의 너비 조정
+                          height: 60,
+                          child: FloatingActionButton.extended(
+                            onPressed: () {
+                              _addTextFields();
+                            },
+                            icon: Icon(
+                              Icons.add,
+                              color: Colors.red,
+                            ),
+                            label: Text(
+                              "세트추가",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                          ),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(
+                              right: 40.0, bottom: 20.0), // margin 추가
+                          width: 200, // FloatingActionButton의 너비 조정
+                          height: 60,
+                          child: FloatingActionButton.extended(
+                            onPressed: () {
+                              _deleteLastRow();
+                            },
+                            icon: Icon(
+                              Icons.remove,
+                              color: Colors.yellow,
+                            ),
+                            label: Text(
+                              "세트삭제",
+                              style: TextStyle(color: Colors.yellow),
+                            ),
+                            backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: Container(
-                margin: EdgeInsets.only(left: 40.0, bottom: 20.0), // margin 추가
-                width: 200, // FloatingActionButton의 너비 조정
-                height: 60,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    _addTextFields();
-                  },
-                  child: Icon(Icons.add),
-                  backgroundColor: Colors.red, // 버튼의 배경색을 설정합니다.
-                ),
-              ),
-            ),
-            Align(
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  margin:
-                      EdgeInsets.only(right: 40.0, bottom: 20.0), // margin 추가
-                  width: 200, // FloatingActionButton의 너비 조정
-                  height: 60,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Icon(Icons.save),
-                    backgroundColor: Colors.red, // 버튼의 배경색을 설정합니다.
-                  ),
-                )),
           ],
         ));
-  }
-}
-
-class CreateTextField extends StatelessWidget {
-  final String hintText;
-
-  const CreateTextField({Key? key, required this.hintText}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.red),
-          ),
-          fillColor: Colors.white,
-          filled: true,
-        ),
-      ),
-    );
   }
 }

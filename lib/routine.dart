@@ -40,7 +40,9 @@ class RoutinePage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          Container(),
+          Container(
+            color: Colors.black,
+          ),
           Align(
             alignment: Alignment.center,
             child: FloatingActionButton.extended(
