@@ -222,9 +222,10 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    saveRoutineData();
                     deletedata(widget.myroutinename, widget.notmyid);
-                    Navigator.pop(context);
+                    saveRoutineData();
+
+                    Navigator.of(context).pop(true);
                   },
                 ),
               ],

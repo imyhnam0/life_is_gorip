@@ -13,19 +13,83 @@ class _RoutinePageState extends State<RoutinePage> {
   TextEditingController nameController = TextEditingController();
   String _title = '';
   String notmyid = '';
+  List<String> collectionNames = [];
 
   final Map<String, dynamic> user = {
     "first": "1",
   };
 
+  @override
   void initState() {
     super.initState();
+    myCollectionName();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showNameInputDialog(context);
     });
   }
 
-  void _addDocumentToCollection(String collectionName) async {
+  void _showDeleteDialog(BuildContext context, String documentId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("루틴 생성 삭제"),
+          content: Text("아 파이어베이스 데이터 한 개도 없으면 날라간대"),
+          actions: [
+            TextButton(
+              child: Text("예"),
+              onPressed: () {
+                deleteData(documentId); // 문서 삭제
+                Navigator.of(context).pop(); // 팝업 닫기
+                Navigator.of(context).pop(); // 이전 화면으로 돌아가기
+              },
+            ),
+            TextButton(
+              child: Text("아니요"),
+              onPressed: () {
+                Navigator.of(context).pop(); // 팝업 닫기
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void deleteData(String documentId) async {
+    if (collectionNames.length == 1) {
+      _showDeleteDialog(context, documentId);
+    } else {
+      try {
+        // 문서 삭제
+        await FirebaseFirestore.instance
+            .collection(nameController.text)
+            .doc(documentId)
+            .delete();
+        myCollectionName();
+      } catch (e) {
+        print('Error deleting document: $e');
+      }
+    }
+  }
+
+  void myCollectionName() async {
+    try {
+      // '_title' 컬렉션에서 하위 문서 ID들 가져오기
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection(nameController.text)
+          .get();
+      List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+
+      setState(() {
+        collectionNames = names;
+      });
+    } catch (e) {
+      print('Error fetching collection names: $e');
+    }
+  }
+
+  void _myRoutineName(String collectionName) async {
     try {
       // 문서를 추가하고 DocumentReference를 반환받음
       DocumentReference docRef =
@@ -79,7 +143,7 @@ class _RoutinePageState extends State<RoutinePage> {
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                _addDocumentToCollection(nameController.text);
+                _myRoutineName(nameController.text);
                 setState(() {
                   _title = nameController.text;
                 });
@@ -114,47 +178,85 @@ class _RoutinePageState extends State<RoutinePage> {
           },
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.account_box,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              // 우측 상단 아이콘 클릭 시 실행할 동작
-              print('Search icon pressed');
-            },
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Container(
-            color: Colors.black,
-          ),
-          Align(
-            alignment: Alignment.center,
-            child: FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateRoutinePage(_title, notmyid),
-                  ),
-                );
-              },
-              icon: Icon(
-                Icons.add,
-                color: Colors.white,
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  _showNameInputDialog(context);
+                },
               ),
-              label: Text(
-                "생성",
-                style: TextStyle(color: Colors.white),
+              IconButton(
+                icon: Icon(
+                  Icons.save,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
               ),
-              backgroundColor: Color.fromARGB(255, 199, 25, 19),
-            ),
+            ],
           )
         ],
       ),
+      body: Container(
+        color: Colors.black,
+        child: ListView.builder(
+          itemCount: collectionNames.length,
+          itemBuilder: (context, index) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(20.0),
+                    color: Colors.white.withOpacity(0.5),
+                    child: Text(
+                      collectionNames[index],
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    deleteData(collectionNames[index]);
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateRoutinePage(_title, notmyid),
+            ),
+          ).then((value) {
+            if (value == true) {
+              myCollectionName();
+            }
+          });
+        },
+        icon: Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        label: Text(
+          "생성",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color.fromARGB(255, 199, 25, 19),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

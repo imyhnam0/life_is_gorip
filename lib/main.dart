@@ -1,5 +1,5 @@
 import 'dart:html';
-
+import 'saveroutine.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Homepage(),
+      home: SaveRoutinePage(),
     );
   }
 }
@@ -184,11 +184,11 @@ class Homepage extends StatelessWidget {
                         print('First FloatingActionButton pressed');
                       },
                       icon: Icon(
-                        Icons.accessibility,
+                        Icons.food_bank,
                         color: Colors.white,
                       ),
                       label: Text(
-                        "자유운동",
+                        "식단추가",
                         style: TextStyle(color: Colors.white),
                       ),
                       backgroundColor: Color.fromARGB(255, 199, 25, 19),
@@ -210,7 +210,13 @@ class Homepage extends StatelessWidget {
               children: [
                 IconButton(
                   icon: Icon(Icons.work, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SaveRoutinePage()),
+                    );
+                  },
                 ),
                 Text(
                   '루틴',
