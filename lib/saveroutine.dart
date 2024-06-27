@@ -11,21 +11,30 @@ class SaveRoutinePage extends StatefulWidget {
 class _SaveRoutinePageState extends State<SaveRoutinePage> {
   List<String> collectionNames = [];
 
-  //  void myCollectionName() async {
-  //   try {
-  //     // '_title' 컬렉션에서 하위 문서 ID들 가져오기
-  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-  //         .collection(nameController.text)
-  //         .get();
-  //     List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+  @override
+  void initState() {
+    super.initState();
+    myCollectionName();
+  }
 
-  //     setState(() {
-  //       collectionNames = names;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching collection names: $e');
-  //   }
-  // }
+  void myCollectionName() async {
+    try {
+      // '_title' 컬렉션에서 하위 문서 ID들 가져오기
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Routinename')
+          .collection('Names')
+          .get();
+      List<String> names =
+          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+      setState(() {
+        collectionNames = names;
+      });
+    } catch (e) {
+      print('Error fetching collection names: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +69,32 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       ),
       body: Container(
         color: Colors.black,
+        child: ListView.builder(
+          itemCount: collectionNames.length,
+          itemBuilder: (context, index) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(20.0),
+                    color: Colors.white.withOpacity(0.5),
+                    child: Text(
+                      collectionNames[index],
+                      style: TextStyle(fontSize: 18.0),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {},
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

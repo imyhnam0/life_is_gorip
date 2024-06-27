@@ -106,6 +106,21 @@ class _RoutinePageState extends State<RoutinePage> {
     );
   }
 
+  void saveRoutineName() async {
+    var db = FirebaseFirestore.instance;
+
+    try {
+      await db
+          .collection('Routine')
+          .doc('Routinename')
+          .collection('Names')
+          .add({'name': nameController.text});
+      // 지정한 ID로 문서 참조 후 데이터 저장
+    } catch (e) {
+      print('Error adding document: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +160,7 @@ class _RoutinePageState extends State<RoutinePage> {
                   color: Colors.white,
                 ),
                 onPressed: () {
+                  saveRoutineName();
                   Navigator.of(context).pop();
                 },
               ),

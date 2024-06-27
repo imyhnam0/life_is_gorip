@@ -41,7 +41,6 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
     String documentId = nameController.text;
 
     try {
-      // 지정한 ID로 문서 참조 후 데이터 저장
       await db
           .collection('Routine')
           .doc('Myroutine')
