@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateRoutinePage extends StatefulWidget {
-  const CreateRoutinePage({super.key});
+  const CreateRoutinePage(this.myroutinename, this.notmyid, {Key? key})
+      : super(key: key);
+  final String myroutinename;
+  final String notmyid;
 
   @override
   _CreateRoutinePageState createState() => _CreateRoutinePageState();
@@ -17,12 +20,24 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   int _counter = 1;
 
   @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     _showNameInputDialog(context);
-  //   });
-  // }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showNameInputDialog(context);
+    });
+  }
+
+  void deletedata(String collectionName, String documentId) async {
+    try {
+      // 문서 삭제
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(documentId)
+          .delete();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
+  }
 
   void saveRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -41,7 +56,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
 
     try {
       // 지정한 ID로 문서 참조 후 데이터 저장
-      await db.collection("routine").doc(documentId).set(routine);
+      await db.collection(widget.myroutinename).doc(documentId).set(routine);
     } catch (e) {
       print('Error adding document: $e');
     }
@@ -54,7 +69,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
         return AlertDialog(
           backgroundColor: Colors.grey,
           title: Text(
-            '루틴 이름 입력',
+            'Exercise name',
             style: TextStyle(color: Colors.white),
           ),
           content: TextField(
@@ -190,15 +205,30 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
             },
           ),
           actions: [
-            IconButton(
-              icon: Icon(
-                Icons.edit,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                _showNameInputDialog(context);
-              },
-            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    _showNameInputDialog(context);
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.save,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    saveRoutineData();
+                    deletedata(widget.myroutinename, widget.notmyid);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            )
           ],
         ),
         body: Stack(
