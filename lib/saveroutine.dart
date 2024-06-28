@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'start_routine.dart';
 
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
@@ -70,31 +71,67 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       body: Container(
         color: Colors.black,
         child: ListView.builder(
-          itemCount: collectionNames.length,
-          itemBuilder: (context, index) {
-            return Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(20.0),
-                    color: Colors.white.withOpacity(0.5),
-                    child: Text(
-                      collectionNames[index],
-                      style: TextStyle(fontSize: 18.0),
+            itemCount: collectionNames.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.all(30.0),
+                          backgroundColor:
+                              Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StartRoutinePage(
+                                clickroutinename: collectionNames[index],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.star,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {},
+                            ), // 왼쪽 끝에 아이콘
+                            Text(
+                              collectionNames[index],
+                              style:
+                                  TextStyle(fontSize: 18.0, color: Colors.red),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                print("hihi");
+                              },
+                            ), // 오른쪽 끝에 아이콘
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {},
-                ),
-              ],
-            );
-          },
-        ),
+              );
+            }),
       ),
     );
   }

@@ -61,10 +61,10 @@ class _RoutinePageState extends State<RoutinePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.grey,
+          backgroundColor: Color.fromARGB(255, 39, 34, 34),
           title: Text(
             'My routine name',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.red),
           ),
           content: TextField(
             controller: nameController,
@@ -82,7 +82,7 @@ class _RoutinePageState extends State<RoutinePage> {
             TextButton(
               child: Text(
                 '취소',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.red),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -91,7 +91,7 @@ class _RoutinePageState extends State<RoutinePage> {
             TextButton(
               child: Text(
                 '확인',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.red),
               ),
               onPressed: () {
                 setState(() {
