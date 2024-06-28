@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:health/playroutine.dart';
 import 'create_routine.dart';
 import 'startroutinename.dart';
 
@@ -271,7 +272,12 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
               height: 56.0, // 원하는 높이로 설정
               child: FloatingActionButton.extended(
                 onPressed: () {
-                  // 다른 기능을 위한 코드 작성
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PlayMyRoutinePage(
+                            clickroutinename: widget.clickroutinename)),
+                  );
                 },
                 icon: Icon(
                   Icons.sports_gymnastics,
