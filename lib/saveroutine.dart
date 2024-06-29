@@ -16,8 +16,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   @override
   void initState() {
     super.initState();
+    loadStarRow();
     myCollectionName();
-    loadSavedCollectionNames();
   }
 
   void deleteCollection(String documentId) async {
@@ -72,7 +72,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     }
   }
 
-  void loadSavedCollectionNames() async {
+  void loadStarRow() async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
           .collection("Routine")
@@ -90,14 +90,53 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     }
   }
 
-  void saveCollectionNames() async {
+  void addStarRow(String name) async {
     try {
-      await FirebaseFirestore.instance
+      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Bookmark')
-          .set({'names': savedCollectionNames});
+          .get();
+
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        if (!names.contains(name)) {
+          names.add(name);
+          await FirebaseFirestore.instance
+              .collection("Routine")
+              .doc('Bookmark')
+              .update({'names': names});
+          setState(() {
+            savedCollectionNames = names;
+          });
+        }
+      }
     } catch (e) {
-      print('Error saving collection names: $e');
+      print('Error adding name: $e');
+    }
+  }
+
+  void removeStarRow(String name) async {
+    try {
+      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Bookmark')
+          .get();
+
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        if (names.contains(name)) {
+          names.remove(name);
+          await FirebaseFirestore.instance
+              .collection("Routine")
+              .doc('Bookmark')
+              .update({'names': names});
+          setState(() {
+            savedCollectionNames = names;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error removing name: $e');
     }
   }
 
@@ -128,6 +167,9 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         child: ListView.builder(
             itemCount: collectionNames.length,
             itemBuilder: (context, index) {
+              String collectionName = collectionNames[index];
+              bool isSaved = savedCollectionNames.contains(collectionName);
+              print('보내기전 $isSaved');
               return Padding(
                 padding: const EdgeInsets.symmetric(
                     vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
@@ -149,7 +191,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => StartRoutinePage(
-                                clickroutinename: collectionNames[index],
+                                clickroutinename: collectionName,
                               ),
                             ),
                           );
@@ -159,24 +201,13 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                               MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
                           children: [
                             StarRow(
-                              collectionName: collectionNames[index],
-                              isChecked: savedCollectionNames
-                                  .contains(collectionNames[index]),
-                              onChanged: (isChecked) {
-                                setState(() {
-                                  if (isChecked) {
-                                    savedCollectionNames
-                                        .add(collectionNames[index]);
-                                  } else {
-                                    savedCollectionNames
-                                        .remove(collectionNames[index]);
-                                  }
-                                  saveCollectionNames();
-                                });
-                              },
+                              name: collectionName,
+                              isChecked: isSaved,
+                              onAdd: addStarRow,
+                              onRemove: removeStarRow,
                             ),
                             Text(
-                              collectionNames[index],
+                              collectionName,
                               style:
                                   TextStyle(fontSize: 18.0, color: Colors.red),
                             ),
@@ -186,7 +217,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                deleteCollection(collectionNames[index]);
+                                deleteCollection(collectionName);
                               },
                             ), // 오른쪽 끝에 아이콘
                           ],
@@ -203,14 +234,16 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 }
 
 class StarRow extends StatefulWidget {
-  final String collectionName;
+  final String name;
   final bool isChecked;
-  final ValueChanged<bool> onChanged;
+  final Function(String) onAdd;
+  final Function(String) onRemove;
 
   StarRow(
-      {required this.collectionName,
+      {required this.name,
       required this.isChecked,
-      required this.onChanged});
+      required this.onAdd,
+      required this.onRemove});
 
   @override
   _StarRowState createState() => _StarRowState();
@@ -223,6 +256,8 @@ class _StarRowState extends State<StarRow> {
   void initState() {
     super.initState();
     _isChecked = widget.isChecked;
+    print(widget.isChecked);
+    print(widget.name);
   }
 
   @override
@@ -235,10 +270,14 @@ class _StarRowState extends State<StarRow> {
           color: _isChecked ? Colors.yellow : Colors.grey,
           size: 30,
         ),
-        onPressed: () {
+        onPressed: () async {
           setState(() {
             _isChecked = !_isChecked;
-            widget.onChanged(_isChecked);
+            if (_isChecked) {
+              widget.onAdd(widget.name);
+            } else {
+              widget.onRemove(widget.name);
+            }
           });
         },
       ),
