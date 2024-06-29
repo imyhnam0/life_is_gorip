@@ -21,7 +21,6 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   List<Widget> _rows = [];
   List<Map<String, dynamic>> exercisesData = [];
   int _counter = 1;
-  bool _isChecked = false;
 
   @override
   void initState() {
@@ -86,7 +85,6 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
             Navigator.pop(context);
           },
         ),
-        
       ),
       body: Stack(
         children: [

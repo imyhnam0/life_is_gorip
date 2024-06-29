@@ -9,6 +9,9 @@ import 'create_routine.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'calender.dart';
+import 'package:intl/intl.dart';
+import 'bookmark.dart';
 
 void main() async {
   await Firebase.initializeApp(
@@ -29,8 +32,36 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Homepage extends StatelessWidget {
+class Homepage extends StatefulWidget {
   const Homepage({super.key});
+
+  @override
+  State<Homepage> createState() => _HomepageState();
+}
+
+class _HomepageState extends State<Homepage> {
+  DateTime selectedDate = DateTime.now();
+
+  Future<Map<String, dynamic>?> _fetchRoutineData() async {
+    var db = FirebaseFirestore.instance;
+    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+    try {
+      QuerySnapshot snapshot = await db
+          .collection('Calender')
+          .doc('health')
+          .collection(formattedDate)
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.data() as Map<String, dynamic>;
+      }
+    } catch (e) {
+      print('Error fetching document: $e');
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,19 +80,19 @@ class Homepage extends StatelessWidget {
             Icons.menu,
             color: Colors.white,
           ), // Icons.list 대신 Icons.menu를 사용
-          onPressed: () {
-            print('Leading icon pressed');
-          },
+          onPressed: () {},
         ),
         actions: [
           IconButton(
             icon: Icon(
-              Icons.account_box,
-              color: Colors.white,
+              Icons.star,
+              color: Colors.yellow,
             ),
             onPressed: () {
-              // 우측 상단 아이콘 클릭 시 실행할 동작
-              print('Search icon pressed');
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => BookMarkPage()),
+              );
             },
           ),
         ],
@@ -82,55 +113,59 @@ class Homepage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding:
-                            EdgeInsets.only(left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
-                        child: Text(
-                          '2024-06-26',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 25.0), // 폰트 크기를 18.0으로 설정합니다.
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            EdgeInsets.only(left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
-                        child: Text(
-                          '현재까지 먹은 칼로리: 1200kcal',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            EdgeInsets.only(left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
-                        child: Text(
-                          '탄 60g 단 140g 지 20g',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            EdgeInsets.only(left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
-                        child: Text(
-                          '오늘 총 운동 볼륨 : 12000 운동시간 : 1h',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            EdgeInsets.only(left: 50.0), // 오른쪽으로 16.0의 여백을 줍니다.
-                        child: Text(
-                          'Im thinking about what to add',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.0), // 폰트 크기를 18.0으로 설정합니다.
-                        ),
+                      FutureBuilder<Map<String, dynamic>?>(
+                        future: _fetchRoutineData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                                child: Text('오류 발생: ${snapshot.error}'));
+                          }
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return Center(
+                                child: Text('데이터가 없습니다.',
+                                    style: TextStyle(color: Colors.white)));
+                          }
+
+                          var data = snapshot.data!;
+                          var todayDate = DateTime.now();
+                          var formattedDate =
+                              '${todayDate.year}-${todayDate.month}-${todayDate.day}';
+
+                          return Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  color: Colors.grey[800],
+                                  child: Text(
+                                    '오늘 날짜: $formattedDate',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 16),
+                                  ),
+                                ),
+                                SizedBox(height: 8), // 간격 추가
+                                Text(
+                                  '오늘 총 세트수: ${data['오늘 총 세트수']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                Text(
+                                  '오늘 총 볼륨: ${data['오늘 총 볼륨']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                Text(
+                                  '오늘 총 운동시간: ${data['오늘 총 시간']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -230,7 +265,10 @@ class Homepage extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.event_available, color: Colors.white),
                   onPressed: () {
-                    print('Search icon pressed');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CalenderPage()),
+                    );
                   },
                 ),
                 Text(

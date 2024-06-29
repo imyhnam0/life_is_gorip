@@ -2,22 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'start_routine.dart';
 
-class SaveRoutinePage extends StatefulWidget {
-  const SaveRoutinePage({super.key});
-
+class BookMarkPage extends StatefulWidget {
   @override
-  State<SaveRoutinePage> createState() => _SaveRoutinePageState();
+  State<BookMarkPage> createState() => _BookMarkPageState();
 }
 
-class _SaveRoutinePageState extends State<SaveRoutinePage> {
+class _BookMarkPageState extends State<BookMarkPage> {
   List<String> collectionNames = [];
-  List<String> savedCollectionNames = [];
+
+  bool _isChecked = false;
 
   @override
   void initState() {
     super.initState();
     myCollectionName();
-    loadSavedCollectionNames();
   }
 
   void deleteCollection(String documentId) async {
@@ -69,35 +67,6 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       });
     } catch (e) {
       print('Error fetching collection names: $e');
-    }
-  }
-
-  void loadSavedCollectionNames() async {
-    try {
-      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Bookmark')
-          .get();
-
-      if (bookmarkDoc.exists) {
-        List<String> names = List<String>.from(bookmarkDoc['names']);
-        setState(() {
-          savedCollectionNames = names;
-        });
-      }
-    } catch (e) {
-      print('Error fetching saved collection names: $e');
-    }
-  }
-
-  void saveCollectionNames() async {
-    try {
-      await FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Bookmark')
-          .set({'names': savedCollectionNames});
-    } catch (e) {
-      print('Error saving collection names: $e');
     }
   }
 
@@ -158,23 +127,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                           mainAxisAlignment:
                               MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
                           children: [
-                            StarRow(
-                              collectionName: collectionNames[index],
-                              isChecked: savedCollectionNames
-                                  .contains(collectionNames[index]),
-                              onChanged: (isChecked) {
-                                setState(() {
-                                  if (isChecked) {
-                                    savedCollectionNames
-                                        .add(collectionNames[index]);
-                                  } else {
-                                    savedCollectionNames
-                                        .remove(collectionNames[index]);
-                                  }
-                                  saveCollectionNames();
-                                });
-                              },
-                            ),
+                            // 왼쪽 끝에 아이콘
                             Text(
                               collectionNames[index],
                               style:
@@ -197,50 +150,6 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                 ),
               );
             }),
-      ),
-    );
-  }
-}
-
-class StarRow extends StatefulWidget {
-  final String collectionName;
-  final bool isChecked;
-  final ValueChanged<bool> onChanged;
-
-  StarRow(
-      {required this.collectionName,
-      required this.isChecked,
-      required this.onChanged});
-
-  @override
-  _StarRowState createState() => _StarRowState();
-}
-
-class _StarRowState extends State<StarRow> {
-  late bool _isChecked;
-
-  @override
-  void initState() {
-    super.initState();
-    _isChecked = widget.isChecked;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: IconButton(
-        icon: Icon(
-          _isChecked ? Icons.star : Icons.star_border_outlined,
-          color: _isChecked ? Colors.yellow : Colors.grey,
-          size: 30,
-        ),
-        onPressed: () {
-          setState(() {
-            _isChecked = !_isChecked;
-            widget.onChanged(_isChecked);
-          });
-        },
       ),
     );
   }

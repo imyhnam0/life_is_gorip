@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:health/main.dart';
 import 'startroutinename_play.dart';
+import 'package:intl/intl.dart';
 
 class PlayMyRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -16,11 +17,15 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   TextEditingController nameController = TextEditingController();
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
+  List<Map<String, dynamic>> exercisesData = [];
+  int result = 0;
+  int sumweight = 0;
 
   @override
   void initState() {
     super.initState();
     myCollectionName();
+    totalRoutineReps();
     _startTimer();
   }
 
@@ -47,6 +52,28 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  void saveRoutineName(int result, int sumweight, int timerSeconds) async {
+    // 완료된 값 저장하는 함수
+    var db = FirebaseFirestore.instance;
+    String currentTime = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    try {
+      // health 문서 아래에 timestamp 컬렉션을 생성하고 새로운 문서를 추가합니다.
+      await db
+          .collection('Calender')
+          .doc('health')
+          .collection(currentTime)
+          .add({
+        '오늘 총 세트수': result,
+        '오늘 총 볼륨': sumweight,
+        '오늘 총 시간': _formatTime(timerSeconds),
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error adding document: $e');
+    }
+  }
+
   void myCollectionName() async {
     try {
       // 내루틴 가져오기
@@ -62,6 +89,52 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       });
     } catch (e) {
       print('Error fetching collection names: $e');
+    }
+  }
+
+  void totalRoutineReps() async {
+    try {
+      // 내루틴 가져오기
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Routine')
+          .doc('Myroutine')
+          .collection(widget.clickroutinename)
+          .get();
+
+      int totalExercises = 0;
+      int totalWeight = 0;
+
+      for (var doc in querySnapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data.containsKey('exercises')) {
+          exercisesData = List<Map<String, dynamic>>.from(data['exercises']
+              .map((exercise) => {
+                    'reps': exercise['reps'],
+                    'weight': exercise['weight'],
+                  })
+              .toList());
+
+          totalExercises += exercisesData.length;
+
+          for (var exercise in exercisesData) {
+            // weight 값을 안전하게 변환
+            int weight = 0;
+            if (exercise['weight'] is int) {
+              weight = exercise['weight'];
+            } else if (exercise['weight'] is String) {
+              weight = int.tryParse(exercise['weight']) ?? 0;
+            }
+            totalWeight += weight;
+          }
+        }
+      }
+      print(totalWeight);
+      setState(() {
+        result = totalExercises;
+        sumweight = totalWeight;
+      });
+    } catch (e) {
+      print('Error fetching document data: $e');
     }
   }
 
@@ -146,11 +219,11 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                         MainAxisAlignment.spaceEvenly, // 가로 균등 정렬
                     children: [
                       Text(
-                        '총 남은 루틴 수: 5', // 예시 텍스트
+                        '오늘 총 세트수: $result', // 예시 텍스트
                         style: TextStyle(fontSize: 24, color: Colors.white),
                       ),
                       Text(
-                        '오늘의 볼륨: 300', // 예시 텍스트
+                        '오늘 총 볼륨: $sumweight', // 예시 텍스트
                         style: TextStyle(fontSize: 24, color: Colors.white),
                       ),
                     ],
@@ -221,7 +294,35 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           width: 170.0, // 원하는 너비로 설정
           height: 56.0, // 원하는 높이로 설정
           child: FloatingActionButton.extended(
-            onPressed: () {},
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('운동을 종료하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // 팝업창 닫기
+                        },
+                        child: Text('아니요'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          saveRoutineName(result, sumweight, _seconds);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Homepage()),
+                          );
+                        },
+                        child: Text('예'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
             icon: Icon(
               Icons.mood,
               color: Colors.white,

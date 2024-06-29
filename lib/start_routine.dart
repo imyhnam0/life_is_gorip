@@ -205,13 +205,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                           mainAxisAlignment:
                               MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
                           children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.star,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {},
-                            ), // 왼쪽 끝에 아이콘
+                            // 왼쪽 끝에 아이콘
                             Text(
                               collectionNames[index],
                               style:
