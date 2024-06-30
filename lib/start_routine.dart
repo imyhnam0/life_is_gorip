@@ -198,7 +198,14 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                                 clickroutinename: collectionNames[index],
                               ),
                             ),
-                          );
+                          ).then((value) {
+                            if (value == true) {
+                              myCollectionName();
+                            }
+                            if (value == false) {
+                              deleteData(collectionNames[index]);
+                            }
+                          });
                         },
                         child: Row(
                           mainAxisAlignment:

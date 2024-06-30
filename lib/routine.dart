@@ -167,7 +167,7 @@ class _RoutinePageState extends State<RoutinePage> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('정말 나가시겠습니까?'),
+                  title: Text('생성을 종료하시겠습니까?'),
                   actions: <Widget>[
                     TextButton(
                       child: Text('아니오'),
@@ -227,7 +227,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                           Navigator.of(context)
                                               .pop(); // 저장 완료 팝업 닫기
                                           Navigator.of(context)
-                                              .pop(); // 이전 화면으로 이동
+                                              .pop(true); // 이전 화면으로 이동
                                         },
                                       ),
                                     ],

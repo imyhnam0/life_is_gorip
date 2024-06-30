@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'start_routine.dart';
+import 'routine.dart';
 
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
@@ -161,29 +162,58 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          Row(
+            children: [
+              IconButton(
+                  icon: Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const RoutinePage()),
+                    ).then((value) {
+                      if (value == true) {
+                        myCollectionName();
+                      }
+                    });
+                    ;
+                  }),
+            ],
+          ),
+        ],
       ),
       body: Container(
         color: Colors.black,
-        child: ListView.builder(
-            itemCount: collectionNames.length,
-            itemBuilder: (context, index) {
-              String collectionName = collectionNames[index];
-              bool isSaved = savedCollectionNames.contains(collectionName);
-
-              return Padding(
+        child: ReorderableListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          onReorder: (int oldIndex, int newIndex) {
+            setState(() {
+              if (oldIndex < newIndex) {
+                newIndex -= 1;
+              }
+              final String item = collectionNames.removeAt(oldIndex);
+              collectionNames.insert(newIndex, item);
+            });
+          },
+          children: <Widget>[
+            for (int index = 0; index < collectionNames.length; index++)
+              Padding(
+                key: Key('$index'),
                 padding: const EdgeInsets.symmetric(
-                    vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                    vertical: 15.0, horizontal: 30.0),
                 child: Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(25.0),
-                          backgroundColor:
-                              Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                          backgroundColor: Color.fromARGB(255, 39, 34, 34),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                            borderRadius: BorderRadius.circular(15.0),
                           ),
                         ),
                         onPressed: () {
@@ -191,23 +221,23 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => StartRoutinePage(
-                                clickroutinename: collectionName,
+                                clickroutinename: collectionNames[index],
                               ),
                             ),
                           );
                         },
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             StarRow(
-                              name: collectionName,
-                              isChecked: isSaved,
+                              name: collectionNames[index],
+                              isChecked: savedCollectionNames
+                                  .contains(collectionNames[index]),
                               onAdd: addStarRow,
                               onRemove: removeStarRow,
                             ),
                             Text(
-                              collectionName,
+                              collectionNames[index],
                               style:
                                   TextStyle(fontSize: 18.0, color: Colors.red),
                             ),
@@ -217,17 +247,29 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                deleteCollection(collectionName);
+                                deleteCollection(collectionNames[index]);
                               },
-                            ), // 오른쪽 끝에 아이콘
+                            ),
                           ],
+                        ),
+                      ),
+                    ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Container(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(
+                          Icons.drag_handle,
+                          size: 36.0, // 원하는 크기로 설정
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
+              ),
+          ],
+        ),
       ),
     );
   }
