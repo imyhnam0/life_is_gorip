@@ -61,6 +61,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
+          .orderBy('order')
           .get();
       List<String> names =
           querySnapshot.docs.map((doc) => doc['name'] as String).toList();
@@ -113,6 +114,35 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       }
     } catch (e) {
       print('Error adding name: $e');
+    }
+  }
+
+  Future<void> updateFirestoreOrder() async {
+    try {
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+      CollectionReference collectionRef = FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Routinename')
+          .collection('Names');
+
+      // `collectionNames` 리스트는 각 문서의 `name` 필드를 포함하고 있는 것으로 가정합니다.
+      for (int i = 0; i < collectionNames.length; i++) {
+        // `collectionNames[i]` 값을 가진 문서를 찾습니다.
+        QuerySnapshot querySnapshot = await collectionRef
+            .where('name', isEqualTo: collectionNames[i])
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentReference docRef = querySnapshot.docs[0].reference;
+          batch.update(docRef, {'order': i});
+        }
+      }
+
+      await batch.commit();
+
+      myCollectionName();
+    } catch (e) {
+      print('Error updating Firestore order: $e');
     }
   }
 
@@ -190,7 +220,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         color: Colors.black,
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex) {
+          onReorder: (int oldIndex, int newIndex) async {
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
@@ -198,6 +228,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
               final String item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
             });
+            await updateFirestoreOrder();
           },
           children: <Widget>[
             for (int index = 0; index < collectionNames.length; index++)
@@ -281,11 +312,12 @@ class StarRow extends StatefulWidget {
   final Function(String) onAdd;
   final Function(String) onRemove;
 
-  StarRow(
-      {required this.name,
-      required this.isChecked,
-      required this.onAdd,
-      required this.onRemove});
+  StarRow({
+    required this.name,
+    required this.isChecked,
+    required this.onAdd,
+    required this.onRemove,
+  });
 
   @override
   _StarRowState createState() => _StarRowState();
@@ -298,8 +330,14 @@ class _StarRowState extends State<StarRow> {
   void initState() {
     super.initState();
     _isChecked = widget.isChecked;
-    print(widget.isChecked);
-    print(widget.name);
+  }
+
+  @override
+  void didUpdateWidget(StarRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isChecked != widget.isChecked) {
+      _isChecked = widget.isChecked;
+    }
   }
 
   @override
@@ -312,7 +350,7 @@ class _StarRowState extends State<StarRow> {
           color: _isChecked ? Colors.yellow : Colors.grey,
           size: 30,
         ),
-        onPressed: () async {
+        onPressed: () {
           setState(() {
             _isChecked = !_isChecked;
             if (_isChecked) {
