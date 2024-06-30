@@ -52,7 +52,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  void saveRoutineName(int result, int sumweight, int timerSeconds) async {
+  void saveRoutineName(
+      int result, int sumweight, int timerSeconds, String _title) async {
     // 완료된 값 저장하는 함수
     var db = FirebaseFirestore.instance;
     String currentTime = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -64,6 +65,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           .doc('health')
           .collection(currentTime)
           .add({
+        '오늘 한 루틴이름': _title,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
         '오늘 총 시간': _formatTime(timerSeconds),
@@ -309,7 +311,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          saveRoutineName(result, sumweight, _seconds);
+                          saveRoutineName(result, sumweight, _seconds, _title);
                           Navigator.push(
                             context,
                             MaterialPageRoute(

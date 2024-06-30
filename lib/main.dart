@@ -1,4 +1,6 @@
 import 'dart:html';
+import 'package:health/food.dart';
+
 import 'saveroutine.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'calender.dart';
 import 'package:intl/intl.dart';
 import 'bookmark.dart';
+import 'start_routine.dart';
 
 void main() async {
   await Firebase.initializeApp(
@@ -41,6 +44,44 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   DateTime selectedDate = DateTime.now();
+  List<String> collectionNames = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSevenDayAgoData();
+  }
+
+  Future<void> _fetchSevenDayAgoData() async {
+    List<String> names = await _sevendayago();
+    setState(() {
+      collectionNames = names;
+    });
+  }
+
+  Future<List<String>> _sevendayago() async {
+    var db = FirebaseFirestore.instance;
+    String sevenDaysAgoDate = DateFormat('yyyy-MM-dd')
+        .format(selectedDate.subtract(Duration(days: 7)));
+    print(sevenDaysAgoDate);
+    try {
+      // 7일 전 날짜의 데이터 가져오기
+      QuerySnapshot snapshot = await db
+          .collection('Calender')
+          .doc('health')
+          .collection(sevenDaysAgoDate)
+          .get();
+
+      // 7일 전 루틴 이름 리스트를 추출
+      List<String> routineNames =
+          snapshot.docs.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
+
+      return routineNames;
+    } catch (e) {
+      print('오류 발생: $e');
+      return [];
+    }
+  }
 
   Future<Map<String, dynamic>?> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -83,17 +124,32 @@ class _HomepageState extends State<Homepage> {
           onPressed: () {},
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.star,
-              color: Colors.yellow,
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => BookMarkPage()),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.star,
+                    color: Colors.yellow,
+                  ),
+                  label: Text(
+                    '즐겨찾기',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.black, // 버튼 배경색 설정
+                  ),
+                ),
+              ],
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => BookMarkPage()),
-              );
-            },
           ),
         ],
       ),
@@ -149,18 +205,26 @@ class _HomepageState extends State<Homepage> {
                                         color: Colors.white, fontSize: 16),
                                   ),
                                 ),
-                                SizedBox(height: 8), // 간격 추가
+                                SizedBox(height: 8),
+                                Text(
+                                  '오늘 한 루틴이름: ${data['오늘 한 루틴이름']}',
+                                  style: TextStyle(
+                                      color: Colors.red, fontSize: 15),
+                                ), // 간격 추가
                                 Text(
                                   '오늘 총 세트수: ${data['오늘 총 세트수']}',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 10),
                                 ),
                                 Text(
                                   '오늘 총 볼륨: ${data['오늘 총 볼륨']}',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 10),
                                 ),
                                 Text(
                                   '오늘 총 운동시간: ${data['오늘 총 시간']}',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 10),
                                 ),
                               ],
                             ),
@@ -178,7 +242,65 @@ class _HomepageState extends State<Homepage> {
             child: Stack(
               children: [
                 Container(
-                  color: Colors.black, // 하단 영역 배경 색상 설정
+                  color: Colors.black,
+                  child: ListView.builder(
+                    itemCount: collectionNames.length,
+                    itemBuilder: (context, index) {
+                      String collectionName = collectionNames[index];
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.all(25.0),
+                                  backgroundColor:
+                                      Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        15.0), // 둥근 모서리 반경 설정
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => StartRoutinePage(
+                                        clickroutinename: collectionName,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      collectionName,
+                                      style: TextStyle(
+                                        fontSize: 20.0,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5.0),
+                                    Text(
+                                      '7일전 루틴',
+                                      style: TextStyle(
+                                        fontSize: 15.0,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ), // 하단 영역 배경 색상 설정
                 ),
                 Align(
                   alignment: Alignment.bottomRight,
@@ -216,7 +338,11 @@ class _HomepageState extends State<Homepage> {
                     height: 60,
                     child: FloatingActionButton.extended(
                       onPressed: () {
-                        print('First FloatingActionButton pressed');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FoodCreatePage()),
+                        );
                       },
                       icon: Icon(
                         Icons.food_bank,

@@ -9,6 +9,8 @@ class BookMarkPage extends StatefulWidget {
 
 class _BookMarkPageState extends State<BookMarkPage> {
   List<String> collectionNames = [];
+  List<String> savedCollectionNames = [];
+  List<String> filteredCollectionNames = [];
 
   bool _isChecked = false;
 
@@ -16,6 +18,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void initState() {
     super.initState();
     myCollectionName();
+    loadStarRow();
   }
 
   void deleteCollection(String documentId) async {
@@ -70,6 +73,33 @@ class _BookMarkPageState extends State<BookMarkPage> {
     }
   }
 
+  void loadStarRow() async {
+    try {
+      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Bookmark')
+          .get();
+
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        setState(() {
+          savedCollectionNames = names;
+          filterCollectionNames();
+        });
+      }
+    } catch (e) {
+      print('Error fetching saved collection names: $e');
+    }
+  }
+
+  void filterCollectionNames() {
+    setState(() {
+      filteredCollectionNames = collectionNames
+          .where((name) => savedCollectionNames.contains(name))
+          .toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +125,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
       body: Container(
         color: Colors.black,
         child: ListView.builder(
-            itemCount: collectionNames.length,
+            itemCount: filteredCollectionNames.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -118,7 +148,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => StartRoutinePage(
-                                clickroutinename: collectionNames[index],
+                                clickroutinename:
+                                    filteredCollectionNames[index],
                               ),
                             ),
                           );
@@ -129,7 +160,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
                           children: [
                             // 왼쪽 끝에 아이콘
                             Text(
-                              collectionNames[index],
+                              filteredCollectionNames[index],
                               style:
                                   TextStyle(fontSize: 18.0, color: Colors.red),
                             ),
@@ -139,7 +170,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                deleteCollection(collectionNames[index]);
+                                deleteCollection(
+                                    filteredCollectionNames[index]);
                               },
                             ), // 오른쪽 끝에 아이콘
                           ],

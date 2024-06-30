@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:health/playroutine.dart';
 import 'create_routine.dart';
-import 'startroutinename.dart';
 
 class StartRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -194,8 +193,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => StartRoutineName(
-                                currentroutinename: _title,
+                              builder: (context) => CreateRoutinePage(
+                                myroutinename: _title,
                                 clickroutinename: collectionNames[index],
                               ),
                             ),
@@ -242,7 +241,10 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreateRoutinePage(_title),
+                      builder: (context) => CreateRoutinePage(
+                        myroutinename: _title,
+                        clickroutinename: "",
+                      ),
                     ),
                   ).then((value) {
                     if (value == true) {

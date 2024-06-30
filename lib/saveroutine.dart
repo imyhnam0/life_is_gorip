@@ -169,7 +169,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
             itemBuilder: (context, index) {
               String collectionName = collectionNames[index];
               bool isSaved = savedCollectionNames.contains(collectionName);
-              print('보내기전 $isSaved');
+
               return Padding(
                 padding: const EdgeInsets.symmetric(
                     vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가

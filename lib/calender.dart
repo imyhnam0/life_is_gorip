@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'calender.dart';
 import 'package:intl/intl.dart';
 
 class CalenderPage extends StatefulWidget {
@@ -12,25 +13,25 @@ class CalenderPage extends StatefulWidget {
 class _CalenderPageState extends State<CalenderPage> {
   DateTime selectedDate = DateTime.now();
 
-  Future<Map<String, dynamic>?> _fetchRoutineData() async {
+  Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
-    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
       QuerySnapshot snapshot = await db
           .collection('Calender')
           .doc('health')
-          .collection(formattedDate)
+          .collection(todayDate)
           .orderBy('timestamp', descending: true)
           .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        return snapshot.docs.first.data() as Map<String, dynamic>;
-      }
+      return snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     } catch (e) {
-      print('Error fetching document: $e');
+      print('Error fetching documents: $e');
     }
-    return null;
+    return [];
   }
 
   void _selectDate(BuildContext context) async {
@@ -39,6 +40,20 @@ class _CalenderPageState extends State<CalenderPage> {
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: Colors.red,
+              onPrimary: Colors.white,
+              surface: Colors.black,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: Colors.black,
+          ),
+          child: child!,
+        );
+      },
     );
     if (pickedDate != null && pickedDate != selectedDate) {
       setState(() {
@@ -49,43 +64,108 @@ class _CalenderPageState extends State<CalenderPage> {
 
   @override
   Widget build(BuildContext context) {
+    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
     return Scaffold(
+      backgroundColor: Color.fromARGB(255, 18, 17, 17),
       appBar: AppBar(
-        title: Text('캘린더 페이지'),
+        title: Text(
+          "운동일지",
+          style: TextStyle(color: Colors.red),
+        ),
+        centerTitle: true,
+        backgroundColor: Color.fromARGB(255, 23, 20, 20),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ), // Icons.list 대신 Icons.menu를 사용
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: ElevatedButton(
+              onPressed: () => _selectDate(context),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero, // 사각형 모양
+                  ),
+                ),
+              ),
+              child: Text('날짜 선택', style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ElevatedButton(
-            onPressed: () => _selectDate(context),
-            child: Text('날짜 선택'),
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0), // 상단에 여백을 줍니다.
+            child: Center(
+              child: Text(
+                todayDate,
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey),
+              ),
+            ),
           ),
-          FutureBuilder<Map<String, dynamic>?>(
-            future: _fetchRoutineData(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('오류 발생: ${snapshot.error}'));
-              }
-              if (!snapshot.hasData || snapshot.data == null) {
-                return Center(child: Text('데이터가 없습니다.'));
-              }
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchRoutineData(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('오류 발생: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('데이터가 없습니다.'));
+                }
 
-              var data = snapshot.data!;
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('오늘 총 운동 세트수: ${data['오늘 총 세트수']}'),
-                    Text('오늘 총 운동 볼륨: ${data['오늘 총 볼륨']}'),
-                    Text('오늘 총 운동 시간: ${data['오늘 총 시간']}'),
-                    Text('운동 완료 시간: ${data['timestamp']?.toDate() ?? 'N/A'}'),
-                  ],
-                ),
-              );
-            },
+                var data = snapshot.data!;
+                return ListView.builder(
+                  itemCount: data.length,
+                  itemBuilder: (context, index) {
+                    var routine = data[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '오늘 한 루틴 이름: ${routine['오늘 한 루틴이름']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '오늘 총 운동 세트수: ${routine['오늘 총 세트수']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '오늘 총 운동 볼륨: ${routine['오늘 총 볼륨']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '오늘 총 운동 시간: ${routine['오늘 총 시간']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                              '운동 완료 시간: ${routine['timestamp']?.toDate() ?? 'N/A'}'),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateRoutinePage extends StatefulWidget {
-  const CreateRoutinePage(this.myroutinename, {Key? key}) : super(key: key);
+  final String clickroutinename;
   final String myroutinename;
+  const CreateRoutinePage({
+    Key? key,
+    required this.clickroutinename,
+    required this.myroutinename,
+  }) : super(key: key);
 
   @override
   _CreateRoutinePageState createState() => _CreateRoutinePageState();
@@ -13,16 +18,37 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   TextEditingController nameController = TextEditingController();
   List<TextEditingController> _weightControllers = [];
   List<TextEditingController> _repsControllers = [];
-  String _title = '';
+  late String _title = widget.clickroutinename;
   List<Widget> _rows = [];
+  List<Map<String, dynamic>> exercisesData = [];
   int _counter = 1;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showNameInputDialog(context);
-    });
+
+    if (_title == '') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showNameInputDialog(context);
+      });
+    } else {
+      myCollectionName();
+    }
+  }
+
+  void deleteData(String documentId) async {
+    try {
+      // 문서 삭제
+      await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Myroutine')
+          .collection(widget.myroutinename)
+          .doc(_title)
+          .delete();
+      myCollectionName();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
   }
 
   void saveRoutineData() async {
@@ -38,17 +64,17 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
         "reps": reps,
       });
     }
-    String documentId = nameController.text;
-
-    try {
-      await db
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(widget.myroutinename)
-          .doc(documentId)
-          .set(routine);
-    } catch (e) {
-      print('Error adding document: $e');
+    if (routine["exercises"].isNotEmpty) {
+      try {
+        await db
+            .collection('Routine')
+            .doc('Myroutine')
+            .collection(widget.myroutinename)
+            .doc(_title)
+            .set(routine);
+      } catch (e) {
+        print('Error adding document: $e');
+      }
     }
   }
 
@@ -102,6 +128,95 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
     );
   }
 
+  void myCollectionName() async {
+    try {
+      // 내루틴 가져오기
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('Routine')
+          .doc('Myroutine')
+          .collection(widget.myroutinename)
+          .doc(widget.clickroutinename)
+          .get();
+
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
+        if (data.containsKey('exercises')) {
+          exercisesData = List<Map<String, dynamic>>.from(data['exercises']
+              .map((exercise) => {
+                    'reps': exercise['reps'],
+                    'weight': exercise['weight'],
+                  })
+              .toList());
+        }
+        setState(() {
+          _rows = exercisesData.map((exercise) {
+            Widget row = _buildExerciseRow(
+                exercise['weight'].toString(), exercise['reps'].toString());
+            _counter++; // 각 행을 추가할 때마다 카운터 증가
+            return row;
+          }).toList();
+        });
+      }
+    } catch (e) {
+      print('Error fetching document data: $e');
+    }
+  }
+
+  Widget _buildExerciseRow(String weight, String reps) {
+    final weightController = TextEditingController(text: weight.toString());
+    final repsController = TextEditingController(text: reps.toString());
+
+    _weightControllers.add(weightController);
+    _repsControllers.add(repsController);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.0),
+            color: Colors.red,
+            child: Text(
+              '$_counter',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: weightController,
+              decoration: InputDecoration(
+                hintText: "무게를 입력하세요",
+                hintStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red),
+                ),
+                fillColor: Colors.white,
+                filled: true,
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: repsController,
+              decoration: InputDecoration(
+                hintText: "횟수를 입력하세요",
+                hintStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red),
+                ),
+                fillColor: Colors.white,
+                filled: true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _deleteLastRow() {
     setState(() {
       if (_rows.isNotEmpty) {
@@ -115,60 +230,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
 
   void _addTextFields() {
     setState(() {
-      TextEditingController weightController = TextEditingController();
-      TextEditingController repsController = TextEditingController();
-
-      _weightControllers.add(weightController);
-      _repsControllers.add(repsController);
-
-      _rows.add(
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Container(
-                padding: EdgeInsets.all(16.0),
-                color: Colors.red,
-                child: Text(
-                  '$_counter',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: weightController,
-                  decoration: InputDecoration(
-                    hintText: "무게를 입력하세요",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red),
-                    ),
-                    fillColor: Colors.white,
-                    filled: true,
-                  ),
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: repsController,
-                  decoration: InputDecoration(
-                    hintText: "횟수를 입력하세요",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red),
-                    ),
-                    fillColor: Colors.white,
-                    filled: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      _rows.add(_buildExerciseRow('0', '0'));
       _counter++;
     });
   }
@@ -176,111 +238,109 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            _title,
-            style: TextStyle(
-              color: Color.fromARGB(255, 243, 8, 8),
-            ),
+      appBar: AppBar(
+        title: Text(
+          _title,
+          style: TextStyle(
+            color: Color.fromARGB(255, 243, 8, 8),
           ),
-          centerTitle: true,
-          backgroundColor: Color.fromARGB(255, 17, 6, 6),
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          actions: [
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.edit,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    _showNameInputDialog(context);
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.save,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    saveRoutineData();
-                    Navigator.of(context).pop(true);
-                  },
-                ),
-              ],
-            )
-          ],
         ),
-        body: Stack(
-          children: [
-            Container(
-              color: Colors.black,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
+        centerTitle: true,
+        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            if (_rows.isEmpty) {
+              Navigator.of(context).pop(false);
+            } else {
+              saveRoutineData();
+              Navigator.of(context).pop(true);
+            }
+          },
+        ),
+        actions: [
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  deleteData(_title);
+                  _showNameInputDialog(context);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.save,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  saveRoutineData();
+                  Navigator.of(context).pop(true);
+                },
+              ),
+            ],
+          )
+        ],
+      ),
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.black,
+          ),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                ..._rows,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ..._rows,
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween, // 좌우에 버튼을 배치하기 위해 사용
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(
-                              left: 40.0, bottom: 20.0), // margin 추가
-                          width: 200, // FloatingActionButton의 너비 조정
-                          height: 60,
-                          child: FloatingActionButton.extended(
-                            onPressed: () {
-                              _addTextFields();
-                            },
-                            icon: Icon(
-                              Icons.add,
-                              color: Colors.red,
-                            ),
-                            label: Text(
-                              "세트추가",
-                              style: TextStyle(color: Colors.red),
-                            ),
-                            backgroundColor: Color.fromARGB(255, 17, 6, 6),
-                          ),
+                    Container(
+                      margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                      width: 200,
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: _addTextFields,
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.red,
                         ),
-                        Container(
-                          margin: EdgeInsets.only(
-                              right: 40.0, bottom: 20.0), // margin 추가
-                          width: 200, // FloatingActionButton의 너비 조정
-                          height: 60,
-                          child: FloatingActionButton.extended(
-                            onPressed: () {
-                              _deleteLastRow();
-                            },
-                            icon: Icon(
-                              Icons.remove,
-                              color: Colors.yellow,
-                            ),
-                            label: Text(
-                              "세트삭제",
-                              style: TextStyle(color: Colors.yellow),
-                            ),
-                            backgroundColor: Color.fromARGB(255, 17, 6, 6),
-                          ),
+                        label: Text(
+                          "세트추가",
+                          style: TextStyle(color: Colors.red),
                         ),
-                      ],
+                        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                      width: 200,
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: _deleteLastRow,
+                        icon: Icon(
+                          Icons.remove,
+                          color: Colors.yellow,
+                        ),
+                        label: Text(
+                          "세트삭제",
+                          style: TextStyle(color: Colors.yellow),
+                        ),
+                        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                      ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 }
