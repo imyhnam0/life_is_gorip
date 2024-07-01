@@ -111,11 +111,11 @@ class _HomepageState extends State<Homepage> {
         title: Text(
           'IMYHNAM',
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8), // 글자 색상을 흰색으로 설정
+            color: Colors.white, // 글자 색상을 흰색으로 설정
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.menu,
@@ -153,216 +153,241 @@ class _HomepageState extends State<Homepage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Flexible(
-            flex: 3, // 상단 영역
-            child: Container(
-              color: Colors.black,
-              child: Row(children: [
-                Image.asset(
-                  'health.jpg',
-                  width: 150,
-                ),
-                Container(
-                  width: 350,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilder<Map<String, dynamic>?>(
-                        future: _fetchRoutineData(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator());
-                          }
-                          if (snapshot.hasError) {
-                            return Center(
-                                child: Text('오류 발생: ${snapshot.error}'));
-                          }
-                          if (!snapshot.hasData || snapshot.data == null) {
-                            return Center(
-                                child: Text('데이터가 없습니다.',
-                                    style: TextStyle(color: Colors.white)));
-                          }
-
-                          var data = snapshot.data!;
-                          var todayDate = DateTime.now();
-                          var formattedDate =
-                              '${todayDate.year}-${todayDate.month}-${todayDate.day}';
-
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  color: Colors.grey[800],
-                                  child: Text(
-                                    '오늘 날짜: $formattedDate',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 16),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  '오늘 한 루틴이름: ${data['오늘 한 루틴이름']}',
-                                  style: TextStyle(
-                                      color: Colors.red, fontSize: 15),
-                                ), // 간격 추가
-                                Text(
-                                  '오늘 총 세트수: ${data['오늘 총 세트수']}',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10),
-                                ),
-                                Text(
-                                  '오늘 총 볼륨: ${data['오늘 총 볼륨']}',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10),
-                                ),
-                                Text(
-                                  '오늘 총 운동시간: ${data['오늘 총 시간']}',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                )
-              ]), // 상단 영역 배경 색상 설정
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
             ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
           ),
-          Flexible(
-            flex: 7, // 하단 영역
-            child: Stack(
-              children: [
-                Container(
-                  color: Colors.black,
-                  child: ListView.builder(
-                    itemCount: collectionNames.length,
-                    itemBuilder: (context, index) {
-                      String collectionName = collectionNames[index];
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.all(25.0),
-                                  backgroundColor:
-                                      Color.fromARGB(255, 39, 34, 34), // 배경 색상
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        15.0), // 둥근 모서리 반경 설정
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => StartRoutinePage(
-                                        clickroutinename: collectionName,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      collectionName,
-                                      style: TextStyle(
-                                        fontSize: 20.0,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 5.0),
-                                    Text(
-                                      '7일전 루틴',
-                                      style: TextStyle(
-                                        fontSize: 15.0,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+        ),
+        child: Column(
+          children: [
+            Flexible(
+              flex: 3, // 상단 영역
+              child: Container(
+                child: Row(children: [
+                  Image.asset(
+                    'dumbbell.png',
+                    width: 100,
+                  ),
+                  Container(
+                    width: 350,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 오늘 날짜를 항상 표시하는 Container
+                        Padding(
+                          padding: const EdgeInsets.all(0.0),
+                          child: Align(
+                            alignment: Alignment(-0.2, 0.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(8.0),
+                              color: Colors.grey[800],
+                              child: Text(
+                                '오늘 날짜: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
-                  ), // 하단 영역 배경 색상 설정
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    margin:
-                        EdgeInsets.only(right: 40.0, bottom: 20.0), // margin 추가
-                    width: 200, // FloatingActionButton의 너비 조정
-                    height: 60,
-                    child: FloatingActionButton.extended(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const RoutinePage()),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.add,
-                        color: Colors.red,
-                      ),
-                      label: Text(
-                        "루틴추가",
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      backgroundColor: Color.fromARGB(255, 243, 241, 240),
+                        FutureBuilder<Map<String, dynamic>?>(
+                          future: _fetchRoutineData(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                            if (snapshot.hasError) {
+                              return Center(
+                                  child: Text('오류 발생: ${snapshot.error}'));
+                            }
+                            if (!snapshot.hasData || snapshot.data == null) {
+                              return Center(
+                                child: Text(
+                                  '데이터가 없습니다.',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              );
+                            }
+
+                            var data = snapshot.data!;
+
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 8),
+                                  Text(
+                                    '오늘 한 루틴이름: ${data['오늘 한 루틴이름']}',
+                                    style: TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 242, 241, 241),
+                                        fontSize: 15),
+                                  ),
+                                  Text(
+                                    '오늘 총 세트수: ${data['오늘 총 세트수']}',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  ),
+                                  Text(
+                                    '오늘 총 볼륨: ${data['오늘 총 볼륨']}',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  ),
+                                  Text(
+                                    '오늘 총 운동시간: ${data['오늘 총 시간']}',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Container(
-                    margin:
-                        EdgeInsets.only(left: 40.0, bottom: 20.0), // margin 추가
-                    width: 200, // FloatingActionButton의 너비 조정
-                    height: 60,
-                    child: FloatingActionButton.extended(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const FoodCreatePage()),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.food_bank,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        "식단추가",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      backgroundColor: Color.fromARGB(255, 199, 25, 19),
-                    ),
-                  ),
-                ),
-              ],
+                  )
+                ]), // 상단 영역 배경 색상 설정
+              ),
             ),
-          ),
-        ],
+            Flexible(
+              flex: 7, // 하단 영역
+              child: Stack(
+                children: [
+                  Container(
+                    child: ListView.builder(
+                      itemCount: collectionNames.length,
+                      itemBuilder: (context, index) {
+                        String collectionName = collectionNames[index];
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.all(25.0),
+                                    backgroundColor: Color.fromARGB(
+                                        255, 39, 34, 34), // 배경 색상
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          15.0), // 둥근 모서리 반경 설정
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => StartRoutinePage(
+                                          clickroutinename: collectionName,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        collectionName,
+                                        style: TextStyle(
+                                          fontSize: 20.0,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 5.0),
+                                      Text(
+                                        '7일전 루틴',
+                                        style: TextStyle(
+                                          fontSize: 15.0,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ), // 하단 영역 배경 색상 설정
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      margin: EdgeInsets.only(
+                          right: 40.0, bottom: 20.0), // margin 추가
+                      width: 200, // FloatingActionButton의 너비 조정
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const RoutinePage()),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.blueGrey.shade700,
+                        ),
+                        label: Text(
+                          "루틴추가",
+                          style: TextStyle(color: Colors.blueGrey.shade700),
+                        ),
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Container(
+                      margin: EdgeInsets.only(
+                          left: 40.0, bottom: 20.0), // margin 추가
+                      width: 200, // FloatingActionButton의 너비 조정
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const FoodCreatePage()),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.food_bank,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          "식단추가",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.cyan.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.black,
+        color: Colors.blueGrey.shade800,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [

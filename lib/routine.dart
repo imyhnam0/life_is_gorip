@@ -248,14 +248,23 @@ class _RoutinePageState extends State<RoutinePage> {
       ),
       body: Container(
         color: Colors.black,
-        child: ListView.builder(
-            itemCount: collectionNames.length,
-            itemBuilder: (context, index) {
-              String collectionName = collectionNames[index];
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+        child: ReorderableListView(
+          padding: const EdgeInsets.symmetric(
+              vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+          onReorder: (int oldIndex, int newIndex) {
+            setState(() {
+              if (newIndex > oldIndex) {
+                newIndex -= 1;
+              }
+              final String item = collectionNames.removeAt(oldIndex);
+              collectionNames.insert(newIndex, item);
+            });
+          },
+          children: [
+            for (int index = 0; index < collectionNames.length; index++)
+              Padding(
+                key: Key('$index'),
+                padding: const EdgeInsets.symmetric(vertical: 8.0), // 위아래 여백 추가
                 child: Row(
                   children: [
                     Expanded(
@@ -292,7 +301,7 @@ class _RoutinePageState extends State<RoutinePage> {
                               MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
                           children: [
                             Text(
-                              collectionName,
+                              collectionNames[index],
                               style:
                                   TextStyle(fontSize: 18.0, color: Colors.red),
                             ),
@@ -302,7 +311,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                deleteData(collectionName);
+                                deleteData(collectionNames[index]);
                               },
                             ), // 오른쪽 끝에 아이콘
                           ],
@@ -311,8 +320,9 @@ class _RoutinePageState extends State<RoutinePage> {
                     ),
                   ],
                 ),
-              );
-            }),
+              ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {

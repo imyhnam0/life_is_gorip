@@ -14,6 +14,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   List<String> collectionNames = [];
   List<String> savedCollectionNames = [];
 
+  bool _isDelete = false;
+
   @override
   void initState() {
     super.initState();
@@ -178,11 +180,11 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         title: Text(
           "루틴 모음",
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -212,12 +214,37 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                     });
                     ;
                   }),
+              IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isDelete = !_isDelete;
+                  });
+                },
+              ),
             ],
           ),
         ],
       ),
       body: Container(
-        color: Colors.black,
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
+          ),
+        ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           onReorder: (int oldIndex, int newIndex) async {
@@ -242,9 +269,13 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(25.0),
-                          backgroundColor: Color.fromARGB(255, 39, 34, 34),
+                          backgroundColor: Colors.blueGrey.shade800,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: Colors.blueGrey.shade700,
+                              width: 2,
+                            ),
                           ),
                         ),
                         onPressed: () {
@@ -269,30 +300,38 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                             ),
                             Text(
                               collectionNames[index],
-                              style:
-                                  TextStyle(fontSize: 18.0, color: Colors.red),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.delete,
+                              style: TextStyle(
+                                fontSize: 18.0,
                                 color: Colors.white,
                               ),
-                              onPressed: () {
-                                deleteCollection(collectionNames[index]);
-                              },
+                            ),
+                            Visibility(
+                              visible: _isDelete,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 70.0),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    deleteCollection(collectionNames[index]);
+                                  },
+                                ),
+                              ),
+                            ),
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: Container(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Icon(
+                                  Icons.drag_handle,
+                                  size: 30.0, // 원하는 크기로 설정
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.drag_handle,
-                          size: 36.0, // 원하는 크기로 설정
-                          color: Colors.white,
                         ),
                       ),
                     ),

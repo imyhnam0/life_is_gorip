@@ -21,36 +21,48 @@ class _BookMarkPageState extends State<BookMarkPage> {
     loadStarRow();
   }
 
-  void deleteCollection(String documentId) async {
+  Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
     try {
-      // 컬렉션의 모든 문서를 가져옴
-      var collectionRef = FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(documentId);
+      // Bookmark 문서를 참조합니다.
+      DocumentReference bookmarkDocRef =
+          FirebaseFirestore.instance.collection("Routine").doc('Bookmark');
 
-      var snapshots = await collectionRef.get();
+      // Bookmark 문서를 가져와서 names 필드를 업데이트합니다.
+      DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 
-      // 각 문서를 삭제
-      for (var doc in snapshots.docs) {
-        await doc.reference.delete();
+      if (bookmarkDocSnapshot.exists) {
+        // 변경된 순서를 names 필드에 반영합니다.
+        await bookmarkDocRef.update({'names': updatedCollectionNames});
+      } else {
+        // Bookmark 문서가 존재하지 않을 경우, 새로 생성합니다.
+        await bookmarkDocRef.set({'names': updatedCollectionNames});
       }
-      var namesCollectionRef = FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Routinename')
-          .collection("Names");
 
-      var namesSnapshots =
-          await namesCollectionRef.where('name', isEqualTo: documentId).get();
-
-      // 각 문서를 삭제
-      for (var doc in namesSnapshots.docs) {
-        await doc.reference.delete();
-      }
       myCollectionName();
-      // 새로고침 함수 호출
     } catch (e) {
-      print('Error deleting collection: $e');
+      print('Error updating Firestore order: $e');
+    }
+  }
+
+  void deleteBookmark(String name) async {
+    try {
+      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Bookmark')
+          .get();
+
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        if (names.contains(name)) {
+          names.remove(name);
+          await FirebaseFirestore.instance
+              .collection("Routine")
+              .doc('Bookmark')
+              .update({'names': names});
+        }
+      }
+    } catch (e) {
+      print('Error removing name: $e');
     }
   }
 
@@ -75,20 +87,19 @@ class _BookMarkPageState extends State<BookMarkPage> {
 
   void loadStarRow() async {
     try {
-      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Bookmark')
-          .get();
+      DocumentReference bookmarkDocRef =
+          FirebaseFirestore.instance.collection("Routine").doc('Bookmark');
 
-      if (bookmarkDoc.exists) {
-        List<String> names = List<String>.from(bookmarkDoc['names']);
+      DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
+
+      if (bookmarkDocSnapshot.exists) {
+        List<dynamic> names = bookmarkDocSnapshot.get('names');
         setState(() {
-          savedCollectionNames = names;
-          filterCollectionNames();
+          filteredCollectionNames = List<String>.from(names);
         });
       }
     } catch (e) {
-      print('Error fetching saved collection names: $e');
+      print('Error fetching names from Firestore: $e');
     }
   }
 
@@ -107,11 +118,11 @@ class _BookMarkPageState extends State<BookMarkPage> {
         title: Text(
           "루틴 모음",
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -121,26 +132,67 @@ class _BookMarkPageState extends State<BookMarkPage> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.edit,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isChecked = !_isChecked;
+              });
+            },
+          ),
+        ],
       ),
       body: Container(
-        color: Colors.black,
-        child: ListView.builder(
-            itemCount: filteredCollectionNames.length,
-            itemBuilder: (context, index) {
-              return Padding(
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
+          ),
+        ),
+        child: ReorderableListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          onReorder: (int oldIndex, int newIndex) async {
+            setState(() {
+              if (oldIndex < newIndex) {
+                newIndex -= 1;
+              }
+              final String item = filteredCollectionNames.removeAt(oldIndex);
+              filteredCollectionNames.insert(newIndex, item);
+            });
+            await updateFirestoreOrder(filteredCollectionNames);
+          },
+          children: <Widget>[
+            for (int index = 0; index < filteredCollectionNames.length; index++)
+              Padding(
+                key: Key('$index'),
                 padding: const EdgeInsets.symmetric(
-                    vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                    vertical: 15.0, horizontal: 30.0),
                 child: Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(25.0),
-                          backgroundColor:
-                              Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                          backgroundColor: Colors.blueGrey.shade800,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: Colors.blueGrey.shade700,
+                              width: 2,
+                            ),
                           ),
                         ),
                         onPressed: () {
@@ -155,33 +207,54 @@ class _BookMarkPageState extends State<BookMarkPage> {
                           );
                         },
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // 왼쪽 끝에 아이콘
                             Text(
                               filteredCollectionNames[index],
-                              style:
-                                  TextStyle(fontSize: 18.0, color: Colors.red),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.delete,
+                              style: TextStyle(
+                                fontSize: 18.0,
                                 color: Colors.white,
                               ),
-                              onPressed: () {
-                                deleteCollection(
-                                    filteredCollectionNames[index]);
-                              },
-                            ), // 오른쪽 끝에 아이콘
+                            ),
+                            Visibility(
+                              visible: _isChecked,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 200.0),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    deleteBookmark(
+                                        filteredCollectionNames[index]);
+                                    setState(() {
+                                      filteredCollectionNames.removeAt(index);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(
+                                  Icons.drag_handle,
+                                  size: 30.0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
+              ),
+          ],
+        ),
       ),
     );
   }
