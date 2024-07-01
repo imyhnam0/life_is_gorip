@@ -83,10 +83,10 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Color.fromARGB(255, 39, 34, 34),
+          backgroundColor: Colors.cyan.shade900,
           title: Text(
             'Exercise name',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: Colors.white),
           ),
           content: TextField(
             controller: nameController,
@@ -94,7 +94,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
               hintText: "이름을 입력하세요",
               hintStyle: TextStyle(color: Colors.grey), // 힌트 텍스트 색상
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.red), // 기본 상태의 밑줄 색상
+                borderSide: BorderSide(color: Colors.black), // 기본 상태의 밑줄 색상
               ),
               fillColor: Colors.white, // 텍스트 필드 배경 색상
               filled: true,
@@ -104,7 +104,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
             TextButton(
               child: Text(
                 '취소',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -113,7 +113,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
             TextButton(
               child: Text(
                 '확인',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 setState(() {
@@ -176,7 +176,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
         children: [
           Container(
             padding: EdgeInsets.all(16.0),
-            color: Colors.red,
+            color: Colors.cyan.shade700,
             child: Text(
               '$_counter',
               style: TextStyle(color: Colors.white),
@@ -190,7 +190,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                 hintText: "무게를 입력하세요",
                 hintStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red),
+                  borderSide: BorderSide(color: Colors.black),
                 ),
                 fillColor: Colors.white,
                 filled: true,
@@ -205,7 +205,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                 hintText: "횟수를 입력하세요",
                 hintStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red),
+                  borderSide: BorderSide(color: Colors.black),
                 ),
                 fillColor: Colors.white,
                 filled: true,
@@ -242,11 +242,11 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
         title: Text(
           _title,
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -291,12 +291,27 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
       body: Stack(
         children: [
           Container(
-            color: Colors.black,
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.shade900,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 7,
+                  offset: Offset(0, 3), // changes position of shadow
+                ),
+              ],
+              border: Border.all(
+                color: Colors.blueGrey.shade700,
+                width: 2,
+              ),
+            ),
           ),
           SingleChildScrollView(
             child: Column(
               children: [
                 ..._rows,
+                SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -308,13 +323,13 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                         onPressed: _addTextFields,
                         icon: Icon(
                           Icons.add,
-                          color: Colors.red,
+                          color: Colors.white,
                         ),
                         label: Text(
                           "세트추가",
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                        backgroundColor: Colors.blueGrey.shade900,
                       ),
                     ),
                     Container(
@@ -331,7 +346,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                           "세트삭제",
                           style: TextStyle(color: Colors.yellow),
                         ),
-                        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+                        backgroundColor: Colors.blueGrey.shade900,
                       ),
                     ),
                   ],

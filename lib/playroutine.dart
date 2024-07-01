@@ -147,54 +147,67 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
         title: Text(
           _title,
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('진짜 종료하시겠습니까?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // 팝업창 닫기
-                        },
-                        child: Text('아니요'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const Homepage()),
-                          );
-                        },
-                        child: Text('예'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            child: Text(
-              '종료',
-              style: TextStyle(color: Colors.red), // 텍스트 색상 설정
-            ),
+        backgroundColor: Colors.blueGrey.shade700,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
           ),
-        ],
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('진짜 종료하시겠습니까?'),
+                  content: Text('운동을 종료하면 모든 진행 상황이 저장되지 않습니다. 계속하시겠습니까?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // 팝업창 닫기
+                      },
+                      child: Text('아니요'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const Homepage()),
+                        );
+                      },
+                      child: Text('예'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
           Flexible(
             flex: 3,
             child: Container(
-              color: Colors.grey, // 상단 컨테이너 색상
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.shade600,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 7,
+                    offset: Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.blueGrey.shade500,
+                  width: 2,
+                ),
+              ), // 상단 컨테이너 색상
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start, // 세로 상단 정렬
                 crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
@@ -204,13 +217,31 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center, // 가로 중앙 정렬
                       children: [
-                        Text(
-                          '운동 시간: ',
-                          style: TextStyle(fontSize: 24, color: Colors.white),
-                        ),
-                        Text(
-                          _formatTime(_seconds),
-                          style: TextStyle(fontSize: 24, color: Colors.white),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.timer, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              '운동 시간: ',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(2.0, 2.0),
+                                    blurRadius: 3.0,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              _formatTime(_seconds),
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -237,7 +268,21 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           Flexible(
             flex: 7,
             child: Container(
-              color: Colors.black,
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.shade900,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 7,
+                    offset: Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.blueGrey.shade700,
+                  width: 2,
+                ),
+              ),
               child: ListView.builder(
                 itemCount: collectionNames.length,
                 itemBuilder: (context, index) {
@@ -250,11 +295,15 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.all(30.0),
+
                               backgroundColor:
-                                  Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                                  Colors.blueGrey.shade800, // 배경 색상
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                                borderRadius: BorderRadius.circular(15.0),
+                                side: BorderSide(
+                                  color: Colors.blueGrey.shade700,
+                                  width: 2,
+                                ), // 둥근 모서리 반경 설정
                               ),
                             ),
                             onPressed: () {
@@ -275,7 +324,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                 Text(
                                   collectionNames[index],
                                   style: TextStyle(
-                                      fontSize: 18.0, color: Colors.red),
+                                      fontSize: 18.0, color: Colors.white),
                                 ),
                               ],
                             ),
@@ -291,7 +340,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Color.fromARGB(241, 34, 30, 30),
+        color: Colors.blueGrey.shade800,
         child: Container(
           width: 170.0, // 원하는 너비로 설정
           height: 56.0, // 원하는 높이로 설정
@@ -333,7 +382,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
               "완료",
               style: TextStyle(color: Colors.white),
             ),
-            backgroundColor: Color.fromARGB(255, 180, 34, 34),
+            backgroundColor: Colors.cyan.shade700,
           ),
         ),
       ),

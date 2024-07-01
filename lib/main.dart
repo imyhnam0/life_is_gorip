@@ -109,9 +109,11 @@ class _HomepageState extends State<Homepage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'IMYHNAM',
+          'Life is Gorip',
           style: TextStyle(
-            color: Colors.white, // 글자 색상을 흰색으로 설정
+            color: Colors.white,
+            fontFamily: 'Pacifico',
+            fontSize: 24.0, // 글자 색상을 흰색으로 설정
           ),
         ),
         centerTitle: true,
@@ -145,7 +147,7 @@ class _HomepageState extends State<Homepage> {
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.black, // 버튼 배경색 설정
+                    primary: Colors.blueGrey.shade700, // 버튼 배경색 설정
                   ),
                 ),
               ],
@@ -195,7 +197,10 @@ class _HomepageState extends State<Homepage> {
                               child: Text(
                                 '오늘 날짜: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 16),
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontFamily: 'Oswald',
+                                ),
                               ),
                             ),
                           ),
@@ -233,7 +238,8 @@ class _HomepageState extends State<Homepage> {
                                     style: TextStyle(
                                         color:
                                             Color.fromARGB(255, 242, 241, 241),
-                                        fontSize: 15),
+                                        fontFamily: 'Oswald',
+                                        fontSize: 13),
                                   ),
                                   Text(
                                     '오늘 총 세트수: ${data['오늘 총 세트수']}',
@@ -280,11 +286,14 @@ class _HomepageState extends State<Homepage> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     padding: EdgeInsets.all(25.0),
-                                    backgroundColor: Color.fromARGB(
-                                        255, 39, 34, 34), // 배경 색상
+                                    backgroundColor:
+                                        Colors.blueGrey.shade800, // 배경 색상
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          15.0), // 둥근 모서리 반경 설정
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      side: BorderSide(
+                                        color: Colors.blueGrey.shade700,
+                                        width: 2,
+                                      ), // 둥근 모서리 반경 설정
                                     ),
                                   ),
                                   onPressed: () {
@@ -306,6 +315,7 @@ class _HomepageState extends State<Homepage> {
                                         style: TextStyle(
                                           fontSize: 20.0,
                                           color: Colors.white,
+                                          fontFamily: 'Oswald',
                                         ),
                                       ),
                                       SizedBox(height: 5.0),
@@ -313,7 +323,7 @@ class _HomepageState extends State<Homepage> {
                                         '7일전 루틴',
                                         style: TextStyle(
                                           fontSize: 15.0,
-                                          color: Colors.red,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ],
@@ -347,7 +357,10 @@ class _HomepageState extends State<Homepage> {
                         ),
                         label: Text(
                           "루틴추가",
-                          style: TextStyle(color: Colors.blueGrey.shade700),
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade700,
+                            fontFamily: 'Oswald',
+                          ),
                         ),
                         backgroundColor: Colors.white,
                       ),
@@ -374,7 +387,10 @@ class _HomepageState extends State<Homepage> {
                         ),
                         label: Text(
                           "식단추가",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Oswald',
+                          ),
                         ),
                         backgroundColor: Colors.cyan.shade700,
                       ),

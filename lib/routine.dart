@@ -83,10 +83,10 @@ class _RoutinePageState extends State<RoutinePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Color.fromARGB(255, 39, 34, 34),
+          backgroundColor: Colors.cyan.shade900,
           title: Text(
             'My routine name',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: Colors.white),
           ),
           content: TextField(
             controller: nameController,
@@ -94,7 +94,7 @@ class _RoutinePageState extends State<RoutinePage> {
               hintText: "이름을 입력하세요",
               hintStyle: TextStyle(color: Colors.grey), // 힌트 텍스트 색상
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.red), // 기본 상태의 밑줄 색상
+                borderSide: BorderSide(color: Colors.black), // 기본 상태의 밑줄 색상
               ),
               fillColor: Colors.white, // 텍스트 필드 배경 색상
               filled: true,
@@ -104,7 +104,7 @@ class _RoutinePageState extends State<RoutinePage> {
             TextButton(
               child: Text(
                 '취소',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -113,7 +113,7 @@ class _RoutinePageState extends State<RoutinePage> {
             TextButton(
               child: Text(
                 '확인',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 setState(() {
@@ -152,11 +152,11 @@ class _RoutinePageState extends State<RoutinePage> {
         title: Text(
           _title,
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -247,7 +247,21 @@ class _RoutinePageState extends State<RoutinePage> {
         ],
       ),
       body: Container(
-        color: Colors.black,
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
+          ),
+        ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(
               vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
@@ -271,11 +285,13 @@ class _RoutinePageState extends State<RoutinePage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(25.0),
-                          backgroundColor:
-                              Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                          backgroundColor: Colors.blueGrey.shade800, // 배경 색상
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: Colors.blueGrey.shade700,
+                              width: 2,
+                            ), // 둥근 모서리 반경 설정
                           ),
                         ),
                         onPressed: () {
@@ -302,8 +318,8 @@ class _RoutinePageState extends State<RoutinePage> {
                           children: [
                             Text(
                               collectionNames[index],
-                              style:
-                                  TextStyle(fontSize: 18.0, color: Colors.red),
+                              style: TextStyle(
+                                  fontSize: 18.0, color: Colors.white),
                             ),
                             IconButton(
                               icon: Icon(
@@ -348,7 +364,7 @@ class _RoutinePageState extends State<RoutinePage> {
           "생성",
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Color.fromARGB(255, 199, 25, 19),
+        backgroundColor: Colors.cyan.shade700,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

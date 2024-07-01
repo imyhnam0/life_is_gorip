@@ -128,11 +128,11 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
         title: Text(
           _title,
           style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -169,7 +169,21 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
         ],
       ),
       body: Container(
-        color: Colors.black,
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
+          ),
+        ),
         child: ListView.builder(
             itemCount: collectionNames.length,
             itemBuilder: (context, index) {
@@ -182,11 +196,13 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(30.0),
-                          backgroundColor:
-                              Color.fromARGB(255, 39, 34, 34), // 배경 색상
+                          backgroundColor: Colors.blueGrey.shade800, // 배경 색상
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(15.0), // 둥근 모서리 반경 설정
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: Colors.blueGrey.shade700,
+                              width: 2,
+                            ), // 둥근 모서리 반경 설정
                           ),
                         ),
                         onPressed: () {
@@ -214,8 +230,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                             // 왼쪽 끝에 아이콘
                             Text(
                               collectionNames[index],
-                              style:
-                                  TextStyle(fontSize: 18.0, color: Colors.red),
+                              style: TextStyle(
+                                  fontSize: 18.0, color: Colors.white),
                             ),
                             IconButton(
                               icon: Icon(
@@ -236,7 +252,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
             }),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Color.fromARGB(241, 34, 30, 30),
+        color: Colors.blueGrey.shade800,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -267,7 +283,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                   "생성",
                   style: TextStyle(color: Colors.white),
                 ),
-                backgroundColor: Color.fromARGB(255, 199, 25, 19),
+                backgroundColor: Colors.cyan.shade700,
               ),
             ),
             Container(
@@ -284,13 +300,13 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                 },
                 icon: Icon(
                   Icons.sports_gymnastics,
-                  color: Colors.white,
+                  color: Colors.blueGrey.shade700,
                 ),
                 label: Text(
                   "시작",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.blueGrey.shade700),
                 ),
-                backgroundColor: Color.fromARGB(255, 100, 100, 100),
+                backgroundColor: Colors.white,
               ),
             ),
           ],
