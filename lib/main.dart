@@ -66,16 +66,24 @@ class _HomepageState extends State<Homepage> {
         .format(selectedDate.subtract(Duration(days: 7)));
     print(sevenDaysAgoDate);
     try {
-      // 7일 전 날짜의 데이터 가져오기
       QuerySnapshot snapshot = await db
           .collection('Calender')
           .doc('health')
-          .collection(sevenDaysAgoDate)
+          .collection('routines')
           .get();
+
+      List<Map<String, dynamic>> matchedDocuments = [];
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data['날짜'] == sevenDaysAgoDate) {
+          matchedDocuments.add(data);
+        }
+      }
 
       // 7일 전 루틴 이름 리스트를 추출
       List<String> routineNames =
-          snapshot.docs.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
+          matchedDocuments.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
 
       return routineNames;
     } catch (e) {
@@ -84,25 +92,31 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchRoutineData() async {
+  Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
-    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
       QuerySnapshot snapshot = await db
           .collection('Calender')
           .doc('health')
-          .collection(formattedDate)
-          .orderBy('timestamp', descending: true)
+          .collection('routines')
           .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        return snapshot.docs.first.data() as Map<String, dynamic>;
+      List<Map<String, dynamic>> matchedDocuments = [];
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data['날짜'] == todayDate) {
+          matchedDocuments.add(data);
+        }
       }
+
+      return matchedDocuments;
     } catch (e) {
-      print('Error fetching document: $e');
+      print('Error fetching documents: $e');
     }
-    return null;
+    return [];
   }
 
   @override
@@ -121,7 +135,7 @@ class _HomepageState extends State<Homepage> {
         backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
-            Icons.menu,
+            Icons.query_stats,
             color: Colors.white,
           ), // Icons.list 대신 Icons.menu를 사용
           onPressed: () {
@@ -211,61 +225,74 @@ class _HomepageState extends State<Homepage> {
                             ),
                           ),
                         ),
-                        FutureBuilder<Map<String, dynamic>?>(
-                          future: _fetchRoutineData(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            }
-                            if (snapshot.hasError) {
-                              return Center(
-                                  child: Text('오류 발생: ${snapshot.error}'));
-                            }
-                            if (!snapshot.hasData || snapshot.data == null) {
-                              return Center(
-                                child: Text(
+                        Expanded(
+                          child: FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _fetchRoutineData(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (snapshot.hasError) {
+                                return Center(
+                                    child: Text('오류 발생: ${snapshot.error}'));
+                              }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Center(
+                                    child: Text(
                                   '데이터가 없습니다.',
                                   style: TextStyle(color: Colors.white),
-                                ),
+                                ));
+                              }
+
+                              var data = snapshot.data!;
+                              return ListView.builder(
+                                itemCount: data.length,
+                                itemBuilder: (context, index) {
+                                  var routine = data[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[950],
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        border: Border.all(color: Colors.white),
+                                      ),
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '루틴 이름: ${routine['오늘 한 루틴이름']}',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          Text(
+                                            '운동 세트수: ${routine['오늘 총 세트수']}',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          Text(
+                                            '운동 볼륨: ${routine['오늘 총 볼륨']}',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          Text(
+                                            '운동 시간: ${routine['오늘 총 시간']}',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
-                            }
-
-                            var data = snapshot.data!;
-
-                            return Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: 8),
-                                  Text(
-                                    '오늘 한 루틴이름: ${data['오늘 한 루틴이름']}',
-                                    style: TextStyle(
-                                        color:
-                                            Color.fromARGB(255, 242, 241, 241),
-                                        fontFamily: 'Oswald',
-                                        fontSize: 13),
-                                  ),
-                                  Text(
-                                    '오늘 총 세트수: ${data['오늘 총 세트수']}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 10),
-                                  ),
-                                  Text(
-                                    '오늘 총 볼륨: ${data['오늘 총 볼륨']}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 10),
-                                  ),
-                                  Text(
-                                    '오늘 총 운동시간: ${data['오늘 총 시간']}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                            },
+                          ),
                         ),
                       ],
                     ),
