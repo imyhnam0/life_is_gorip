@@ -52,24 +52,32 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  void saveRoutineName(
-      int result, int sumweight, int timerSeconds, String _title) async {
-    // 완료된 값 저장하는 함수
-    var db = FirebaseFirestore.instance;
-    String currentTime = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
+  Future<void> saveRoutine(
+      String _title, int result, int sumweight, int timerSeconds) async {
+    final DateTime now = DateTime.now();
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     try {
-      // health 문서 아래에 timestamp 컬렉션을 생성하고 새로운 문서를 추가합니다.
-      await db
-          .collection('Calender')
-          .doc('health')
-          .collection(currentTime)
-          .add({
+      // Firestore 인스턴스
+      final db = FirebaseFirestore.instance;
+
+      // health 문서 참조
+      final healthDocRef = db.collection('Calender').doc('health');
+
+      // 현재 문서 개수를 가져와서 새로운 문서 번호를 결정합니다.
+      final existingDocsSnapshot =
+          await healthDocRef.collection('routines').get();
+      final newDocNumber = existingDocsSnapshot.size + 1;
+
+      // 새로운 문서를 추가합니다.
+      await healthDocRef
+          .collection('routines')
+          .doc(newDocNumber.toString())
+          .set({
         '오늘 한 루틴이름': _title,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
         '오늘 총 시간': _formatTime(timerSeconds),
-        'timestamp': FieldValue.serverTimestamp(),
+        '날짜': formattedDate,
       });
     } catch (e) {
       print('Error adding document: $e');
@@ -360,7 +368,12 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          saveRoutineName(result, sumweight, _seconds, _title);
+                          saveRoutine(
+                            _title,
+                            result,
+                            sumweight,
+                            _seconds,
+                          );
                           Navigator.push(
                             context,
                             MaterialPageRoute(

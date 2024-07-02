@@ -1,6 +1,6 @@
 import 'dart:html';
 import 'package:health/food.dart';
-
+import 'package:flutter_charts/flutter_charts.dart';
 import 'saveroutine.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +15,7 @@ import 'calender.dart';
 import 'package:intl/intl.dart';
 import 'bookmark.dart';
 import 'start_routine.dart';
+import 'chart.dart';
 
 void main() async {
   await Firebase.initializeApp(
@@ -123,7 +124,12 @@ class _HomepageState extends State<Homepage> {
             Icons.menu,
             color: Colors.white,
           ), // Icons.list 대신 Icons.menu를 사용
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => RoutineChart()),
+            );
+          },
         ),
         actions: [
           Padding(

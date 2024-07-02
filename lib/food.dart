@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class FoodCreatePage extends StatefulWidget {
   const FoodCreatePage({super.key});
@@ -12,22 +10,31 @@ class FoodCreatePage extends StatefulWidget {
 }
 
 class _FoodCreatePageState extends State<FoodCreatePage> {
-  final TextEditingController _controller = TextEditingController();
-  Map<String, dynamic>? _nutritionData;
+  List<Map<String, dynamic>>? foodData;
+  TextEditingController _foodNameController = TextEditingController();
+  @override
+  void dispose() {
+    _foodNameController.dispose();
+    super.dispose();
+  }
 
-  Future<void> _fetchNutritionData(String query) async {
-    final String apiKey = 'YOUR_API_KEY'; // 여기에 공공데이터 포털 API 키를 입력하세요.
-    final String url =
-        'https://api.nongsaro.go.kr/service/foodComposition/foodCompositionList?apiKey=$apiKey&foodName=$query&type=json';
+  Future<void> fetchFoodData(String foodName) async {
+    final url = Uri.parse(
+        'http://openapi.foodsafetykorea.go.kr/api/c40b690515f447b599b7/I2790/json/1/1000/DESC_KOR=$foodName');
 
-    final http.Response response = await http.get(Uri.parse(url));
-
+    final response = await http.get(url);
     if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
       setState(() {
-        _nutritionData = json.decode(response.body);
+        if (data['I2790'] != null && data['I2790']['row'] != null) {
+          foodData = List<Map<String, dynamic>>.from(data['I2790']['row']);
+        } else {
+          foodData = null;
+        }
       });
     } else {
-      throw Exception('Failed to load nutrition data');
+      throw Exception('Failed to load food data');
     }
   }
 
@@ -35,56 +42,56 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "식단 생성",
-          style: TextStyle(
-            color: Color.fromARGB(255, 243, 8, 8),
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 17, 6, 6),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        title: Text('Food Create Page'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
-              controller: _controller,
+              controller: _foodNameController,
               decoration: InputDecoration(
-                labelText: '음식 검색',
+                labelText: '품목명 입력',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 16.0),
+            SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => _fetchNutritionData(_controller.text),
+              onPressed: () {
+                fetchFoodData(_foodNameController.text);
+              },
               child: Text('검색'),
             ),
-            SizedBox(height: 16.0),
-            _nutritionData != null
-                ? Expanded(
-                    child: ListView(
-                      children: [
-                        Text('칼로리: ${_nutritionData!['calories']} kcal'),
-                        Text(
-                            '탄수화물: ${_nutritionData!['totalNutrients']['CHOCDF']['quantity']} g'),
-                        Text(
-                            '단백질: ${_nutritionData!['totalNutrients']['PROCNT']['quantity']} g'),
-                        Text(
-                            '지방: ${_nutritionData!['totalNutrients']['FAT']['quantity']} g'),
-                      ],
+            SizedBox(height: 16),
+            Expanded(
+              child: foodData == null
+                  ? Center(child: Text('데이터를 불러올 수 없습니다.'))
+                  : ListView.builder(
+                      itemCount: foodData!.length,
+                      itemBuilder: (context, index) {
+                        final item = foodData![index];
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('식품이름: ${item['DESC_KOR']}'),
+                                  Text('총내용량: ${item['SERVING_SIZE']}'),
+                                  Text('열량(kcal): ${item['NUTR_CONT1']}'),
+                                  Text('탄수화물(g): ${item['NUTR_CONT2']}'),
+                                  Text('단백질(g): ${item['NUTR_CONT3']}'),
+                                  Text('지방(g): ${item['NUTR_CONT4']}'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  )
-                : Text('검색 결과가 없습니다.'),
+            ),
           ],
         ),
       ),

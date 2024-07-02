@@ -21,13 +21,19 @@ class _CalenderPageState extends State<CalenderPage> {
       QuerySnapshot snapshot = await db
           .collection('Calender')
           .doc('health')
-          .collection(todayDate)
-          .orderBy('timestamp', descending: true)
+          .collection('routines')
           .get();
 
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      List<Map<String, dynamic>> matchedDocuments = [];
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data['날짜'] == todayDate) {
+          matchedDocuments.add(data);
+        }
+      }
+
+      return matchedDocuments;
     } catch (e) {
       print('Error fetching documents: $e');
     }
@@ -44,9 +50,9 @@ class _CalenderPageState extends State<CalenderPage> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: ColorScheme.dark(
-              primary: Colors.red,
+              primary: Colors.blueGrey.shade700,
               onPrimary: Colors.white,
-              surface: Colors.black,
+              surface: Colors.grey,
               onSurface: Colors.white,
             ),
             dialogBackgroundColor: Colors.black,
@@ -67,14 +73,16 @@ class _CalenderPageState extends State<CalenderPage> {
     String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 18, 17, 17),
+      backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
         title: Text(
           "운동일지",
-          style: TextStyle(color: Colors.red),
+          style: TextStyle(
+            color: Colors.white,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 23, 20, 20),
+        backgroundColor: Colors.blueGrey.shade700,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
@@ -90,7 +98,9 @@ class _CalenderPageState extends State<CalenderPage> {
             child: ElevatedButton(
               onPressed: () => _selectDate(context),
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+                backgroundColor: MaterialStateProperty.all<Color>(
+                  Colors.blueGrey.shade700,
+                ),
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero, // 사각형 모양
@@ -128,7 +138,11 @@ class _CalenderPageState extends State<CalenderPage> {
                   return Center(child: Text('오류 발생: ${snapshot.error}'));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('데이터가 없습니다.'));
+                  return Center(
+                      child: Text(
+                    '데이터가 없습니다.',
+                    style: TextStyle(color: Colors.white),
+                  ));
                 }
 
                 var data = snapshot.data!;
@@ -157,8 +171,6 @@ class _CalenderPageState extends State<CalenderPage> {
                             '오늘 총 운동 시간: ${routine['오늘 총 시간']}',
                             style: TextStyle(color: Colors.white),
                           ),
-                          Text(
-                              '운동 완료 시간: ${routine['timestamp']?.toDate() ?? 'N/A'}'),
                         ],
                       ),
                     );

@@ -58,15 +58,32 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
   void myCollectionName() async {
     try {
-      // '_title' 컬렉션에서 하위 문서 ID들 가져오기
+      // 'Routine' 컬렉션에서 'Routinename' 문서의 하위 컬렉션 'Names'의 문서들 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection("Routine")
+          .doc('Routinename')
+          .collection('Names')
+          .get();
+
+      // `order` 필드가 없는 문서들을 이름 순서대로 리스트에 저장
+      List<String> names =
+          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+      setState(() {
+        collectionNames = names;
+      });
+
+      // `order` 필드가 없는 문서에 대해 `order` 필드 업데이트
+      await updateFirestoreOrder();
+
+      // `order` 필드가 추가된 문서들을 다시 불러와 정렬
+      querySnapshot = await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
           .orderBy('order')
           .get();
-      List<String> names =
-          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+      names = querySnapshot.docs.map((doc) => doc['name'] as String).toList();
 
       setState(() {
         collectionNames = names;
