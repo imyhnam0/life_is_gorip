@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'create_routine.dart';
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 
 class StartRoutineNamePlay extends StatefulWidget {
   final String clickroutinename;
@@ -20,13 +21,14 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   TextEditingController nameController = TextEditingController();
 
   late String _title = widget.clickroutinename;
-  List<Widget> _rows = [];
+  List<ExerciseRow> _rows = [];
   List<Map<String, dynamic>> exercisesData = [];
   int _counter = 0;
   int _minutes = 0;
   int _seconds = 0;
   Timer? _timer;
   int _remainingTime = 0;
+
   void _startTimer() {
     if (_timer != null) {
       _timer!.cancel();
@@ -46,41 +48,36 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     });
   }
 
-  void _incrementMinutes() {
+  
+
+ void _addTextFields() {
     setState(() {
-      _minutes++;
+      _counter++;
+      _rows.add(ExerciseRow(
+        weightController: TextEditingController(text: '0'),
+        repsController: TextEditingController(text: '0'),
+        counter: _counter,
+        onCheckPressed: _startTimer,
+      ));
     });
   }
 
-  void _incrementSeconds() {
+  void _deleteLastRow() {
     setState(() {
-      _seconds++;
-      if (_seconds >= 60) {
-        _seconds = 0;
-        _minutes++;
+      if (_rows.isNotEmpty) {
+        _rows.removeLast();
+        _counter--;
       }
     });
   }
+ 
 
-  void _decrementMinutes() {
-    if (_minutes > 0) {
-      setState(() {
-        _minutes--;
-      });
-    }
-  }
-
-  void _decrementSeconds() {
-    if (_seconds > 0) {
-      setState(() {
-        _seconds--;
-      });
-    } else if (_minutes > 0) {
-      setState(() {
-        _seconds = 59;
-        _minutes--;
-      });
-    }
+  
+  void _cancelTimer() {
+    _timer?.cancel();
+    setState(() {
+      _remainingTime = 0;
+    });
   }
 
   @override
@@ -108,27 +105,56 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
       if (documentSnapshot.exists) {
         var data = documentSnapshot.data() as Map<String, dynamic>;
         if (data.containsKey('exercises')) {
-          exercisesData = List<Map<String, dynamic>>.from(data['exercises']
+          List<Map<String, dynamic>> exercisesData = List<Map<String, dynamic>>.from(data['exercises']
               .map((exercise) => {
                     'reps': exercise['reps'],
                     'weight': exercise['weight'],
                   })
               .toList());
+
+          setState(() {
+            _rows = exercisesData.map((exercise) {
+              _counter++; // 각 행을 추가할 때마다 카운터 증가
+              return ExerciseRow(
+                weightController: TextEditingController(text: exercise['weight'].toString()),
+                repsController: TextEditingController(text: exercise['reps'].toString()),
+                counter: _counter,
+                onCheckPressed: _startTimer,
+              );
+            }).toList();
+          });
         }
-        setState(() {
-          _rows = exercisesData.map((exercise) {
-            _counter++; // 각 행을 추가할 때마다 카운터 증가
-            return ExerciseRow(
-              weight: exercise['weight'].toString(),
-              reps: exercise['reps'].toString(),
-              counter: _counter,
-              onCheckPressed: _startTimer,
-            );
-          }).toList();
-        });
       }
     } catch (e) {
       print('Error fetching document data: $e');
+    }
+  }
+
+  void saveRoutineData() async {
+    var db = FirebaseFirestore.instance;
+
+    Map<String, dynamic> routine = {"exercises": []};
+    for (var row in _rows) {
+      String weight = row.weightController.text;
+      String reps = row.repsController.text;
+
+      routine["exercises"].add({
+        "weight": weight,
+        "reps": reps,
+      });
+    }
+
+    if (routine["exercises"].isNotEmpty) {
+      try {
+        await db
+            .collection('Routine')
+            .doc('Myroutine')
+            .collection(widget.currentroutinename)
+            .doc(widget.clickroutinename)
+            .set(routine);
+      } catch (e) {
+        print('Error adding document: $e');
+      }
     }
   }
 
@@ -150,6 +176,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
             color: Colors.white,
           ), // Icons.list 대신 Icons.menu를 사용
           onPressed: () {
+            saveRoutineData();
             Navigator.pop(context);
           },
         ),
@@ -186,78 +213,80 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        ElevatedButton(
+                          onPressed: _cancelTimer,
+                          child: Text(
+                            '취소',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey, // 버튼 배경색 설정
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        // 분 선택
                         Column(
                           children: [
-                            ElevatedButton(
-                              onPressed: _incrementMinutes,
-                              child: Text(
-                                '+',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                primary: Colors.cyan.shade700, // 버튼 배경색 설정
-                              ),
-                            ),
-                            Text(
-                              '$_minutes'.padLeft(2, '0'),
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            ElevatedButton(
-                              onPressed: _decrementMinutes,
-                              child: Text(
-                                '-',
-                                style: TextStyle(color: Colors.yellow),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                primary: Colors.cyan.shade700, // 버튼 배경색 설정
+                            Text('분', style: TextStyle(fontSize: 20)),
+                            Container(
+                              height: 150,
+                              width: 100,
+                              child: CupertinoPicker(
+                                itemExtent: 32.0,
+                                onSelectedItemChanged: (int index) {
+                                  setState(() {
+                                    _minutes = index ;
+                                  });
+                                },
+                                children:
+                                    List<Widget>.generate(60, (int index) {
+                                  return Center(
+                                    child: Text(
+                                        '${index.toString().padLeft(2, '0')}'),
+                                  );
+                                }),
                               ),
                             ),
                           ],
                         ),
-                        Text(
-                          ':',
-                          style: TextStyle(fontSize: 14),
-                        ),
+                        Text(':', style: TextStyle(fontSize: 20)),
+                        // 초 선택
                         Column(
                           children: [
-                            ElevatedButton(
-                              onPressed: _incrementSeconds,
-                              child: Text(
-                                '+',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                primary: Colors.cyan.shade700, // 버튼 배경색 설정
-                              ),
-                            ),
-                            Text(
-                              '$_seconds'.padLeft(2, '0'),
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            ElevatedButton(
-                              onPressed: _decrementSeconds,
-                              child: Text(
-                                '-',
-                                style: TextStyle(color: Colors.yellow),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                primary: Colors.cyan.shade700, // 버튼 배경색 설정
+                            Text('초', style: TextStyle(fontSize: 20)),
+                            Container(
+                              height: 150,
+                              width: 100,
+                              child: CupertinoPicker(
+                                itemExtent: 32.0,
+                                onSelectedItemChanged: (int index) {
+                                  setState(() {
+                                    _seconds = index;
+                                  });
+                                },
+                                children:
+                                    List<Widget>.generate(60, (int index) {
+                                  return Center(
+                                    child: Text(
+                                        '${index.toString().padLeft(2, '0')}'),
+                                  );
+                                }),
                               ),
                             ),
                           ],
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _startTimer,
+                          child: Text(
+                            '시작',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green, // 버튼 배경색 설정
+                          ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: _startTimer,
-                      child: Text(
-                        '타이머 시작',
-                        style: TextStyle(color: Colors.cyan.shade700),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.white, // 버튼 배경색 설정
-                      ),
                     ),
                   ],
                 ),
@@ -287,7 +316,49 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                 ),
                 SingleChildScrollView(
                   child: Column(
-                    children: _rows,
+                    children:[..._rows,
+                    SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                      width: 160,
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: _addTextFields,
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          "세트추가",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.blueGrey.shade900,
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                      width: 160,
+                      height: 60,
+                      child: FloatingActionButton.extended(
+                        onPressed: _deleteLastRow,
+                        icon: Icon(
+                          Icons.remove,
+                          color: Colors.yellow,
+                        ),
+                        label: Text(
+                          "세트삭제",
+                          style: TextStyle(color: Colors.yellow),
+                        ),
+                        backgroundColor: Colors.blueGrey.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+                    ], 
+                    
                   ),
                 ),
               ],
@@ -300,16 +371,17 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
 }
 
 class ExerciseRow extends StatefulWidget {
-  final String weight;
-  final String reps;
+  final TextEditingController weightController;
+  final TextEditingController repsController;
   final int counter;
   final VoidCallback onCheckPressed;
 
-  ExerciseRow(
-      {required this.weight,
-      required this.reps,
-      required this.counter,
-      required this.onCheckPressed});
+  ExerciseRow({
+    required this.weightController,
+    required this.repsController,
+    required this.counter,
+    required this.onCheckPressed,
+  });
 
   @override
   _ExerciseRowState createState() => _ExerciseRowState();
@@ -336,7 +408,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
           SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: TextEditingController(text: widget.weight),
+              controller: widget.weightController,
               decoration: InputDecoration(
                 hintText: "무게를 입력하세요",
                 hintStyle: TextStyle(color: Colors.grey),
@@ -351,7 +423,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
           SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: TextEditingController(text: widget.reps),
+              controller: widget.repsController,
               decoration: InputDecoration(
                 hintText: "횟수를 입력하세요",
                 hintStyle: TextStyle(color: Colors.grey),

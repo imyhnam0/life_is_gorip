@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'calender.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 class CalenderPage extends StatefulWidget {
@@ -38,6 +38,38 @@ class _CalenderPageState extends State<CalenderPage> {
       print('Error fetching documents: $e');
     }
     return [];
+  }
+
+  Future<Map<String, Map<String, int>>> _fetchRoutineChartData(String routineName) async {
+    var db = FirebaseFirestore.instance;
+    Map<String, Map<String, int>> routineData = {};
+
+    try {
+      QuerySnapshot snapshot = await db
+          .collection('Calender')
+          .doc('health')
+          .collection('routines')
+          .get();
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data['오늘 한 루틴이름'] == routineName) {
+          String formattedDate = data['날짜'];
+          int volume = data['오늘 총 볼륨'] ?? 0;
+
+          if (routineData.containsKey(routineName)) {
+            routineData[routineName]![formattedDate] = volume;
+          } else {
+            routineData[routineName] = {formattedDate: volume};
+          }
+        }
+      }
+
+      return routineData;
+    } catch (e) {
+      print('Error fetching documents: $e');
+      return {};
+    }
   }
 
   void _selectDate(BuildContext context) async {
@@ -87,7 +119,7 @@ class _CalenderPageState extends State<CalenderPage> {
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -103,7 +135,7 @@ class _CalenderPageState extends State<CalenderPage> {
                 ),
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // 사각형 모양
+                    borderRadius: BorderRadius.zero,
                   ),
                 ),
               ),
@@ -116,7 +148,7 @@ class _CalenderPageState extends State<CalenderPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 16.0), // 상단에 여백을 줍니다.
+            padding: const EdgeInsets.only(top: 16.0),
             child: Center(
               child: Text(
                 todayDate,
@@ -170,6 +202,125 @@ class _CalenderPageState extends State<CalenderPage> {
                           Text(
                             '오늘 총 운동 시간: ${routine['오늘 총 시간']}',
                             style: TextStyle(color: Colors.white),
+                          ),
+                          SizedBox(height: 16),
+                          FutureBuilder<Map<String, Map<String, int>>>(
+                            future: _fetchRoutineChartData(routine['오늘 한 루틴이름']),
+                            builder: (context, chartSnapshot) {
+                              if (chartSnapshot.connectionState == ConnectionState.waiting) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              if (chartSnapshot.hasError) {
+                                return Center(child: Text('오류 발생: ${chartSnapshot.error}'));
+                              }
+                              if (!chartSnapshot.hasData || chartSnapshot.data!.isEmpty) {
+                                return Center(
+                                    child: Text(
+                                  '차트 데이터가 없습니다.',
+                                  style: TextStyle(color: Colors.white),
+                                ));
+                              }
+
+                              Map<String, Map<String, int>> routineData = chartSnapshot.data!;
+                              if (!routineData.containsKey(routine['오늘 한 루틴이름'])) {
+                                return Center(
+                                    child: Text(
+                                  '차트 데이터가 없습니다.',
+                                  style: TextStyle(color: Colors.white),
+                                ));
+                              }
+
+                              Map<String, int> data = routineData[routine['오늘 한 루틴이름']]!;
+
+                              // X축 라벨을 위한 날짜 포맷터
+                              DateFormat dateFormat = DateFormat('MM/dd');
+
+                              // X축 라벨과 Y축 값을 추출
+                              List<String> xLabels = data.keys
+                                  .map((date) => dateFormat.format(DateTime.parse(date)))
+                                  .toList();
+                              List<double> yValues =
+                                  data.values.map((volume) => volume.toDouble()).toList();
+
+                              // Y축 최소값과 최대값 계산
+                              double minY = yValues.reduce((a, b) => a < b ? a : b);
+                              double maxY = yValues.reduce((a, b) => a > b ? a : b);
+
+                              // FlSpot 데이터 생성
+                              List<FlSpot> spots = [];
+                              for (int i = 0; i < data.length; i++) {
+                                spots.add(FlSpot(i.toDouble(), yValues[i]));
+                              }
+
+                              return SizedBox(
+                                height: 200,
+                                child: LineChart(
+                                  LineChartData(
+                                    gridData: FlGridData(show: false),
+                                    titlesData: FlTitlesData(
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          getTitlesWidget: (value, meta) {
+                                            if (value.toInt() < xLabels.length) {
+                                              return Text(
+                                                xLabels[value.toInt()],
+                                                style: TextStyle(color: Colors.white),
+                                              );
+                                            }
+                                            return Text('');
+                                          },
+                                          interval: 1,
+                                          reservedSize: 22,
+                                        ),
+                                      ),
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: false,
+                                          getTitlesWidget: (value, meta) {
+                                            return Text(
+                                              '${value.toInt()}',
+                                              style: TextStyle(color: Colors.white),
+                                            );
+                                          },
+                                          interval: 1,
+                                          reservedSize: 28,
+                                        ),
+                                      ),
+                                      rightTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                      topTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                    ),
+                                    borderData: FlBorderData(
+                                      show: true,
+                                      border: Border(
+                                        bottom: BorderSide(color: Colors.white, width: 1),
+                                        left: BorderSide(color: Colors.white, width: 1),
+                                        right: BorderSide.none,
+                                        top: BorderSide.none,
+                                      ),
+                                    ),
+                                    minX: 0,
+                                    maxX: (data.length - 1).toDouble(),
+                                    minY: minY,
+                                    maxY: maxY,
+                                    lineBarsData: [
+                                      LineChartBarData(
+                                        spots: spots,
+                                        isCurved: true,
+                                        barWidth: 5,
+                                        isStrokeCapRound: true,
+                                        dotData: FlDotData(show: true),
+                                        belowBarData: BarAreaData(show: false),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

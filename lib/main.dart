@@ -1,6 +1,4 @@
-import 'dart:html';
 import 'package:health/food.dart';
-import 'package:flutter_charts/flutter_charts.dart';
 import 'saveroutine.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +14,11 @@ import 'package:intl/intl.dart';
 import 'bookmark.dart';
 import 'start_routine.dart';
 import 'chart.dart';
+import 'foodsave.dart';
+import 'foodroutinestart.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -64,12 +65,14 @@ class _HomepageState extends State<Homepage> {
     var db = FirebaseFirestore.instance;
     String sevenDaysAgoDate = DateFormat('yyyy-MM-dd')
         .format(selectedDate.subtract(Duration(days: 7)));
+
     print(sevenDaysAgoDate);
     try {
       QuerySnapshot snapshot = await db
           .collection('Calender')
           .doc('health')
           .collection('routines')
+          .where('날짜', isEqualTo: sevenDaysAgoDate) 
           .get();
 
       List<Map<String, dynamic>> matchedDocuments = [];
@@ -79,11 +82,13 @@ class _HomepageState extends State<Homepage> {
         if (data['날짜'] == sevenDaysAgoDate) {
           matchedDocuments.add(data);
         }
+      
       }
-
+      
+       print('전체 문서 개수: ${snapshot.docs.length}');
       // 7일 전 루틴 이름 리스트를 추출
       List<String> routineNames =
-          matchedDocuments.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
+      matchedDocuments.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
 
       return routineNames;
     } catch (e) {
@@ -167,7 +172,7 @@ class _HomepageState extends State<Homepage> {
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.blueGrey.shade700, // 버튼 배경색 설정
+                    backgroundColor: Colors.blueGrey.shade700, // 버튼 배경색 설정
                   ),
                 ),
               ],
@@ -197,12 +202,9 @@ class _HomepageState extends State<Homepage> {
               flex: 3, // 상단 영역
               child: Container(
                 child: Row(children: [
-                  Image.asset(
-                    'dumbbell.png',
-                    width: 100,
-                  ),
+                  Image.asset('assets/dumbbell.png',width: 140,),
                   Container(
-                    width: 350,
+                    width: 150,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -241,9 +243,9 @@ class _HomepageState extends State<Homepage> {
                               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                                 return Center(
                                     child: Text(
-                                  '데이터가 없습니다.',
-                                  style: TextStyle(color: Colors.white),
-                                ));
+                                      '데이터가 없습니다.',
+                                      style: TextStyle(color: Colors.white),
+                                    ));
                               }
 
                               var data = snapshot.data!;
@@ -257,33 +259,33 @@ class _HomepageState extends State<Homepage> {
                                       decoration: BoxDecoration(
                                         color: Colors.grey[950],
                                         borderRadius:
-                                            BorderRadius.circular(12.0),
+                                        BorderRadius.circular(12.0),
                                         border: Border.all(color: Colors.white),
                                       ),
-                                      padding: const EdgeInsets.all(16.0),
+                                      padding: const EdgeInsets.all(8.0),
                                       child: Column(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             '루틴 이름: ${routine['오늘 한 루틴이름']}',
                                             style:
-                                                TextStyle(color: Colors.white),
+                                            TextStyle(color: Colors.white),
                                           ),
                                           Text(
                                             '운동 세트수: ${routine['오늘 총 세트수']}',
                                             style:
-                                                TextStyle(color: Colors.white),
+                                            TextStyle(color: Colors.white),
                                           ),
                                           Text(
                                             '운동 볼륨: ${routine['오늘 총 볼륨']}',
                                             style:
-                                                TextStyle(color: Colors.white),
+                                            TextStyle(color: Colors.white),
                                           ),
                                           Text(
                                             '운동 시간: ${routine['오늘 총 시간']}',
                                             style:
-                                                TextStyle(color: Colors.white),
+                                            TextStyle(color: Colors.white),
                                           ),
                                         ],
                                       ),
@@ -320,7 +322,7 @@ class _HomepageState extends State<Homepage> {
                                   style: ElevatedButton.styleFrom(
                                     padding: EdgeInsets.all(25.0),
                                     backgroundColor:
-                                        Colors.blueGrey.shade800, // 배경 색상
+                                    Colors.blueGrey.shade800, // 배경 색상
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15.0),
                                       side: BorderSide(
@@ -341,7 +343,7 @@ class _HomepageState extends State<Homepage> {
                                   },
                                   child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         collectionName,
@@ -374,7 +376,7 @@ class _HomepageState extends State<Homepage> {
                     child: Container(
                       margin: EdgeInsets.only(
                           right: 40.0, bottom: 20.0), // margin 추가
-                      width: 200, // FloatingActionButton의 너비 조정
+                      width: 160, // FloatingActionButton의 너비 조정
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: () {
@@ -404,14 +406,14 @@ class _HomepageState extends State<Homepage> {
                     child: Container(
                       margin: EdgeInsets.only(
                           left: 40.0, bottom: 20.0), // margin 추가
-                      width: 200, // FloatingActionButton의 너비 조정
+                      width: 160, // FloatingActionButton의 너비 조정
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const FoodCreatePage()),
+                                builder: (context) => const FoodRoutineCreatePage()),
                           );
                         },
                         icon: Icon(
@@ -440,7 +442,7 @@ class _HomepageState extends State<Homepage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Column(
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
@@ -455,11 +457,11 @@ class _HomepageState extends State<Homepage> {
                 ),
                 Text(
                   '루틴',
-                  style: TextStyle(color: Colors.white, fontSize: 8),
+                  style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
             ),
-            Column(
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
@@ -472,34 +474,44 @@ class _HomepageState extends State<Homepage> {
                   },
                 ),
                 Text(
-                  '캘린더',
-                  style: TextStyle(color: Colors.white, fontSize: 8),
+                  '일지',
+                  style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
             ),
-            Column(
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: Icon(Icons.directions_run, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FoodroutinestartPage()),
+                    );
+                  },
                 ),
                 Text(
-                  '현재진행',
-                  style: TextStyle(color: Colors.white, fontSize: 8),
+                  '진행중',
+                  style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
             ),
-            Column(
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: Icon(Icons.lunch_dining, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FoodSavePage()),
+                    );
+                  },
                 ),
                 Text(
                   '식단',
-                  style: TextStyle(color: Colors.white, fontSize: 8),
+                  style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
             ),
@@ -509,3 +521,4 @@ class _HomepageState extends State<Homepage> {
     );
   }
 }
+

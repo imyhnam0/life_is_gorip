@@ -317,7 +317,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                   children: [
                     Container(
                       margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                      width: 200,
+                      width: 160,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: _addTextFields,
@@ -334,7 +334,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                     ),
                     Container(
                       margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
-                      width: 200,
+                      width: 160,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: _deleteLastRow,

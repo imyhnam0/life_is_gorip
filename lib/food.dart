@@ -1,96 +1,279 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'foodcreate.dart';
+import 'foodsave.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-class FoodCreatePage extends StatefulWidget {
-  const FoodCreatePage({super.key});
+class FoodRoutineCreatePage extends StatefulWidget {
+  const FoodRoutineCreatePage({super.key});
 
   @override
-  State<FoodCreatePage> createState() => _FoodCreatePageState();
+  State<FoodRoutineCreatePage> createState() => _FoodRoutineCreatePageState();
 }
 
-class _FoodCreatePageState extends State<FoodCreatePage> {
-  List<Map<String, dynamic>>? foodData;
-  TextEditingController _foodNameController = TextEditingController();
-  @override
-  void dispose() {
-    _foodNameController.dispose();
-    super.dispose();
+class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
+  List<Map<String, dynamic>> meals = [];
+  TextEditingController _titleController = TextEditingController();
+
+  Future<void> _saveData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('meals', json.encode(meals));
   }
 
-  Future<void> fetchFoodData(String foodName) async {
-    final url = Uri.parse(
-        'http://openapi.foodsafetykorea.go.kr/api/c40b690515f447b599b7/I2790/json/1/1000/DESC_KOR=$foodName');
-
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-
+  Future<void> _navigateAndAddSubMeal(BuildContext context, int mealIndex) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddMealPage()),
+    );
+    if (result != null && result is String) {
       setState(() {
-        if (data['I2790'] != null && data['I2790']['row'] != null) {
-          foodData = List<Map<String, dynamic>>.from(data['I2790']['row']);
-        } else {
-          foodData = null;
-        }
+        meals[mealIndex]['subMeals'].add(result);
+        _saveData();
       });
-    } else {
-      throw Exception('Failed to load food data');
     }
+  }
+
+  void _addMeal() {
+    setState(() {
+      meals.add({
+        'name': '${meals.length + 1}번째 끼니',
+        'subMeals': [],
+        'isExpanded': false,
+      });
+      _saveData();
+    });
+  }
+
+  void _removeMeal(int index) {
+    setState(() {
+      meals.removeAt(index);
+      // 끼니 이름 재정렬
+      for (int i = 0; i < meals.length; i++) {
+        meals[i]['name'] = '${i + 1}번째 끼니';
+      }
+      _saveData();
+    });
+  }
+
+  void _removeSubMeal(int mealIndex, int subMealIndex) {
+    setState(() {
+      meals[mealIndex]['subMeals'].removeAt(subMealIndex);
+      _saveData();
+    });
+  }
+
+  Future<void> _editMealName(BuildContext context, int mealIndex) async {
+    TextEditingController _editController = TextEditingController();
+    _editController.text = meals[mealIndex]['name'];
+    final result = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('끼니 이름 수정'),
+          content: TextField(
+            controller: _editController,
+            decoration: InputDecoration(
+              labelText: '끼니 이름 입력',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, _editController.text);
+              },
+              child: Text('저장'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('취소'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result is String) {
+      setState(() {
+        meals[mealIndex]['name'] = result;
+        _saveData();
+      });
+    }
+  }
+
+  
+
+  void _toggleExpansion(int index, bool isExpanded) {
+    setState(() {
+      meals[index]['isExpanded'] = isExpanded;
+    });
+  }
+
+  void _saveTitleAndMeals() {
+    String title = _titleController.text;
+    if (title.isNotEmpty) {
+      Map<String, dynamic> data = {
+        'title': title,
+        'meals': meals,
+      };
+      _saveToSharedPreferences(data);
+      setState(() {
+        _titleController.clear();
+        meals = [];
+      });
+    }
+  }
+
+  Future<void> _saveToSharedPreferences(Map<String, dynamic> data) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedData = prefs.getStringList('savedMeals');
+    if (savedData == null) {
+      savedData = [];
+    }
+    savedData.add(json.encode(data));
+    await prefs.setStringList('savedMeals', savedData);
+  }
+
+  void _saveAndNavigateToSavePage() {
+    _saveTitleAndMeals();
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Food Create Page'),
+        title: Text('식단 루틴 생성'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FoodCreatePage()),
+              );
+            },
+            child: Text('식단 추가'),
+          ),
+          ElevatedButton(
+            onPressed: _saveAndNavigateToSavePage,
+            child: Text('저장'),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
-              controller: _foodNameController,
+              controller: _titleController,
               decoration: InputDecoration(
-                labelText: '품목명 입력',
+                labelText: '제목 입력',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _addMeal,
+              child: Text('끼니 추가'),
+            ),
+            SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: meals.length,
+                itemBuilder: (context, index) {
+                  return ExpansionTile(
+                    title: Text(meals[index]['name']),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            _editMealName(context, index);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: () {
+                            _navigateAndAddSubMeal(context, index);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.remove),
+                          onPressed: () {
+                            _removeMeal(index);
+                          },
+                        ),
+                        Icon(meals[index]['isExpanded']
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down),
+                      ],
+                    ),
+                    onExpansionChanged: (isExpanded) {
+                      _toggleExpansion(index, isExpanded);
+                    },
+                    children: meals[index]['subMeals'].asMap().entries.map<Widget>((entry) {
+                      int subMealIndex = entry.key;
+                      String subMeal = entry.value;
+                      return ListTile(
+                        title: Text(subMeal),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            
+                            IconButton(
+                              icon: Icon(Icons.remove),
+                              onPressed: () {
+                                _removeSubMeal(index, subMealIndex);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _saveTitleAndMeals,
+              child: Text('저장'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AddMealPage extends StatelessWidget {
+  final TextEditingController _mealController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('끼니 추가'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _mealController,
+              decoration: InputDecoration(
+                labelText: '끼니 이름 입력',
                 border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                fetchFoodData(_foodNameController.text);
+                Navigator.pop(context, _mealController.text);
               },
-              child: Text('검색'),
-            ),
-            SizedBox(height: 16),
-            Expanded(
-              child: foodData == null
-                  ? Center(child: Text('데이터를 불러올 수 없습니다.'))
-                  : ListView.builder(
-                      itemCount: foodData!.length,
-                      itemBuilder: (context, index) {
-                        final item = foodData![index];
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('식품이름: ${item['DESC_KOR']}'),
-                                  Text('총내용량: ${item['SERVING_SIZE']}'),
-                                  Text('열량(kcal): ${item['NUTR_CONT1']}'),
-                                  Text('탄수화물(g): ${item['NUTR_CONT2']}'),
-                                  Text('단백질(g): ${item['NUTR_CONT3']}'),
-                                  Text('지방(g): ${item['NUTR_CONT4']}'),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+              child: Text('추가'),
             ),
           ],
         ),
