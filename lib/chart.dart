@@ -287,6 +287,7 @@ class _RoutineChartState extends State<RoutineChart> {
                       minY: minY,
                       maxY: maxY,
                       lineBarsData: [
+                        
                         LineChartBarData(
                           spots: spots,
                           isCurved: true,
