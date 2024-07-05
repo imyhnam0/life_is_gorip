@@ -13,7 +13,8 @@ class CalenderPage extends StatefulWidget {
 class _CalenderPageState extends State<CalenderPage> {
   DateTime selectedDate = DateTime.now();
 
-  Future<Map<String, Map<String, int>>> _fetchRoutineChartData(String routineName) async {
+  Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
+      String routineName) async {
     var db = FirebaseFirestore.instance;
     Map<String, Map<String, int>> routineData = {};
 
@@ -57,7 +58,9 @@ class _CalenderPageState extends State<CalenderPage> {
           .where('date', isEqualTo: todayDate)
           .get();
 
-      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      return snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     } catch (e) {
       print('Error fetching documents: $e');
       return [];
@@ -87,7 +90,8 @@ class _CalenderPageState extends State<CalenderPage> {
     return [];
   }
 
-  List<PieChartSectionData> showingSections(double carbs, double protein, double fat) {
+  List<PieChartSectionData> showingSections(
+      double carbs, double protein, double fat) {
     final total = carbs + protein + fat;
     if (total == 0) return [];
 
@@ -234,94 +238,108 @@ class _CalenderPageState extends State<CalenderPage> {
                 }
 
                 var data = snapshot.data!;
-                var totalCarbs = data.fold<double>(0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
-                var totalProtein = data.fold<double>(0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
-                var totalFat = data.fold<double>(0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
-                var totalCalories = data.fold<double>(0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
+                var totalCarbs = data.fold<double>(
+                    0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
+                var totalProtein = data.fold<double>(
+                    0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
+                var totalFat = data.fold<double>(
+                    0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
+                var totalCalories = data.fold<double>(
+                    0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
 
-                return ListView(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '총 칼로리: $totalCalories',
-                            style: TextStyle(color: Colors.white),
+                return ListView(children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '오늘 먹은 칼로리: $totalCalories',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold, // 글자를 두껍게
+                            fontSize: 15, // 글자 크기를 20으로 설정
                           ),
-                          Text(
-                            '총 탄수화물: $totalCarbs',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '총 단백질: $totalProtein',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '총 지방: $totalFat',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-              children: <Widget>[
-                Text(
-                  '탄수화물 : ',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  color: Colors.blue,
-                ),
-                SizedBox(width: 10), // 간격 추가
-                Text(
-                  '단백질 : ',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
-                ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  color: Colors.red,
-                ),
-                SizedBox(width: 10), // 간격 추가
-                Text(
-                  '지방 : ',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
-                ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  color: Colors.green,
-                ),
-              ],
-            ),
-                          SizedBox(
-                            height: 200,
-                            child: PieChart(
-                              PieChartData(
-                                sections: showingSections(totalCarbs, totalProtein, totalFat),
-                                centerSpaceRadius: 40,
-                                sectionsSpace: 0,
-                                pieTouchData: PieTouchData(
-                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {},
-                                ),
+                        ),
+                        Text(
+                          '탄수화물: $totalCarbs',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        Text(
+                          '단백질: $totalProtein',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        Text(
+                          '지방: $totalFat',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: <Widget>[
+                            Text(
+                              '탄수화물 : ',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: Colors.blue,
+                            ),
+                            SizedBox(width: 10), // 간격 추가
+                            Text(
+                              '단백질 : ',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: Colors.red,
+                            ),
+                            SizedBox(width: 10), // 간격 추가
+                            Text(
+                              '지방 : ',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: Colors.green,
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 200,
+                          child: PieChart(
+                            PieChartData(
+                              sections: showingSections(
+                                  totalCarbs, totalProtein, totalFat),
+                              centerSpaceRadius: 40,
+                              sectionsSpace: 0,
+                              pieTouchData: PieTouchData(
+                                touchCallback:
+                                    (FlTouchEvent event, pieTouchResponse) {},
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                     
-                  ]
-          );
+                  ),
+                ]);
               },
             ),
           ),
-          Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _fetchRoutineData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -349,7 +367,11 @@ class _CalenderPageState extends State<CalenderPage> {
                         children: [
                           Text(
                             '오늘 한 루틴 이름: ${routine['오늘 한 루틴이름']}',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold, // 글자를 두껍게
+                              fontSize: 15, // 글자 크기를 20으로 설정
+                            ),
                           ),
                           Text(
                             '오늘 총 운동 세트수: ${routine['오늘 총 세트수']}',
@@ -365,15 +387,21 @@ class _CalenderPageState extends State<CalenderPage> {
                           ),
                           SizedBox(height: 16),
                           FutureBuilder<Map<String, Map<String, int>>>(
-                            future: _fetchRoutineChartData(routine['오늘 한 루틴이름']),
+                            future:
+                                _fetchRoutineChartData(routine['오늘 한 루틴이름']),
                             builder: (context, chartSnapshot) {
-                              if (chartSnapshot.connectionState == ConnectionState.waiting) {
-                                return Center(child: CircularProgressIndicator());
+                              if (chartSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Center(
+                                    child: CircularProgressIndicator());
                               }
                               if (chartSnapshot.hasError) {
-                                return Center(child: Text('오류 발생: ${chartSnapshot.error}'));
+                                return Center(
+                                    child:
+                                        Text('오류 발생: ${chartSnapshot.error}'));
                               }
-                              if (!chartSnapshot.hasData || chartSnapshot.data!.isEmpty) {
+                              if (!chartSnapshot.hasData ||
+                                  chartSnapshot.data!.isEmpty) {
                                 return Center(
                                     child: Text(
                                   '차트 데이터가 없습니다.',
@@ -381,8 +409,10 @@ class _CalenderPageState extends State<CalenderPage> {
                                 ));
                               }
 
-                              Map<String, Map<String, int>> routineData = chartSnapshot.data!;
-                              if (!routineData.containsKey(routine['오늘 한 루틴이름'])) {
+                              Map<String, Map<String, int>> routineData =
+                                  chartSnapshot.data!;
+                              if (!routineData
+                                  .containsKey(routine['오늘 한 루틴이름'])) {
                                 return Center(
                                     child: Text(
                                   '차트 데이터가 없습니다.',
@@ -390,21 +420,26 @@ class _CalenderPageState extends State<CalenderPage> {
                                 ));
                               }
 
-                              Map<String, int> data = routineData[routine['오늘 한 루틴이름']]!;
+                              Map<String, int> data =
+                                  routineData[routine['오늘 한 루틴이름']]!;
 
                               // X축 라벨을 위한 날짜 포맷터
                               DateFormat dateFormat = DateFormat('MM/dd');
 
                               // X축 라벨과 Y축 값을 추출
                               List<String> xLabels = data.keys
-                                  .map((date) => dateFormat.format(DateTime.parse(date)))
+                                  .map((date) =>
+                                      dateFormat.format(DateTime.parse(date)))
                                   .toList();
-                              List<double> yValues =
-                                  data.values.map((volume) => volume.toDouble()).toList();
+                              List<double> yValues = data.values
+                                  .map((volume) => volume.toDouble())
+                                  .toList();
 
                               // Y축 최소값과 최대값 계산
-                              double minY = yValues.reduce((a, b) => a < b ? a : b);
-                              double maxY = yValues.reduce((a, b) => a > b ? a : b);
+                              double minY =
+                                  yValues.reduce((a, b) => a < b ? a : b);
+                              double maxY =
+                                  yValues.reduce((a, b) => a > b ? a : b);
 
                               // FlSpot 데이터 생성
                               List<FlSpot> spots = [];
@@ -422,10 +457,12 @@ class _CalenderPageState extends State<CalenderPage> {
                                         sideTitles: SideTitles(
                                           showTitles: true,
                                           getTitlesWidget: (value, meta) {
-                                            if (value.toInt() < xLabels.length) {
+                                            if (value.toInt() <
+                                                xLabels.length) {
                                               return Text(
                                                 xLabels[value.toInt()],
-                                                style: TextStyle(color: Colors.white),
+                                                style: TextStyle(
+                                                    color: Colors.white),
                                               );
                                             }
                                             return Text('');
@@ -440,7 +477,8 @@ class _CalenderPageState extends State<CalenderPage> {
                                           getTitlesWidget: (value, meta) {
                                             return Text(
                                               '${value.toInt()}',
-                                              style: TextStyle(color: Colors.white),
+                                              style: TextStyle(
+                                                  color: Colors.white),
                                             );
                                           },
                                           interval: 1,
@@ -448,17 +486,21 @@ class _CalenderPageState extends State<CalenderPage> {
                                         ),
                                       ),
                                       rightTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
+                                        sideTitles:
+                                            SideTitles(showTitles: false),
                                       ),
                                       topTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
+                                        sideTitles:
+                                            SideTitles(showTitles: false),
                                       ),
                                     ),
                                     borderData: FlBorderData(
                                       show: true,
                                       border: Border(
-                                        bottom: BorderSide(color: Colors.white, width: 1),
-                                        left: BorderSide(color: Colors.white, width: 1),
+                                        bottom: BorderSide(
+                                            color: Colors.white, width: 1),
+                                        left: BorderSide(
+                                            color: Colors.white, width: 1),
                                         right: BorderSide.none,
                                         top: BorderSide.none,
                                       ),
@@ -488,9 +530,9 @@ class _CalenderPageState extends State<CalenderPage> {
                   },
                 );
               },
-),
+            ),
           ),
-        ],  
+        ],
       ),
     );
   }

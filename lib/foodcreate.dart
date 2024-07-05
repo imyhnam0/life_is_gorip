@@ -49,113 +49,136 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('음식 추가'),
+        title: const Text('음식 추가', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.blueGrey.shade900,
+         leading: IconButton(
+    icon: Icon(
+      Icons.arrow_back,
+      color: Colors.white,
+      size: 28, // 아이콘 크기를 키움
+    ),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
+  ),
       ),
-      body: Padding(
+      body: Container(
         padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: '음식 이름'),
-            ),
-            TextField(
-              controller: _gramsController,
-              decoration: const InputDecoration(labelText: '그람수'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _caloriesController,
-              decoration: const InputDecoration(labelText: '칼로리'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _carbsController,
-              decoration: const InputDecoration(labelText: '탄수화물'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _proteinController,
-              decoration: const InputDecoration(labelText: '단백질'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _fatController,
-              decoration: const InputDecoration(labelText: '지방'),
-              keyboardType: TextInputType.number,
-            ),
+            _buildTextField(_nameController, '음식 이름'),
+            _buildTextField(_gramsController, '그람수', isNumber: true),
+            _buildTextField(_caloriesController, '칼로리', isNumber: true),
+            _buildTextField(_carbsController, '탄수화물', isNumber: true),
+            _buildTextField(_proteinController, '단백질', isNumber: true),
+            _buildTextField(_fatController, '지방', isNumber: true),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _addFood();
-                Navigator.pop(context);},
-              child: const Text('음식 추가'),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  _addFood();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyan,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                child: const Text('음식 추가', style: TextStyle(fontSize: 18,color: Colors.white)),
+              ),
             ),
             const SizedBox(height: 20),
             if (foodName.isNotEmpty && calories > 0) ...[
-              Text(
-                '음식 이름: $foodName',
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '칼로리: $calories',
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+              _buildInfoText('음식 이름: $foodName'),
+              _buildInfoText('칼로리: $calories'),
               const SizedBox(height: 20),
-              Row(
-                children: <Widget>[
-                  Text(
-                    '탄수화물 : ',
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Container(
-                    width: 20,
-                    height: 20,
-                    color: Colors.blue,
-                  ),
-                  SizedBox(width: 10), // 간격 추가
-                  Text(
-                    '단백질 : ',
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Container(
-                    width: 20,
-                    height: 20,
-                    color: Colors.red,
-                  ),
-                  SizedBox(width: 10), // 간격 추가
-                  Text(
-                    '지방 : ',
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Container(
-                    width: 20,
-                    height: 20,
-                    color: Colors.green,
-                  ),
-                ],
-              )
-            ],
-            Expanded(
-              child: PieChart(
-                PieChartData(
-                  sections: showingSections(),
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 0,
-                  pieTouchData: PieTouchData(
-                    touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+              _buildMacroNutrientsLegend(),
+              const SizedBox(height: 20),
+              Expanded(
+                child: PieChart(
+                  PieChartData(
+                    sections: showingSections(),
+                    centerSpaceRadius: 40,
+                    sectionsSpace: 0,
+                    pieTouchData: PieTouchData(
+                      touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String labelText, {bool isNumber = false}) {
+    return TextField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(color: Colors.white),
+        border: const OutlineInputBorder(),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.cyan),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoText(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildMacroNutrientsLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: <Widget>[
+        _buildLegendItem('탄수화물', Colors.blue),
+        _buildLegendItem('단백질', Colors.red),
+        _buildLegendItem('지방', Colors.green),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          color: color,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 

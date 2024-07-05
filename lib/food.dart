@@ -22,10 +22,12 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     await prefs.setString('meals', json.encode(meals));
   }
 
-  Future<void> _navigateAndAddSubMeal(BuildContext context, int mealIndex) async {
+  Future<void> _navigateAndAddSubMeal(
+      BuildContext context, int mealIndex) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddMealPage()), // AddMealPage로 이동
+      MaterialPageRoute(
+          builder: (context) => const AddMealPage()), // AddMealPage로 이동
     );
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
@@ -39,7 +41,7 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     setState(() {
       meals.add({
         'name': '${meals.length + 1}번째 끼니',
-        'subMeals': <Map<String, dynamic>>[], 
+        'subMeals': <Map<String, dynamic>>[],
         'isExpanded': false,
       });
       _saveData();
@@ -67,42 +69,90 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
   Future<void> _editMealName(BuildContext context, int mealIndex) async {
     TextEditingController _editController = TextEditingController();
     _editController.text = meals[mealIndex]['name'];
-    final result = await showDialog(
+    showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      backgroundColor: Colors.blueGrey.shade900,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('끼니 이름 수정'),
-          content: TextField(
-            controller: _editController,
-            decoration: const InputDecoration(
-              labelText: '끼니 이름 입력',
-              border: OutlineInputBorder(),
-            ),
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _editController,
+                style: TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: '끼니 이름 입력',
+                  labelStyle: TextStyle(color: Colors.white),
+                  border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.cyan),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.cyan.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        meals[mealIndex]['name'] = _editController.text;
+                        _saveData();
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text('이름 수정'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _navigateAndAddSubMeal(context, mealIndex);
+                    },
+                    child: const Text('음식 추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _removeMeal(mealIndex);
+                    },
+                    child: const Text('끼니 삭제'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, _editController.text);
-              },
-              child: const Text('저장'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('취소'),
-            ),
-          ],
         );
       },
     );
-
-    if (result != null && result is String) {
-      setState(() {
-        meals[mealIndex]['name'] = result;
-        _saveData();
-      });
-    }
   }
 
   void _toggleExpansion(int index, bool isExpanded) {
@@ -141,7 +191,8 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     Navigator.pop(context);
   }
 
-  Map<String, double> _calculateTotalNutrients(List<Map<String, dynamic>> subMeals) {
+  Map<String, double> _calculateTotalNutrients(
+      List<Map<String, dynamic>> subMeals) {
     double totalCalories = 0;
     double totalCarbs = 0;
     double totalProtein = 0;
@@ -166,7 +217,27 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('식단 루틴 생성'),
+        title: const Text(
+          '나만의 식단 생성',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Oswald',
+          ),
+        ),
+        backgroundColor: Colors.blueGrey.shade900,
+         leading: IconButton(
+    icon: Icon(
+      Icons.arrow_back,
+      color: Colors.white,
+      size: 28, // 아이콘 크기를 키움
+    ),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
+  ),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -175,87 +246,153 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                 MaterialPageRoute(builder: (context) => const FoodCreatePage()),
               );
             },
-            child: const Text('식단 추가'),
-          ),
-          ElevatedButton(
-            onPressed: _saveAndNavigateToSavePage,
-            child: const Text('저장'),
+            child: const Text('음식 추가', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueGrey.shade700,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              minimumSize: Size(60, 40),
+            ),
           ),
         ],
       ),
+      backgroundColor: Colors.blueGrey.shade900,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
+              style: TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+              decoration: InputDecoration(
                 labelText: '제목 입력',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _addMeal,
-              child: const Text('끼니 추가'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _addMeal,
+                  child: const Text('끼니 추가',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',
+                      )),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade700,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveAndNavigateToSavePage,
+                  child: const Text('루틴 저장',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',
+                      )),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade700,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
                 itemCount: meals.length,
                 itemBuilder: (context, index) {
-                  final totalNutrients = _calculateTotalNutrients(meals[index]['subMeals']);
+                  final totalNutrients =
+                      _calculateTotalNutrients(meals[index]['subMeals']);
                   return ExpansionTile(
-                    title: Text(
-                      '${meals[index]['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
+                    backgroundColor: Colors.blueGrey.shade800,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${meals[index]['name']}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '총 칼로리: ${totalNutrients['calories']}',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Text('총 탄수화물: ${totalNutrients['carbs']}  ',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 12)),
+                                Text('총 단백질: ${totalNutrients['protein']}  ',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 12)),
+                                Text(
+                                  '총 지방: ${totalNutrients['fat']}',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit),
+                          icon:
+                              const Icon(Icons.more_horiz, color: Colors.white),
                           onPressed: () {
                             _editMealName(context, index);
                           },
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            _navigateAndAddSubMeal(context, index);
-                          },
+                        Icon(
+                          meals[index]['isExpanded']
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: Colors.white,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed: () {
-                            _removeMeal(index);
-                          },
-                        ),
-                        Icon(meals[index]['isExpanded']
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down),
                       ],
                     ),
                     onExpansionChanged: (isExpanded) {
                       _toggleExpansion(index, isExpanded);
                     },
-                    children: meals[index]['subMeals'].asMap().entries.map<Widget>((entry) {
+                    children: meals[index]['subMeals']
+                        .asMap()
+                        .entries
+                        .map<Widget>((entry) {
                       int subMealIndex = entry.key;
                       Map<String, dynamic> subMeal = entry.value;
                       return ListTile(
-                        title: Text('${subMeal['name']} (${subMeal['grams']}g)'),
+                        title: Text(
+                          '${subMeal['name']} (${subMeal['grams']}g)',
+                          style: TextStyle(color: Colors.white),
+                        ),
                         subtitle: Text(
                           'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                _removeSubMeal(index, subMealIndex);
-                              },
-                            ),
-                          ],
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove, color: Colors.white),
+                          onPressed: () {
+                            _removeSubMeal(index, subMealIndex);
+                          },
                         ),
                       );
                     }).toList(),
@@ -263,7 +400,14 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                 },
               ),
             ),
-            
+            Padding(
+              padding: const EdgeInsets.only(
+                  bottom: 30.0), // 아래쪽 여백을 주어 텍스트를 위로 올립니다.
+              child: Text(
+                "*만약 검색에서 음식이 없으면 직접 음식 영양 정보를 추가해주세요",
+                style: TextStyle(fontSize: 10, color: Colors.white70),
+              ),
+            )
           ],
         ),
       ),

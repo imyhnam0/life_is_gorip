@@ -53,7 +53,14 @@ class _AddMealPageState extends State<AddMealPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(foodName),
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          title: Text(
+            foodName,
+            style: TextStyle(color: Colors.white),
+          ),
           content: StatefulBuilder(
             builder: (context, setState) {
               double grams = double.tryParse(_gramsController.text) ?? 0;
@@ -65,7 +72,18 @@ class _AddMealPageState extends State<AddMealPage> {
                 children: [
                   TextField(
                     controller: _gramsController,
-                    decoration: const InputDecoration(labelText: 'Grams'),
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Grams',
+                      labelStyle: TextStyle(color: Colors.white),
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.cyan),
+                      ),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       setState(() {
@@ -75,10 +93,14 @@ class _AddMealPageState extends State<AddMealPage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  Text('Calories: ${(_selectedFoodData?['calories'] ?? 0) * ratio}'),
-                  Text('Carbs: ${(_selectedFoodData?['carbs'] ?? 0) * ratio}'),
-                  Text('Protein: ${(_selectedFoodData?['protein'] ?? 0) * ratio}'),
-                  Text('Fat: ${(_selectedFoodData?['fat'] ?? 0) * ratio}'),
+                  Text('Calories: ${(_selectedFoodData?['calories'] ?? 0) * ratio}',
+                      style: TextStyle(color: Colors.white)),
+                  Text('Carbs: ${(_selectedFoodData?['carbs'] ?? 0) * ratio}',
+                      style: TextStyle(color: Colors.white)),
+                  Text('Protein: ${(_selectedFoodData?['protein'] ?? 0) * ratio}',
+                      style: TextStyle(color: Colors.white)),
+                  Text('Fat: ${(_selectedFoodData?['fat'] ?? 0) * ratio}',
+                      style: TextStyle(color: Colors.white)),
                 ],
               );
             },
@@ -100,13 +122,13 @@ class _AddMealPageState extends State<AddMealPage> {
                   });
                 }
               },
-              child: const Text('추가'),
+              child: const Text('추가', style: TextStyle(color: Colors.cyan)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('닫기'),
+              child: const Text('닫기', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -119,6 +141,7 @@ class _AddMealPageState extends State<AddMealPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('끼니 추가'),
+        backgroundColor: Colors.blueGrey.shade700,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -126,19 +149,26 @@ class _AddMealPageState extends State<AddMealPage> {
           children: [
             TextField(
               controller: _mealController,
-              decoration: const InputDecoration(
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 labelText: '끼니 이름 입력',
+                labelStyle: TextStyle(color: Colors.white),
                 border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.cyan),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _searchFood,
-                  child: const Text('검색'),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: _searchFood,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyan,
+              ),
+              child: const Text('검색', style: TextStyle(color: Colors.white)),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -146,9 +176,9 @@ class _AddMealPageState extends State<AddMealPage> {
                 itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_searchResults[index]),
+                    title: Text(_searchResults[index], style: TextStyle(color: Colors.white)),
                     trailing: IconButton(
-                      icon: const Icon(Icons.search),
+                      icon: const Icon(Icons.search, color: Colors.cyan),
                       onPressed: () => _showFoodDetails(_searchResults[index]),
                     ),
                   );
@@ -158,6 +188,7 @@ class _AddMealPageState extends State<AddMealPage> {
           ],
         ),
       ),
+      backgroundColor: Colors.blueGrey.shade900,
     );
   }
 }
