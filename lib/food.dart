@@ -3,6 +3,8 @@ import 'foodcreate.dart';
 import 'foodsave.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'addmeal.dart';
 
 class FoodRoutineCreatePage extends StatefulWidget {
   const FoodRoutineCreatePage({super.key});
@@ -13,7 +15,7 @@ class FoodRoutineCreatePage extends StatefulWidget {
 
 class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
   List<Map<String, dynamic>> meals = [];
-  TextEditingController _titleController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
 
   Future<void> _saveData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -23,9 +25,9 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
   Future<void> _navigateAndAddSubMeal(BuildContext context, int mealIndex) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddMealPage()),
+      MaterialPageRoute(builder: (context) => const AddMealPage()), // AddMealPage로 이동
     );
-    if (result != null && result is String) {
+    if (result != null && result is Map<String, dynamic>) {
       setState(() {
         meals[mealIndex]['subMeals'].add(result);
         _saveData();
@@ -37,7 +39,7 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     setState(() {
       meals.add({
         'name': '${meals.length + 1}번째 끼니',
-        'subMeals': [],
+        'subMeals': <Map<String, dynamic>>[], 
         'isExpanded': false,
       });
       _saveData();
@@ -69,10 +71,10 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('끼니 이름 수정'),
+          title: const Text('끼니 이름 수정'),
           content: TextField(
             controller: _editController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: '끼니 이름 입력',
               border: OutlineInputBorder(),
             ),
@@ -82,13 +84,13 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
               onPressed: () {
                 Navigator.pop(context, _editController.text);
               },
-              child: Text('저장'),
+              child: const Text('저장'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('취소'),
+              child: const Text('취소'),
             ),
           ],
         );
@@ -102,8 +104,6 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
       });
     }
   }
-
-  
 
   void _toggleExpansion(int index, bool isExpanded) {
     setState(() {
@@ -141,24 +141,45 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     Navigator.pop(context);
   }
 
+  Map<String, double> _calculateTotalNutrients(List<Map<String, dynamic>> subMeals) {
+    double totalCalories = 0;
+    double totalCarbs = 0;
+    double totalProtein = 0;
+    double totalFat = 0;
+
+    for (var meal in subMeals) {
+      totalCalories += meal['calories'] as double;
+      totalCarbs += meal['carbs'] as double;
+      totalProtein += meal['protein'] as double;
+      totalFat += meal['fat'] as double;
+    }
+
+    return {
+      'calories': totalCalories,
+      'carbs': totalCarbs,
+      'protein': totalProtein,
+      'fat': totalFat,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('식단 루틴 생성'),
+        title: const Text('식단 루틴 생성'),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => FoodCreatePage()),
+                MaterialPageRoute(builder: (context) => const FoodCreatePage()),
               );
             },
-            child: Text('식단 추가'),
+            child: const Text('식단 추가'),
           ),
           ElevatedButton(
             onPressed: _saveAndNavigateToSavePage,
-            child: Text('저장'),
+            child: const Text('저장'),
           ),
         ],
       ),
@@ -168,40 +189,43 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: '제목 입력',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _addMeal,
-              child: Text('끼니 추가'),
+              child: const Text('끼니 추가'),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
                 itemCount: meals.length,
                 itemBuilder: (context, index) {
+                  final totalNutrients = _calculateTotalNutrients(meals[index]['subMeals']);
                   return ExpansionTile(
-                    title: Text(meals[index]['name']),
+                    title: Text(
+                      '${meals[index]['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit),
+                          icon: const Icon(Icons.edit),
                           onPressed: () {
                             _editMealName(context, index);
                           },
                         ),
                         IconButton(
-                          icon: Icon(Icons.add),
+                          icon: const Icon(Icons.add),
                           onPressed: () {
                             _navigateAndAddSubMeal(context, index);
                           },
                         ),
                         IconButton(
-                          icon: Icon(Icons.remove),
+                          icon: const Icon(Icons.remove),
                           onPressed: () {
                             _removeMeal(index);
                           },
@@ -216,15 +240,17 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                     },
                     children: meals[index]['subMeals'].asMap().entries.map<Widget>((entry) {
                       int subMealIndex = entry.key;
-                      String subMeal = entry.value;
+                      Map<String, dynamic> subMeal = entry.value;
                       return ListTile(
-                        title: Text(subMeal),
+                        title: Text('${subMeal['name']} (${subMeal['grams']}g)'),
+                        subtitle: Text(
+                          'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            
                             IconButton(
-                              icon: Icon(Icons.remove),
+                              icon: const Icon(Icons.remove),
                               onPressed: () {
                                 _removeSubMeal(index, subMealIndex);
                               },
@@ -237,44 +263,7 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                 },
               ),
             ),
-            ElevatedButton(
-              onPressed: _saveTitleAndMeals,
-              child: Text('저장'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class AddMealPage extends StatelessWidget {
-  final TextEditingController _mealController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('끼니 추가'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _mealController,
-              decoration: InputDecoration(
-                labelText: '끼니 이름 입력',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, _mealController.text);
-              },
-              child: Text('추가'),
-            ),
+            
           ],
         ),
       ),

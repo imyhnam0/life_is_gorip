@@ -13,33 +13,6 @@ class CalenderPage extends StatefulWidget {
 class _CalenderPageState extends State<CalenderPage> {
   DateTime selectedDate = DateTime.now();
 
-  Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
-    var db = FirebaseFirestore.instance;
-    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-    try {
-      QuerySnapshot snapshot = await db
-          .collection('Calender')
-          .doc('health')
-          .collection('routines')
-          .get();
-
-      List<Map<String, dynamic>> matchedDocuments = [];
-
-      for (var doc in snapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        if (data['날짜'] == todayDate) {
-          matchedDocuments.add(data);
-        }
-      }
-
-      return matchedDocuments;
-    } catch (e) {
-      print('Error fetching documents: $e');
-    }
-    return [];
-  }
-
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(String routineName) async {
     var db = FirebaseFirestore.instance;
     Map<String, Map<String, int>> routineData = {};
@@ -70,6 +43,89 @@ class _CalenderPageState extends State<CalenderPage> {
       print('Error fetching documents: $e');
       return {};
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchFoodData() async {
+    var db = FirebaseFirestore.instance;
+    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+    try {
+      QuerySnapshot snapshot = await db
+          .collection('Calender')
+          .doc('food')
+          .collection('todayfood')
+          .where('date', isEqualTo: todayDate)
+          .get();
+
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error fetching documents: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
+    var db = FirebaseFirestore.instance;
+    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    try {
+      QuerySnapshot snapshot = await db
+          .collection('Calender')
+          .doc('health')
+          .collection('routines')
+          .get();
+      List<Map<String, dynamic>> matchedDocuments = [];
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        if (data['날짜'] == todayDate) {
+          matchedDocuments.add(data);
+        }
+      }
+      return matchedDocuments;
+    } catch (e) {
+      print('Error fetching documents: $e');
+    }
+    return [];
+  }
+
+  List<PieChartSectionData> showingSections(double carbs, double protein, double fat) {
+    final total = carbs + protein + fat;
+    if (total == 0) return [];
+
+    return [
+      PieChartSectionData(
+        color: Colors.blue,
+        value: (carbs / total) * 100,
+        title: '${(carbs / total * 100).toStringAsFixed(1)}%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: Colors.red,
+        value: (protein / total) * 100,
+        title: '${(protein / total * 100).toStringAsFixed(1)}%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: Colors.green,
+        value: (fat / total) * 100,
+        title: '${(fat / total * 100).toStringAsFixed(1)}%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ];
   }
 
   void _selectDate(BuildContext context) async {
@@ -161,7 +217,7 @@ class _CalenderPageState extends State<CalenderPage> {
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _fetchRoutineData(),
+              future: _fetchFoodData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -177,6 +233,110 @@ class _CalenderPageState extends State<CalenderPage> {
                   ));
                 }
 
+                var data = snapshot.data!;
+                var totalCarbs = data.fold<double>(0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
+                var totalProtein = data.fold<double>(0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
+                var totalFat = data.fold<double>(0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
+                var totalCalories = data.fold<double>(0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
+
+                return ListView(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '총 칼로리: $totalCalories',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '총 탄수화물: $totalCarbs',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '총 단백질: $totalProtein',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '총 지방: $totalFat',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+              children: <Widget>[
+                Text(
+                  '탄수화물 : ',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  color: Colors.blue,
+                ),
+                SizedBox(width: 10), // 간격 추가
+                Text(
+                  '단백질 : ',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  color: Colors.red,
+                ),
+                SizedBox(width: 10), // 간격 추가
+                Text(
+                  '지방 : ',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  color: Colors.green,
+                ),
+              ],
+            ),
+                          SizedBox(
+                            height: 200,
+                            child: PieChart(
+                              PieChartData(
+                                sections: showingSections(totalCarbs, totalProtein, totalFat),
+                                centerSpaceRadius: 40,
+                                sectionsSpace: 0,
+                                pieTouchData: PieTouchData(
+                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                     
+                  ]
+          );
+              },
+            ),
+          ),
+          Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchRoutineData(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('오류 발생: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                      child: Text(
+                    '데이터가 없습니다.',
+                    style: TextStyle(color: Colors.white),
+                  ));
+                }
                 var data = snapshot.data!;
                 return ListView.builder(
                   itemCount: data.length,
@@ -328,9 +488,9 @@ class _CalenderPageState extends State<CalenderPage> {
                   },
                 );
               },
-            ),
+),
           ),
-        ],
+        ],  
       ),
     );
   }

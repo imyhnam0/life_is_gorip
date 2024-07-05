@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'foodcreate.dart';
 import 'foodroutinestart.dart';
-
+import 'addmeal.dart';
 
 class FoodSavePage extends StatefulWidget {
   @override
@@ -42,9 +42,9 @@ class _FoodSavePageState extends State<FoodSavePage> {
       int mealIndex, StateSetter setModalState) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddMealPage()),
+      MaterialPageRoute(builder: (context) => const AddMealPage()),
     );
-    if (result != null && result is String) {
+    if (result != null && result is Map<String, dynamic>) {
       setModalState(() {
         savedRoutines[routineIndex]['meals'][mealIndex]['subMeals'].add(result);
       });
@@ -56,7 +56,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
     setModalState(() {
       savedRoutines[routineIndex]['meals'].add({
         'name': '${savedRoutines[routineIndex]['meals'].length + 1}번째 끼니',
-        'subMeals': [],
+        'subMeals': <Map<String, dynamic>>[],
         'isExpanded': false,
       });
     });
@@ -92,10 +92,10 @@ class _FoodSavePageState extends State<FoodSavePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('끼니 이름 수정'),
+          title: const Text('끼니 이름 수정'),
           content: TextField(
             controller: _editController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: '끼니 이름 입력',
               border: OutlineInputBorder(),
             ),
@@ -105,13 +105,13 @@ class _FoodSavePageState extends State<FoodSavePage> {
               onPressed: () {
                 Navigator.pop(context, _editController.text);
               },
-              child: Text('저장'),
+              child: const Text('저장'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('취소'),
+              child: const Text('취소'),
             ),
           ],
         );
@@ -126,66 +126,124 @@ class _FoodSavePageState extends State<FoodSavePage> {
     }
   }
 
+  Map<String, double> _calculateTotalNutrients(List<Map<String, dynamic>> subMeals) {
+    double totalCalories = 0;
+    double totalCarbs = 0;
+    double totalProtein = 0;
+    double totalFat = 0;
+
+    for (var meal in subMeals) {
+      totalCalories += meal['calories'] as double;
+      totalCarbs += meal['carbs'] as double;
+      totalProtein += meal['protein'] as double;
+      totalFat += meal['fat'] as double;
+    }
+
+    return {
+      'calories': totalCalories,
+      'carbs': totalCarbs,
+      'protein': totalProtein,
+      'fat': totalFat,
+    };
+  }
+
+  Map<String, double> _calculateTotalRoutineNutrients(Map<String, dynamic> routine) {
+    double totalCalories = 0;
+    double totalCarbs = 0;
+    double totalProtein = 0;
+    double totalFat = 0;
+
+    for (var meal in routine['meals']) {
+      final nutrients = _calculateTotalNutrients(meal['subMeals'].cast<Map<String, dynamic>>());
+      totalCalories += nutrients['calories']!;
+      totalCarbs += nutrients['carbs']!;
+      totalProtein += nutrients['protein']!;
+      totalFat += nutrients['fat']!;
+    }
+
+    return {
+      'calories': totalCalories,
+      'carbs': totalCarbs,
+      'protein': totalProtein,
+      'fat': totalFat,
+    };
+  }
+
   void _showMeals(
       BuildContext context, int routineIndex, Map<String, dynamic> data) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
+        final totalRoutineNutrients = _calculateTotalRoutineNutrients(data);
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Stack(
+            return Column(
               children: [
-                ListView(
-                  children: data['meals'].asMap().entries.map<Widget>((entry) {
-                    int mealIndex = entry.key;
-                    Map<String, dynamic> meal = entry.value;
-                    return ExpansionTile(
-                      title: Text(meal['name']),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit),
-                            onPressed: () {
-                              _editMealName(context, routineIndex, mealIndex,
-                                  setModalState);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.add),
-                            onPressed: () {
-                              _navigateAndAddSubMeal(context, routineIndex,
-                                  mealIndex, setModalState);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.remove),
-                            onPressed: () {
-                              _removeMeal(
-                                  routineIndex, mealIndex, setModalState);
-                            },
-                          ),
-                        ],
-                      ),
-                      children: meal['subMeals']
-                          .asMap()
-                          .entries
-                          .map<Widget>((subEntry) {
-                        int subMealIndex = subEntry.key;
-                        String subMeal = subEntry.value;
-                        return ListTile(
-                          title: Text(subMeal),
-                          trailing: IconButton(
-                            icon: Icon(Icons.remove),
-                            onPressed: () {
-                              _removeSubMeal(routineIndex, mealIndex,
-                                  subMealIndex, setModalState);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  }).toList(),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    '루틴 총 칼로리: ${totalRoutineNutrients['calories']} 총 탄: ${totalRoutineNutrients['carbs']} 총 단: ${totalRoutineNutrients['protein']} 총 지: ${totalRoutineNutrients['fat']}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: data['meals'].length,
+                    itemBuilder: (context, mealIndex) {
+                      Map<String, dynamic> meal = data['meals'][mealIndex];
+                      final totalNutrients = _calculateTotalNutrients(meal['subMeals'].cast<Map<String, dynamic>>());
+                      return ExpansionTile(
+                        title: Text(
+                          '${meal['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                _editMealName(context, routineIndex, mealIndex,
+                                    setModalState);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                _navigateAndAddSubMeal(context, routineIndex,
+                                    mealIndex, setModalState);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () {
+                                _removeMeal(
+                                    routineIndex, mealIndex, setModalState);
+                              },
+                            ),
+                          ],
+                        ),
+                        children: List.generate(meal['subMeals'].length, (subMealIndex) {
+                          Map<String, dynamic> subMeal = meal['subMeals'][subMealIndex];
+                          return ListTile(
+                            title: Text('${subMeal['name']} (${subMeal['grams']}g)'),
+                            subtitle: Text(
+                              'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () {
+                                _removeSubMeal(routineIndex, mealIndex,
+                                    subMealIndex, setModalState);
+                              },
+                            ),
+                          );
+                        }),
+                      );
+                    },
+                  ),
                 ),
                 Positioned(
                   bottom: 16,
@@ -203,14 +261,14 @@ class _FoodSavePageState extends State<FoodSavePage> {
                           Navigator.pop(context);
                           Navigator.pop(context);
                         },
-                        child: Text('시작'),
+                        child: const Text('시작'),
                       ),
-                      SizedBox(width: 16), // 버튼 사이의 간격
+                      const SizedBox(width: 16), // 버튼 사이의 간격
                       FloatingActionButton(
                         onPressed: () {
                           _addMeal(routineIndex, setModalState);
                         },
-                        child: Icon(Icons.add),
+                        child: const Icon(Icons.add),
                       ),
                     ],
                   ),
@@ -249,10 +307,10 @@ class _FoodSavePageState extends State<FoodSavePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('식단 이름 수정'),
+          title: const Text('식단 이름 수정'),
           content: TextField(
             controller: _editController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: '식단 이름 입력',
               border: OutlineInputBorder(),
             ),
@@ -262,13 +320,13 @@ class _FoodSavePageState extends State<FoodSavePage> {
               onPressed: () {
                 Navigator.pop(context, _editController.text);
               },
-              child: Text('저장'),
+              child: const Text('저장'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('취소'),
+              child: const Text('취소'),
             ),
           ],
         );
@@ -287,10 +345,10 @@ class _FoodSavePageState extends State<FoodSavePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('저장된 식단'),
+        title: const Text('저장된 식단'),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             onPressed: _addRoutine,
           ),
         ],
@@ -304,13 +362,13 @@ class _FoodSavePageState extends State<FoodSavePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit),
+                  icon: const Icon(Icons.edit),
                   onPressed: () {
                     _editRoutineTitle(context, index);
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.remove),
+                  icon: const Icon(Icons.remove),
                   onPressed: () {
                     _removeRoutine(index);
                   },
@@ -325,44 +383,4 @@ class _FoodSavePageState extends State<FoodSavePage> {
       ),
     );
   }
-}
-
-class AddMealPage extends StatelessWidget {
-  final TextEditingController _mealController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('끼니 추가'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _mealController,
-              decoration: InputDecoration(
-                labelText: '끼니 이름 입력',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, _mealController.text);
-              },
-              child: Text('추가'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: FoodSavePage(),
-  ));
 }
