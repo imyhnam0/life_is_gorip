@@ -115,34 +115,41 @@ class _BookMarkPageState extends State<BookMarkPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "루틴 모음",
           style: TextStyle(
             color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Oswald',
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blueGrey.shade700,
+        backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
+            size: 28,
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
+          tooltip: '뒤로 가기',
         ),
         actions: [
           IconButton(
             icon: Icon(
-              Icons.edit,
+              _isChecked ? Icons.check : Icons.edit,
               color: Colors.white,
+              size: 28,
             ),
             onPressed: () {
               setState(() {
                 _isChecked = !_isChecked;
               });
             },
+            tooltip: _isChecked ? '완료' : '편집',
           ),
         ],
       ),
@@ -154,7 +161,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
               color: Colors.black.withOpacity(0.5),
               spreadRadius: 2,
               blurRadius: 7,
-              offset: Offset(0, 3), // changes position of shadow
+              offset: Offset(0, 3),
             ),
           ],
           border: Border.all(
@@ -178,79 +185,59 @@ class _BookMarkPageState extends State<BookMarkPage> {
             for (int index = 0; index < filteredCollectionNames.length; index++)
               Padding(
                 key: Key('$index'),
-                padding: const EdgeInsets.symmetric(
-                    vertical: 15.0, horizontal: 30.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.all(25.0),
-                          backgroundColor: Colors.blueGrey.shade800,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                            side: BorderSide(
-                              color: Colors.blueGrey.shade700,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StartRoutinePage(
-                                clickroutinename:
-                                    filteredCollectionNames[index],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              filteredCollectionNames[index],
-                              style: TextStyle(
-                                fontSize: 18.0,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Visibility(
-                              visible: _isChecked,
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 200.0),
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.delete,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    deleteBookmark(
-                                        filteredCollectionNames[index]);
-                                    setState(() {
-                                      filteredCollectionNames.removeAt(index);
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            ReorderableDragStartListener(
-                              index: index,
-                              child: Container(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Icon(
-                                  Icons.drag_handle,
-                                  size: 30.0,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade800,
+                    borderRadius: BorderRadius.circular(15.0),
+                    border: Border.all(color: Colors.blueGrey.shade700, width: 2),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 5.0, horizontal: 20.0),
+                    title: Text(
+                      filteredCollectionNames[index],
+                      style: const TextStyle(
+                        fontSize: 18.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Oswald',
                       ),
                     ),
-                  ],
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isChecked)
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white),
+                            onPressed: () {
+                              deleteBookmark(filteredCollectionNames[index]);
+                              setState(() {
+                                filteredCollectionNames.removeAt(index);
+                              });
+                            },
+                          ),
+                        ReorderableDragStartListener(
+                          index: index,
+                          child: const Icon(
+                            Icons.drag_handle,
+                            size: 30.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StartRoutinePage(
+                            clickroutinename: filteredCollectionNames[index],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
           ],

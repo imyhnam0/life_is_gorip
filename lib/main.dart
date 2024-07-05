@@ -347,6 +347,7 @@ class _HomepageState extends State<Homepage> {
                                   fontSize: 20.0,
                                   color: Colors.white,
                                   fontFamily: 'Oswald',
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               subtitle: Text(

@@ -57,18 +57,12 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     try {
-      // Firestore 인스턴스
       final db = FirebaseFirestore.instance;
-
-      // health 문서 참조
       final healthDocRef = db.collection('Calender').doc('health');
-
-      // 현재 문서 개수를 가져와서 새로운 문서 번호를 결정합니다.
       final existingDocsSnapshot =
           await healthDocRef.collection('routines').get();
       final newDocNumber = existingDocsSnapshot.size + 1;
 
-      // 새로운 문서를 추가합니다.
       await healthDocRef
           .collection('routines')
           .doc(newDocNumber.toString())
@@ -86,7 +80,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
   void myCollectionName() async {
     try {
-      // 내루틴 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
@@ -104,7 +97,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
   void totalRoutineReps() async {
     try {
-      // 내루틴 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
@@ -127,7 +119,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           totalExercises += exercisesData.length;
 
           for (var exercise in exercisesData) {
-            // weight 값을 안전하게 변환
             int weight = 0;
             if (exercise['weight'] is int) {
               weight = exercise['weight'];
@@ -138,7 +129,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           }
         }
       }
-      print(totalWeight);
       setState(() {
         result = totalExercises;
         sumweight = totalWeight;
@@ -154,30 +144,44 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       appBar: AppBar(
         title: Text(
           _title,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Oswald',
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blueGrey.shade700,
+        backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
+            size: 28,
           ),
           onPressed: () {
             showDialog(
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('진짜 종료하시겠습니까?'),
-                  content: Text('운동을 종료하면 모든 진행 상황이 저장되지 않습니다. 계속하시겠습니까?'),
+                  backgroundColor: Colors.blueGrey.shade800,
+                  title: const Text(
+                    '진짜 종료하시겠습니까?',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  content: const Text(
+                    '운동을 종료하면 모든 진행 상황이 저장되지 않습니다. 계속하시겠습니까?',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // 팝업창 닫기
+                        Navigator.of(context).pop();
                       },
-                      child: Text('아니요'),
+                      child: const Text(
+                        '아니요',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
@@ -187,92 +191,129 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                               builder: (context) => const Homepage()),
                         );
                       },
-                      child: Text('예'),
+                      child: const Text(
+                        '예',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 );
               },
             );
           },
+          tooltip: '뒤로 가기',
         ),
       ),
       body: Column(
         children: [
           Flexible(
-            flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade600,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 7,
-                    offset: Offset(0, 3), // changes position of shadow
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.blueGrey.shade500,
-                  width: 2,
-                ),
-              ), // 상단 컨테이너 색상
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start, // 세로 상단 정렬
-                crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20.0), // 상단 여백 추가
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center, // 가로 중앙 정렬
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.timer, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              '운동 시간: ',
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(2.0, 2.0),
-                                    blurRadius: 3.0,
-                                    color: Colors.black.withOpacity(0.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              _formatTime(_seconds),
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ],
+  flex: 3,
+  child: Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.blueGrey.shade700, Colors.blueGrey.shade900],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.5),
+          spreadRadius: 2,
+          blurRadius: 7,
+          offset: const Offset(0, 3),
+        ),
+      ],
+      border: Border.all(
+        color: Colors.blueGrey.shade600,
+        width: 2,
+      ),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 20.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.timer, color: Colors.cyan.shade300, size: 30),
+              const SizedBox(width: 8),
+              Text(
+                '운동 시간: ',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.cyan.shade300,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(2.0, 2.0),
+                      blurRadius: 3.0,
+                      color: Colors.black.withOpacity(0.5),
                     ),
-                  ),
-                  SizedBox(height: 20), // 간격 추가
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceEvenly, // 가로 균등 정렬
-                    children: [
-                      Text(
-                        '오늘 총 세트수: $result', // 예시 텍스트
-                        style: TextStyle(fontSize: 24, color: Colors.white),
-                      ),
-                      Text(
-                        '오늘 총 볼륨: $sumweight', // 예시 텍스트
-                        style: TextStyle(fontSize: 24, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              Text(
+                _formatTime(_seconds),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.cyan,
+                ),
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
+              children: [
+                Text(
+                  '오늘 총 세트수',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.white70,
+                  ),
+                ),
+                Text(
+                  '$result',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                Text(
+                  '오늘 총 볼륨',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.white70,
+                  ),
+                ),
+                Text(
+                  '$sumweight',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+),
+
           Flexible(
             flex: 7,
             child: Container(
@@ -283,7 +324,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     color: Colors.black.withOpacity(0.5),
                     spreadRadius: 2,
                     blurRadius: 7,
-                    offset: Offset(0, 3), // changes position of shadow
+                    offset: const Offset(0, 3),
                   ),
                 ],
                 border: Border.all(
@@ -296,22 +337,20 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+                        vertical: 15.0, horizontal: 30.0),
                     child: Row(
                       children: [
                         Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.all(30.0),
-
-                              backgroundColor:
-                                  Colors.blueGrey.shade800, // 배경 색상
+                              padding: const EdgeInsets.all(30.0),
+                              backgroundColor: Colors.blueGrey.shade800,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15.0),
                                 side: BorderSide(
                                   color: Colors.blueGrey.shade700,
                                   width: 2,
-                                ), // 둥근 모서리 반경 설정
+                                ),
                               ),
                             ),
                             onPressed: () {
@@ -325,16 +364,14 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                 ),
                               );
                             },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceBetween, // 아이템 간의 공간을 최대화
-                              children: [
-                                Text(
-                                  collectionNames[index],
-                                  style: TextStyle(
-                                      fontSize: 18.0, color: Colors.white),
-                                ),
-                              ],
+                            child: Text(
+                              collectionNames[index],
+                              style: const TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Oswald',
+                              ),
                             ),
                           ),
                         ),
@@ -350,21 +387,28 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       bottomNavigationBar: BottomAppBar(
         color: Colors.blueGrey.shade800,
         child: Container(
-          width: 170.0, // 원하는 너비로 설정
-          height: 56.0, // 원하는 높이로 설정
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          alignment: Alignment.center,
           child: FloatingActionButton.extended(
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text('운동을 종료하시겠습니까?'),
+                    backgroundColor: Colors.blueGrey.shade800,
+                    title: const Text(
+                      '운동을 종료하시겠습니까?',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop(); // 팝업창 닫기
+                          Navigator.of(context).pop();
                         },
-                        child: Text('아니요'),
+                        child: const Text(
+                          '아니요',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
@@ -380,20 +424,27 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                 builder: (context) => const Homepage()),
                           );
                         },
-                        child: Text('예'),
+                        child: const Text(
+                          '예',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   );
                 },
               );
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.mood,
               color: Colors.white,
             ),
-            label: Text(
+            label: const Text(
               "완료",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Oswald',
+              ),
             ),
             backgroundColor: Colors.cyan.shade700,
           ),

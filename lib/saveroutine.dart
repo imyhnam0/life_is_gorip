@@ -325,7 +325,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                             Visibility(
                               visible: _isDelete,
                               child: Padding(
-                                padding: const EdgeInsets.only(left: 70.0),
+                                padding: const EdgeInsets.only(left: 10.0),
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.delete,

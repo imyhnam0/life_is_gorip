@@ -9,18 +9,39 @@ class RoutinePage extends StatefulWidget {
   State<RoutinePage> createState() => _RoutinePageState();
 }
 
-class _RoutinePageState extends State<RoutinePage> {
+class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStateMixin {
   TextEditingController nameController = TextEditingController();
   String _title = '';
   List<String> collectionNames = [];
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     myCollectionName();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0.1, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticIn,
+    ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showNameInputDialog(context);
     });
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    _controller.dispose();
+    super.dispose();
   }
 
   void deleteData(String documentId) async {
@@ -81,52 +102,60 @@ class _RoutinePageState extends State<RoutinePage> {
   void _showNameInputDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
+      barrierDismissible: false,
+       builder: (BuildContext context) {
+      return SlideTransition(
+        position: _offsetAnimation,
+        child: AlertDialog(
           backgroundColor: Colors.cyan.shade900,
           title: Text(
             'My routine name',
             style: TextStyle(color: Colors.white),
           ),
-          content: TextField(
-            controller: nameController,
-            decoration: InputDecoration(
-              hintText: "이름을 입력하세요",
-              hintStyle: TextStyle(color: Colors.grey), // 힌트 텍스트 색상
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.black), // 기본 상태의 밑줄 색상
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: "이름을 입력하세요",
+                hintStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                fillColor: Colors.white,
+                filled: true,
               ),
-              fillColor: Colors.white, // 텍스트 필드 배경 색상
-              filled: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '이름을 입력해주세요';
+                }
+                return null;
+              },
             ),
           ),
           actions: [
-            TextButton(
-              child: Text(
-                '취소',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
             TextButton(
               child: Text(
                 '확인',
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                setState(() {
-                  _title = nameController.text;
-                });
-                Navigator.of(context).pop();
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    _title = nameController.text;
+                  });
+                  Navigator.of(context).pop();
+                } else {
+                  _controller.forward().then((value) => _controller.reverse());
+                }
               },
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   void saveRoutineName() async {
     var db = FirebaseFirestore.instance;
@@ -167,16 +196,17 @@ class _RoutinePageState extends State<RoutinePage> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('생성을 종료하시겠습니까?'),
+                  title: Text('생성을 종료하시겠습니까?', style: TextStyle(color: Colors.white)),
+                  backgroundColor: Colors.cyan.shade900,
                   actions: <Widget>[
                     TextButton(
-                      child: Text('아니오'),
+                      child: Text('아니오', style: TextStyle(color: Colors.white)),
                       onPressed: () {
                         Navigator.of(context).pop(); // 팝업 닫기
                       },
                     ),
                     TextButton(
-                      child: Text('예'),
+                      child: Text('예', style: TextStyle(color: Colors.white)),
                       onPressed: () {
                         deleteCollection(nameController.text);
                         Navigator.pop(context);

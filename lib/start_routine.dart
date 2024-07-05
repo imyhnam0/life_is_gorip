@@ -61,37 +61,41 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Color.fromARGB(255, 39, 34, 34),
-          title: Text(
-            'My routine name',
-            style: TextStyle(color: Colors.red),
+          backgroundColor: Colors.cyan.shade900,
+          title: const Text(
+            '이름 수정',
+            style: TextStyle(color: Colors.white),
           ),
           content: TextField(
             controller: nameController,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: "이름을 입력하세요",
-              hintStyle: TextStyle(color: Colors.grey), // 힌트 텍스트 색상
+              hintStyle: const TextStyle(color: Colors.grey),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.red), // 기본 상태의 밑줄 색상
+                borderSide: BorderSide(color: Colors.white),
               ),
-              fillColor: Colors.white, // 텍스트 필드 배경 색상
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+              fillColor: Colors.blueGrey.shade700,
               filled: true,
             ),
           ),
           actions: [
             TextButton(
-              child: Text(
+              child: const Text(
                 '취소',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text(
+              child: const Text(
                 '확인',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 setState(() {

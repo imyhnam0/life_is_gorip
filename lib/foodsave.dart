@@ -88,32 +88,84 @@ class _FoodSavePageState extends State<FoodSavePage> {
     TextEditingController _editController = TextEditingController();
     _editController.text =
         savedRoutines[routineIndex]['meals'][mealIndex]['name'];
-    final result = await showDialog(
+    final result = await showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.blueGrey.shade900,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('끼니 이름 수정'),
-          content: TextField(
-            controller: _editController,
-            decoration: const InputDecoration(
-              labelText: '끼니 이름 입력',
-              border: OutlineInputBorder(),
-            ),
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _editController,
+                decoration: const InputDecoration(
+                  labelText: '끼니 이름 입력',
+                  labelStyle: TextStyle(color: Colors.white),
+                  border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.cyan),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.cyan.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      setModalState(() {
+                        savedRoutines[routineIndex]['meals'][mealIndex]
+                            ['name'] = _editController.text;
+                      });
+                      _saveData();
+                      Navigator.pop(context);
+                    },
+                    child: const Text('이름 수정'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _navigateAndAddSubMeal(
+                          context, routineIndex, mealIndex, setModalState);
+                    },
+                    child: const Text('음식 추가'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _removeMeal(routineIndex, mealIndex, setModalState);
+                    },
+                    child: const Text('끼니 삭제'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, _editController.text);
-              },
-              child: const Text('저장'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('취소'),
-            ),
-          ],
         );
       },
     );
@@ -126,7 +178,8 @@ class _FoodSavePageState extends State<FoodSavePage> {
     }
   }
 
-  Map<String, double> _calculateTotalNutrients(List<Map<String, dynamic>> subMeals) {
+  Map<String, double> _calculateTotalNutrients(
+      List<Map<String, dynamic>> subMeals) {
     double totalCalories = 0;
     double totalCarbs = 0;
     double totalProtein = 0;
@@ -147,14 +200,16 @@ class _FoodSavePageState extends State<FoodSavePage> {
     };
   }
 
-  Map<String, double> _calculateTotalRoutineNutrients(Map<String, dynamic> routine) {
+  Map<String, double> _calculateTotalRoutineNutrients(
+      Map<String, dynamic> routine) {
     double totalCalories = 0;
     double totalCarbs = 0;
     double totalProtein = 0;
     double totalFat = 0;
 
     for (var meal in routine['meals']) {
-      final nutrients = _calculateTotalNutrients(meal['subMeals'].cast<Map<String, dynamic>>());
+      final nutrients = _calculateTotalNutrients(
+          meal['subMeals'].cast<Map<String, dynamic>>());
       totalCalories += nutrients['calories']!;
       totalCarbs += nutrients['carbs']!;
       totalProtein += nutrients['protein']!;
@@ -177,103 +232,211 @@ class _FoodSavePageState extends State<FoodSavePage> {
         final totalRoutineNutrients = _calculateTotalRoutineNutrients(data);
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    '루틴 총 칼로리: ${totalRoutineNutrients['calories']} 총 탄: ${totalRoutineNutrients['carbs']} 총 단: ${totalRoutineNutrients['protein']} 총 지: ${totalRoutineNutrients['fat']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: data['meals'].length,
-                    itemBuilder: (context, mealIndex) {
-                      Map<String, dynamic> meal = data['meals'][mealIndex];
-                      final totalNutrients = _calculateTotalNutrients(meal['subMeals'].cast<Map<String, dynamic>>());
-                      return ExpansionTile(
-                        title: Text(
-                          '${meal['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () {
-                                _editMealName(context, routineIndex, mealIndex,
-                                    setModalState);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () {
-                                _navigateAndAddSubMeal(context, routineIndex,
-                                    mealIndex, setModalState);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                _removeMeal(
-                                    routineIndex, mealIndex, setModalState);
-                              },
-                            ),
-                          ],
-                        ),
-                        children: List.generate(meal['subMeals'].length, (subMealIndex) {
-                          Map<String, dynamic> subMeal = meal['subMeals'][subMealIndex];
-                          return ListTile(
-                            title: Text('${subMeal['name']} (${subMeal['grams']}g)'),
-                            subtitle: Text(
-                              'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                _removeSubMeal(routineIndex, mealIndex,
-                                    subMealIndex, setModalState);
-                              },
-                            ),
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  bottom: 16,
-                  right: 150,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            return Container(
+              color: Colors.blueGrey.shade900,
+              child: Stack(
+                children: [
+                  Column(
                     children: [
-                      FloatingActionButton(
-                        onPressed: () async {
-                           SharedPreferences prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('currentRoutineTitle', data['title']);
-                          await prefs.setString('currentRoutineMeals', json.encode(data['meals']));
-                          
-                          
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                        },
-                        child: const Text('시작'),
-                      ),
-                      const SizedBox(width: 16), // 버튼 사이의 간격
-                      FloatingActionButton(
-                        onPressed: () {
-                          _addMeal(routineIndex, setModalState);
-                        },
-                        child: const Icon(Icons.add),
+                      Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '루틴 총 칼로리: ${totalRoutineNutrients['calories']}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    '총 탄: ${totalRoutineNutrients['carbs']}  ',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontSize: 16),
+                                  ),
+                                  Text(
+                                    '총 단: ${totalRoutineNutrients['protein']}  ',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontSize: 16),
+                                  ),
+                                  Text(
+                                    '총 지: ${totalRoutineNutrients['fat']}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: data['meals'].length,
+                          itemBuilder: (context, mealIndex) {
+                            Map<String, dynamic> meal =
+                                data['meals'][mealIndex];
+                            final totalNutrients = _calculateTotalNutrients(
+                                meal['subMeals'].cast<Map<String, dynamic>>());
+                            return ExpansionTile(
+                              backgroundColor: Colors.blueGrey.shade800,
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    meal['name'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '총 칼로리: ${totalNutrients['calories']}',
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                              '총 탄수화물: ${totalNutrients['carbs']}  ',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12)),
+                                          Text(
+                                              '총 단백질: ${totalNutrients['protein']}  ',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12)),
+                                          Text(
+                                            '총 지방: ${totalNutrients['fat']}',
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.more_horiz,
+                                        color: Colors.white),
+                                    onPressed: () {
+                                      _editMealName(context, routineIndex,
+                                          mealIndex, setModalState);
+                                    },
+                                  ),
+                                  Icon(
+                                    meal['isExpanded']
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                              onExpansionChanged: (isExpanded) {
+                                setModalState(() {
+                                  meal['isExpanded'] = isExpanded;
+                                });
+                              },
+                              children: List.generate(meal['subMeals'].length,
+                                  (subMealIndex) {
+                                Map<String, dynamic> subMeal =
+                                    meal['subMeals'][subMealIndex];
+                                return ListTile(
+                                  title: Text(
+                                    '${subMeal['name']} (${subMeal['grams']}g)',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  subtitle: Text(
+                                    'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 12),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.remove,
+                                        color: Colors.white),
+                                    onPressed: () {
+                                      _removeSubMeal(routineIndex, mealIndex,
+                                          subMealIndex, setModalState);
+                                    },
+                                  ),
+                                );
+                              }),
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
-                )
-              ],
+                  Positioned(
+                    bottom: 16,
+                    left: 120,
+                    right: 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FloatingActionButton.extended(
+                          onPressed: () async {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setString(
+                                'currentRoutineTitle', data['title']);
+                            await prefs.setString('currentRoutineMeals',
+                                json.encode(data['meals']));
+
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          },
+                          label: const Text(
+                            '시작',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Oswald',
+                            ),
+                          ),
+                          icon: const Icon(Icons.play_arrow),
+                          backgroundColor: Colors.blueGrey.shade700,
+                          foregroundColor: Colors.white,
+                        ),
+                        const SizedBox(width: 16), // 버튼 사이의 간격
+                        FloatingActionButton.extended(
+                          onPressed: () {
+                            _addMeal(routineIndex, setModalState);
+                          },
+                          label: const Text(
+                            '추가',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Oswald',
+                            ),
+                          ),
+                          icon: const Icon(Icons.add),
+                          backgroundColor: Colors.blueGrey.shade700,
+                          foregroundColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -320,7 +483,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
               onPressed: () {
                 Navigator.pop(context, _editController.text);
               },
-              child: const Text('저장'),
+              child: const Text('수정'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -345,41 +508,79 @@ class _FoodSavePageState extends State<FoodSavePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('저장된 식단'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addRoutine,
+        title: const Text(
+          '저장된 식단',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Oswald',
           ),
-        ],
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.blueGrey.shade900,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기',
+        ),
       ),
-      body: ListView.builder(
-        itemCount: savedRoutines.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(savedRoutines[index]['title']),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    _editRoutineTitle(context, index);
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+        ),
+        child: ListView.builder(
+          itemCount: savedRoutines.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                height: 80, // 컨테이너의 높이를 100으로 설정
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: BorderRadius.circular(12.0),
+                  border: Border.all(color: Colors.white),
+                ),
+                child: ListTile(
+                  title: Text(savedRoutines[index]['title'],
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.start),
+                  trailing: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // 아이콘을 상하 기준으로 가운데 정렬
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.white),
+                        onPressed: () {
+                          _editRoutineTitle(context, index);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.white),
+                        onPressed: () {
+                          _removeRoutine(index);
+                        },
+                      ),
+                    ],
+                  ),
+                  onTap: () {
+                    _showMeals(context, index, savedRoutines[index]);
                   },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.remove),
-                  onPressed: () {
-                    _removeRoutine(index);
-                  },
-                ),
-              ],
-            ),
-            onTap: () {
-              _showMeals(context, index, savedRoutines[index]);
-            },
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

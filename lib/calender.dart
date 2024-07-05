@@ -171,6 +171,7 @@ class _CalenderPageState extends State<CalenderPage> {
           "운동일지",
           style: TextStyle(
             color: Colors.white,
+            fontWeight: FontWeight.bold
           ),
         ),
         centerTitle: true,

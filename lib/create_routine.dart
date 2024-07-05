@@ -14,7 +14,7 @@ class CreateRoutinePage extends StatefulWidget {
   _CreateRoutinePageState createState() => _CreateRoutinePageState();
 }
 
-class _CreateRoutinePageState extends State<CreateRoutinePage> {
+class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTickerProviderStateMixin {
   TextEditingController nameController = TextEditingController();
   List<TextEditingController> _weightControllers = [];
   List<TextEditingController> _repsControllers = [];
@@ -22,18 +22,40 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   List<Widget> _rows = [];
   List<Map<String, dynamic>> exercisesData = [];
   int _counter = 1;
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
+
+void initState() {
     super.initState();
+    
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0.1, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticIn,
+    ));
 
-    if (_title == '') {
+    if (_title.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showNameInputDialog(context);
       });
     } else {
       myCollectionName();
     }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    _controller.dispose();
+    super.dispose();
   }
 
   void deleteData(String documentId) async {
@@ -81,52 +103,60 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
   void _showNameInputDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
+      barrierDismissible: false,
+       builder: (BuildContext context) {
+      return SlideTransition(
+        position: _offsetAnimation,
+        child: AlertDialog(
           backgroundColor: Colors.cyan.shade900,
           title: Text(
-            'Exercise name',
+            'My routine name',
             style: TextStyle(color: Colors.white),
           ),
-          content: TextField(
-            controller: nameController,
-            decoration: InputDecoration(
-              hintText: "이름을 입력하세요",
-              hintStyle: TextStyle(color: Colors.grey), // 힌트 텍스트 색상
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.black), // 기본 상태의 밑줄 색상
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: "이름을 입력하세요",
+                hintStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                fillColor: Colors.white,
+                filled: true,
               ),
-              fillColor: Colors.white, // 텍스트 필드 배경 색상
-              filled: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '이름을 입력해주세요';
+                }
+                return null;
+              },
             ),
           ),
           actions: [
-            TextButton(
-              child: Text(
-                '취소',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
             TextButton(
               child: Text(
                 '확인',
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                setState(() {
-                  _title = nameController.text;
-                });
-                Navigator.of(context).pop();
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    _title = nameController.text;
+                  });
+                  Navigator.of(context).pop();
+                } else {
+                  _controller.forward().then((value) => _controller.reverse());
+                }
               },
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   void myCollectionName() async {
     try {
@@ -170,44 +200,52 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
     _repsControllers.add(repsController);
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Container(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             color: Colors.cyan.shade700,
             child: Text(
               '$_counter',
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: weightController,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "무게를 입력하세요",
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: const TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+                  borderSide: BorderSide(color: Colors.white),
                 ),
-                fillColor: Colors.white,
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                fillColor: Colors.blueGrey.shade700,
                 filled: true,
               ),
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: repsController,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "횟수를 입력하세요",
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: const TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+                  borderSide: BorderSide(color: Colors.white),
                 ),
-                fillColor: Colors.white,
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                fillColor: Colors.blueGrey.shade700,
                 filled: true,
               ),
             ),
@@ -241,16 +279,20 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
       appBar: AppBar(
         title: Text(
           _title,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Oswald',
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blueGrey.shade700,
+        backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
+            size: 28,
           ),
           onPressed: () {
             if (_rows.isEmpty) {
@@ -260,14 +302,16 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
               Navigator.of(context).pop(true);
             }
           },
+          tooltip: '뒤로 가기',
         ),
         actions: [
           Row(
             children: [
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit,
                   color: Colors.white,
+                  size: 28,
                 ),
                 onPressed: () {
                   deleteData(_title);
@@ -275,9 +319,10 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                 },
               ),
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.save,
                   color: Colors.white,
+                  size: 28,
                 ),
                 onPressed: () {
                   saveRoutineData();
@@ -298,7 +343,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                   color: Colors.black.withOpacity(0.5),
                   spreadRadius: 2,
                   blurRadius: 7,
-                  offset: Offset(0, 3), // changes position of shadow
+                  offset: const Offset(0, 3), // changes position of shadow
                 ),
               ],
               border: Border.all(
@@ -311,42 +356,50 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
             child: Column(
               children: [
                 ..._rows,
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Container(
-                      margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                      margin: const EdgeInsets.only(left: 20.0, bottom: 20.0),
                       width: 160,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: _addTextFields,
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.add,
                           color: Colors.white,
                         ),
-                        label: Text(
+                        label: const Text(
                           "세트추가",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Oswald',
+                          ),
                         ),
-                        backgroundColor: Colors.blueGrey.shade900,
+                        backgroundColor: Colors.blueGrey.shade700,
                       ),
                     ),
                     Container(
-                      margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                      margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
                       width: 160,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: _deleteLastRow,
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.remove,
-                          color: Colors.yellow,
+                          color: Colors.white,
                         ),
-                        label: Text(
+                        label: const Text(
                           "세트삭제",
-                          style: TextStyle(color: Colors.yellow),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Oswald',
+                          ),
                         ),
-                        backgroundColor: Colors.blueGrey.shade900,
+                        backgroundColor: Colors.blueGrey.shade700,
                       ),
                     ),
                   ],
