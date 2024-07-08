@@ -277,9 +277,7 @@ class _HomepageState extends State<Homepage> {
                                               CrossAxisAlignment.center,
                                           children: [
                                             Text(
-                                              
                                               '루틴 이름: ${routine['오늘 한 루틴이름']}',
-                                              
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 18,

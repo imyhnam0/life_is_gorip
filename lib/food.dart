@@ -48,16 +48,13 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     });
   }
 
-  void _removeMeal(int index) {
-    setState(() {
-      meals.removeAt(index);
-      // 끼니 이름 재정렬
-      for (int i = 0; i < meals.length; i++) {
-        meals[i]['name'] = '${i + 1}번째 끼니';
-      }
-      _saveData();
-    });
-  }
+ void _removeMeal(int index) {
+  setState(() {
+    meals.removeAt(index);
+    _saveData();
+  });
+}
+
 
   void _removeSubMeal(int mealIndex, int subMealIndex) {
     setState(() {
@@ -141,8 +138,8 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
                       _removeMeal(mealIndex);
+                      Navigator.pop(context);
                     },
                     child: const Text('끼니 삭제'),
                   ),
