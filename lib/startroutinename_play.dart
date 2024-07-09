@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'create_routine.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 
@@ -48,9 +47,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     });
   }
 
-  
-
- void _addTextFields() {
+  void _addTextFields() {
     setState(() {
       _counter++;
       _rows.add(ExerciseRow(
@@ -70,9 +67,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
       }
     });
   }
- 
 
-  
   void _cancelTimer() {
     _timer?.cancel();
     setState(() {
@@ -83,6 +78,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   @override
   void dispose() {
     _timer?.cancel();
+    nameController.dispose();
     super.dispose();
   }
 
@@ -92,9 +88,8 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     myCollectionName();
   }
 
-  void myCollectionName() async {
+  Future<void> myCollectionName() async {
     try {
-      // 내루틴 가져오기
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
@@ -105,19 +100,22 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
       if (documentSnapshot.exists) {
         var data = documentSnapshot.data() as Map<String, dynamic>;
         if (data.containsKey('exercises')) {
-          List<Map<String, dynamic>> exercisesData = List<Map<String, dynamic>>.from(data['exercises']
-              .map((exercise) => {
-                    'reps': exercise['reps'],
-                    'weight': exercise['weight'],
-                  })
-              .toList());
+          List<Map<String, dynamic>> exercisesData =
+              List<Map<String, dynamic>>.from(data['exercises']
+                  .map((exercise) => {
+                        'reps': exercise['reps'],
+                        'weight': exercise['weight'],
+                      })
+                  .toList());
 
           setState(() {
             _rows = exercisesData.map((exercise) {
-              _counter++; // 각 행을 추가할 때마다 카운터 증가
+              _counter++;
               return ExerciseRow(
-                weightController: TextEditingController(text: exercise['weight'].toString()),
-                repsController: TextEditingController(text: exercise['reps'].toString()),
+                weightController:
+                    TextEditingController(text: exercise['weight'].toString()),
+                repsController:
+                    TextEditingController(text: exercise['reps'].toString()),
                 counter: _counter,
                 onCheckPressed: _startTimer,
               );
@@ -130,7 +128,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     }
   }
 
-  void saveRoutineData() async {
+  Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
 
     Map<String, dynamic> routine = {"exercises": []};
@@ -174,7 +172,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
+          ),
           onPressed: () {
             saveRoutineData();
             Navigator.pop(context);
@@ -193,14 +191,14 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                     color: Colors.black.withOpacity(0.5),
                     spreadRadius: 2,
                     blurRadius: 7,
-                    offset: Offset(0, 3), // changes position of shadow
+                    offset: Offset(0, 3),
                   ),
                 ],
                 border: Border.all(
                   color: Colors.blueGrey.shade500,
                   width: 2,
                 ),
-              ), // 빈 컨테이너
+              ),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -220,11 +218,10 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                             style: TextStyle(color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey, // 버튼 배경색 설정
+                            backgroundColor: Colors.grey,
                           ),
                         ),
                         SizedBox(width: 10),
-                        // 분 선택
                         Column(
                           children: [
                             Text('분', style: TextStyle(fontSize: 20)),
@@ -235,7 +232,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                                 itemExtent: 32.0,
                                 onSelectedItemChanged: (int index) {
                                   setState(() {
-                                    _minutes = index ;
+                                    _minutes = index;
                                   });
                                 },
                                 children:
@@ -250,7 +247,6 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                           ],
                         ),
                         Text(':', style: TextStyle(fontSize: 20)),
-                        // 초 선택
                         Column(
                           children: [
                             Text('초', style: TextStyle(fontSize: 20)),
@@ -275,7 +271,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        SizedBox(width: 10),
                         ElevatedButton(
                           onPressed: _startTimer,
                           child: Text(
@@ -283,7 +279,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                             style: TextStyle(color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green, // 버튼 배경색 설정
+                            backgroundColor: Colors.green,
                           ),
                         ),
                       ],
@@ -305,7 +301,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                         color: Colors.black.withOpacity(0.5),
                         spreadRadius: 2,
                         blurRadius: 7,
-                        offset: Offset(0, 3), // changes position of shadow
+                        offset: Offset(0, 3),
                       ),
                     ],
                     border: Border.all(
@@ -316,49 +312,49 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                 ),
                 SingleChildScrollView(
                   child: Column(
-                    children:[..._rows,
-                    SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                      width: 160,
-                      height: 60,
-                      child: FloatingActionButton.extended(
-                        onPressed: _addTextFields,
-                        icon: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          "세트추가",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.blueGrey.shade900,
+                    children: [
+                      ..._rows,
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                            width: 160,
+                            height: 60,
+                            child: FloatingActionButton.extended(
+                              onPressed: _addTextFields,
+                              icon: Icon(
+                                Icons.add,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                "세트추가",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.blueGrey.shade900,
+                            ),
+                          ),
+                          Container(
+                            margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                            width: 160,
+                            height: 60,
+                            child: FloatingActionButton.extended(
+                              onPressed: _deleteLastRow,
+                              icon: Icon(
+                                Icons.remove,
+                                color: Colors.yellow,
+                              ),
+                              label: Text(
+                                "세트삭제",
+                                style: TextStyle(color: Colors.yellow),
+                              ),
+                              backgroundColor: Colors.blueGrey.shade900,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
-                      width: 160,
-                      height: 60,
-                      child: FloatingActionButton.extended(
-                        onPressed: _deleteLastRow,
-                        icon: Icon(
-                          Icons.remove,
-                          color: Colors.yellow,
-                        ),
-                        label: Text(
-                          "세트삭제",
-                          style: TextStyle(color: Colors.yellow),
-                        ),
-                        backgroundColor: Colors.blueGrey.shade900,
-                      ),
-                    ),
-                  ],
-                ),
-                    ], 
-                    
+                    ],
                   ),
                 ),
               ],

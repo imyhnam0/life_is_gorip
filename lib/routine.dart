@@ -20,7 +20,6 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    myCollectionName();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -44,24 +43,22 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
     super.dispose();
   }
 
-  void deleteData(String documentId) async {
+  Future<void> deleteData(String documentId) async {
     try {
-      // 문서 삭제
       await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Myroutine')
-          .collection(nameController.text)
+          .collection(_title)
           .doc(documentId)
           .delete();
-      myCollectionName();
+      await myCollectionName();
     } catch (e) {
       print('Error deleting document: $e');
     }
   }
 
-  void deleteCollection(String collectionPath) async {
+  Future<void> deleteCollection(String collectionPath) async {
     try {
-      // 해당 컬렉션의 모든 문서를 가져옴
       var collectionRef = FirebaseFirestore.instance
           .collection("Routine")
           .doc('Myroutine')
@@ -69,25 +66,22 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
 
       var snapshots = await collectionRef.get();
 
-      // 모든 문서를 개별적으로 삭제
       for (var doc in snapshots.docs) {
         await doc.reference.delete();
       }
 
-      // 추가적으로 컬렉션의 문서가 모두 삭제됐는지 확인하고, 필요에 따라 추가 작업 수행
-      myCollectionName();
+      await myCollectionName();
     } catch (e) {
       print('Error deleting collection: $e');
     }
   }
 
-  void myCollectionName() async {
+  Future<void> myCollectionName() async {
     try {
-      // 내루틴 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
-          .collection(nameController.text)
+          .collection(_title)
           .get();
       List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
 
@@ -103,61 +97,62 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
     showDialog(
       context: context,
       barrierDismissible: false,
-       builder: (BuildContext context) {
-      return SlideTransition(
-        position: _offsetAnimation,
-        child: AlertDialog(
-          backgroundColor: Colors.cyan.shade900,
-          title: Text(
-            'My routine name',
-            style: TextStyle(color: Colors.white),
-          ),
-          content: Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: "이름을 입력하세요",
-                hintStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+      builder: (BuildContext context) {
+        return SlideTransition(
+          position: _offsetAnimation,
+          child: AlertDialog(
+            backgroundColor: Colors.cyan.shade900,
+            title: Text(
+              'My routine name',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Form(
+              key: _formKey,
+              child: TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: "이름을 입력하세요",
+                  hintStyle: TextStyle(color: Colors.grey),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.black),
+                  ),
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
-                fillColor: Colors.white,
-                filled: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '이름을 입력해주세요';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '이름을 입력해주세요';
-                }
-                return null;
-              },
             ),
+            actions: [
+              TextButton(
+                child: Text(
+                  '확인',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    setState(() {
+                      _title = nameController.text;
+                    });
+                    Navigator.of(context).pop();
+                    myCollectionName(); // 이름 설정 후 컬렉션 이름 가져오기
+                  } else {
+                    _controller.forward().then((value) => _controller.reverse());
+                  }
+                },
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              child: Text(
-                '확인',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    _title = nameController.text;
-                  });
-                  Navigator.of(context).pop();
-                } else {
-                  _controller.forward().then((value) => _controller.reverse());
-                }
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-  void saveRoutineName() async {
+  Future<void> saveRoutineName() async {
     var db = FirebaseFirestore.instance;
 
     if (nameController.text.isNotEmpty) {
@@ -167,7 +162,6 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
             .doc('Routinename')
             .collection('Names')
             .add({'name': nameController.text});
-        // 지정한 ID로 문서 참조 후 데이터 저장
       } catch (e) {
         print('Error adding document: $e');
       }
@@ -208,9 +202,10 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                     TextButton(
                       child: Text('예', style: TextStyle(color: Colors.white)),
                       onPressed: () {
-                        deleteCollection(nameController.text);
-                        Navigator.pop(context);
-                        Navigator.pop(context);
+                        deleteCollection(_title).then((_) {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        });
                       },
                     ),
                   ],
@@ -232,38 +227,38 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        title: Text('저장하시겠습니까?'),
+                        title: Text('저장하시겠습니까?', style: TextStyle(color: Colors.white)),
+                        backgroundColor: Colors.cyan.shade900,
                         actions: <Widget>[
                           TextButton(
-                            child: Text('아니오'),
+                            child: Text('아니오', style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               Navigator.of(context).pop(); // 팝업 닫기
                             },
                           ),
                           TextButton(
-                            child: Text('예'),
+                            child: Text('예', style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               Navigator.of(context).pop(); // 확인 팝업 닫기
-                              saveRoutineName();
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('저장되었습니다'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        child: Text('확인'),
-                                        onPressed: () {
-                                          Navigator.of(context)
-                                              .pop(); // 저장 완료 팝업 닫기
-                                          Navigator.of(context)
-                                              .pop(true); // 이전 화면으로 이동
-                                        },
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
+                              saveRoutineName().then((_) {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('저장되었습니다', style: TextStyle(color: Colors.white)),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          child: Text('확인', style: TextStyle(color: Colors.white)),
+                                          onPressed: () {
+                                            Navigator.of(context).pop(); // 저장 완료 팝업 닫기
+                                            Navigator.of(context).pop(true); // 이전 화면으로 이동
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              });
                             },
                           ),
                         ],
@@ -284,7 +279,7 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
               color: Colors.black.withOpacity(0.5),
               spreadRadius: 2,
               blurRadius: 7,
-              offset: Offset(0, 3), // changes position of shadow
+              offset: Offset(0, 3),
             ),
           ],
           border: Border.all(
@@ -293,8 +288,7 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
           ),
         ),
         child: ReorderableListView(
-          padding: const EdgeInsets.symmetric(
-              vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
+          padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
           onReorder: (int oldIndex, int newIndex) {
             setState(() {
               if (newIndex > oldIndex) {
@@ -308,20 +302,20 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
             for (int index = 0; index < collectionNames.length; index++)
               Padding(
                 key: Key('$index'),
-                padding: const EdgeInsets.symmetric(vertical: 8.0), // 위아래 여백 추가
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.all(25.0),
-                          backgroundColor: Colors.blueGrey.shade800, // 배경 색상
+                          backgroundColor: Colors.blueGrey.shade800,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15.0),
                             side: BorderSide(
                               color: Colors.blueGrey.shade700,
                               width: 2,
-                            ), // 둥근 모서리 반경 설정
+                            ),
                           ),
                         ),
                         onPressed: () {
@@ -343,13 +337,11 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                           });
                         },
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               collectionNames[index],
-                              style: TextStyle(
-                                  fontSize: 18.0, color: Colors.white),
+                              style: TextStyle(fontSize: 18.0, color: Colors.white),
                             ),
                             IconButton(
                               icon: Icon(
@@ -359,7 +351,7 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                               onPressed: () {
                                 deleteData(collectionNames[index]);
                               },
-                            ), // 오른쪽 끝에 아이콘
+                            ),
                           ],
                         ),
                       ),

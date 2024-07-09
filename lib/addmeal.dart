@@ -12,7 +12,6 @@ class _AddMealPageState extends State<AddMealPage> {
   final TextEditingController _mealController = TextEditingController();
   List<String> _searchResults = [];
   final TextEditingController _gramsController = TextEditingController();
-
   Map<String, dynamic>? _selectedFoodData;
 
   void _searchFood() async {
@@ -35,8 +34,11 @@ class _AddMealPageState extends State<AddMealPage> {
     });
   }
 
-  void _showFoodDetails(String foodName) async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('Food').doc(foodName).get();
+  Future<void> _showFoodDetails(String foodName) async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('Food')
+        .doc(foodName)
+        .get();
 
     if (doc.exists) {
       setState(() {
@@ -93,14 +95,10 @@ class _AddMealPageState extends State<AddMealPage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  Text('Calories: ${(_selectedFoodData?['calories'] ?? 0) * ratio}',
-                      style: TextStyle(color: Colors.white)),
-                  Text('Carbs: ${(_selectedFoodData?['carbs'] ?? 0) * ratio}',
-                      style: TextStyle(color: Colors.white)),
-                  Text('Protein: ${(_selectedFoodData?['protein'] ?? 0) * ratio}',
-                      style: TextStyle(color: Colors.white)),
-                  Text('Fat: ${(_selectedFoodData?['fat'] ?? 0) * ratio}',
-                      style: TextStyle(color: Colors.white)),
+                  _buildFoodDetailText('Calories', (_selectedFoodData?['calories'] ?? 0) * ratio),
+                  _buildFoodDetailText('Carbs', (_selectedFoodData?['carbs'] ?? 0) * ratio),
+                  _buildFoodDetailText('Protein', (_selectedFoodData?['protein'] ?? 0) * ratio),
+                  _buildFoodDetailText('Fat', (_selectedFoodData?['fat'] ?? 0) * ratio),
                 ],
               );
             },
@@ -134,6 +132,20 @@ class _AddMealPageState extends State<AddMealPage> {
         );
       },
     );
+  }
+
+  Widget _buildFoodDetailText(String label, double value) {
+    return Text(
+      '$label: ${value.toStringAsFixed(2)}',
+      style: TextStyle(color: Colors.white),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mealController.dispose();
+    _gramsController.dispose();
+    super.dispose();
   }
 
   @override

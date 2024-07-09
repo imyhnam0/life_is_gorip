@@ -23,24 +23,22 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     myCollectionName();
   }
 
-  void deleteData(String documentId) async {
+  Future<void> deleteData(String documentId) async {
     try {
-      // 문서 삭제
       await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Myroutine')
           .collection(widget.clickroutinename)
           .doc(documentId)
           .delete();
-      myCollectionName();
+      await myCollectionName();
     } catch (e) {
       print('Error deleting document: $e');
     }
   }
 
-  void myCollectionName() async {
+  Future<void> myCollectionName() async {
     try {
-      // 내루틴 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
@@ -110,7 +108,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     );
   }
 
-  void saveRoutineName() async {
+  Future<void> saveRoutineName() async {
     var db = FirebaseFirestore.instance;
 
     try {
@@ -119,7 +117,6 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
           .doc('Routinename')
           .collection('Names')
           .add({'name': nameController.text});
-      // 지정한 ID로 문서 참조 후 데이터 저장
     } catch (e) {
       print('Error adding document: $e');
     }
@@ -141,35 +138,31 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         actions: [
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  _showNameInputDialog(context);
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.save,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  saveRoutineName();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          )
+          IconButton(
+            icon: Icon(
+              Icons.edit,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              _showNameInputDialog(context);
+            },
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.save,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              saveRoutineName();
+              Navigator.of(context).pop();
+            },
+          ),
         ],
       ),
       body: Container(
@@ -180,7 +173,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
               color: Colors.black.withOpacity(0.5),
               spreadRadius: 2,
               blurRadius: 7,
-              offset: Offset(0, 3), // changes position of shadow
+              offset: Offset(0, 3),
             ),
           ],
           border: Border.all(
@@ -189,71 +182,70 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
           ),
         ),
         child: ListView.builder(
-            itemCount: collectionNames.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 15.0, horizontal: 30.0), // 좌우 여백 추가
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.all(30.0),
-                          backgroundColor: Colors.blueGrey.shade800, // 배경 색상
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                            side: BorderSide(
-                              color: Colors.blueGrey.shade700,
-                              width: 2,
-                            ), // 둥근 모서리 반경 설정
+          itemCount: collectionNames.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 15.0, horizontal: 30.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.all(30.0),
+                        backgroundColor: Colors.blueGrey.shade800,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          side: BorderSide(
+                            color: Colors.blueGrey.shade700,
+                            width: 2,
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateRoutinePage(
-                                myroutinename: _title,
-                                clickroutinename: collectionNames[index],
-                              ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateRoutinePage(
+                              myroutinename: _title,
+                              clickroutinename: collectionNames[index],
                             ),
-                          ).then((value) {
-                            if (value == true) {
-                              myCollectionName();
-                            }
-                            if (value == false) {
+                          ),
+                        ).then((value) {
+                          if (value == true) {
+                            myCollectionName();
+                          }
+                          if (value == false) {
+                            deleteData(collectionNames[index]);
+                          }
+                        });
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            collectionNames[index],
+                            style: TextStyle(
+                                fontSize: 18.0, color: Colors.white),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
                               deleteData(collectionNames[index]);
-                            }
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween, // 아이템 간의 공간을 최대화
-                          children: [
-                            // 왼쪽 끝에 아이콘
-                            Text(
-                              collectionNames[index],
-                              style: TextStyle(
-                                  fontSize: 18.0, color: Colors.white),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.delete,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                deleteData(collectionNames[index]);
-                              },
-                            ), // 오른쪽 끝에 아이콘
-                          ],
-                        ),
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            }),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.blueGrey.shade800,
@@ -261,8 +253,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              width: 170.0, // 원하는 너비로 설정
-              height: 56.0, // 원하는 높이로 설정
+              width: 170.0,
+              height: 56.0,
               child: FloatingActionButton.extended(
                 onPressed: () {
                   Navigator.push(
@@ -291,15 +283,17 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
               ),
             ),
             Container(
-              width: 170.0, // 원하는 너비로 설정
-              height: 56.0, // 원하는 높이로 설정
+              width: 170.0,
+              height: 56.0,
               child: FloatingActionButton.extended(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => PlayMyRoutinePage(
-                            clickroutinename: widget.clickroutinename)),
+                      builder: (context) => PlayMyRoutinePage(
+                        clickroutinename: widget.clickroutinename,
+                      ),
+                    ),
                   );
                 },
                 icon: Icon(

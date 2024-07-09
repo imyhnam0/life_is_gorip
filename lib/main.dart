@@ -16,6 +16,7 @@ import 'start_routine.dart';
 import 'chart.dart';
 import 'foodsave.dart';
 import 'foodroutinestart.dart';
+import 'loginpage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Homepage(),
+      home: LoginPage(),
     );
   }
 }
@@ -376,7 +377,7 @@ class _HomepageState extends State<Homepage> {
                     alignment: Alignment.bottomRight,
                     child: Container(
                       margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
-                      width: 160,
+                      width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: () {
@@ -405,7 +406,7 @@ class _HomepageState extends State<Homepage> {
                     alignment: Alignment.bottomLeft,
                     child: Container(
                       margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                      width: 160,
+                      width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
                         onPressed: () {

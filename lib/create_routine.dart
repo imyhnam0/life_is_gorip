@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 
 class CreateRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -26,8 +27,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-
-void initState() {
+  @override
+  void initState() {
     super.initState();
     
     _controller = AnimationController(
@@ -55,12 +56,13 @@ void initState() {
   void dispose() {
     nameController.dispose();
     _controller.dispose();
+    _weightControllers.forEach((controller) => controller.dispose());
+    _repsControllers.forEach((controller) => controller.dispose());
     super.dispose();
   }
 
   void deleteData(String documentId) async {
     try {
-      // 문서 삭제
       await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Myroutine')
@@ -88,12 +90,31 @@ void initState() {
     }
     if (routine["exercises"].isNotEmpty) {
       try {
-        await db
+        DocumentSnapshot documentSnapshot = await db
             .collection('Routine')
             .doc('Myroutine')
             .collection(widget.myroutinename)
             .doc(_title)
-            .set(routine);
+            .get();
+        
+        if (documentSnapshot.exists) {
+          var existingData = documentSnapshot.data() as Map<String, dynamic>;
+          if (!DeepCollectionEquality().equals(existingData['exercises'], routine['exercises'])) {
+            await db
+                .collection('Routine')
+                .doc('Myroutine')
+                .collection(widget.myroutinename)
+                .doc(_title)
+                .set(routine);
+          }
+        } else {
+          await db
+              .collection('Routine')
+              .doc('Myroutine')
+              .collection(widget.myroutinename)
+              .doc(_title)
+              .set(routine);
+        }
       } catch (e) {
         print('Error adding document: $e');
       }
@@ -104,63 +125,62 @@ void initState() {
     showDialog(
       context: context,
       barrierDismissible: false,
-       builder: (BuildContext context) {
-      return SlideTransition(
-        position: _offsetAnimation,
-        child: AlertDialog(
-          backgroundColor: Colors.cyan.shade900,
-          title: Text(
-            'My routine name',
-            style: TextStyle(color: Colors.white),
-          ),
-          content: Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: "이름을 입력하세요",
-                hintStyle: TextStyle(color: Colors.grey),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+      builder: (BuildContext context) {
+        return SlideTransition(
+          position: _offsetAnimation,
+          child: AlertDialog(
+            backgroundColor: Colors.cyan.shade900,
+            title: Text(
+              'My routine name',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Form(
+              key: _formKey,
+              child: TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: "이름을 입력하세요",
+                  hintStyle: TextStyle(color: Colors.grey),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.black),
+                  ),
+                  fillColor: Colors.white,
+                  filled: true,
                 ),
-                fillColor: Colors.white,
-                filled: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '이름을 입력해주세요';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '이름을 입력해주세요';
-                }
-                return null;
-              },
             ),
+            actions: [
+              TextButton(
+                child: Text(
+                  '확인',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    setState(() {
+                      _title = nameController.text;
+                    });
+                    Navigator.of(context).pop();
+                  } else {
+                    _controller.forward().then((value) => _controller.reverse());
+                  }
+                },
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              child: Text(
-                '확인',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    _title = nameController.text;
-                  });
-                  Navigator.of(context).pop();
-                } else {
-                  _controller.forward().then((value) => _controller.reverse());
-                }
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   void myCollectionName() async {
     try {
-      // 내루틴 가져오기
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('Routine')
           .doc('Myroutine')
@@ -182,7 +202,7 @@ void initState() {
           _rows = exercisesData.map((exercise) {
             Widget row = _buildExerciseRow(
                 exercise['weight'].toString(), exercise['reps'].toString());
-            _counter++; // 각 행을 추가할 때마다 카운터 증가
+            _counter++;
             return row;
           }).toList();
         });
@@ -343,7 +363,7 @@ void initState() {
                   color: Colors.black.withOpacity(0.5),
                   spreadRadius: 2,
                   blurRadius: 7,
-                  offset: const Offset(0, 3), // changes position of shadow
+                  offset: const Offset(0, 3),
                 ),
               ],
               border: Border.all(

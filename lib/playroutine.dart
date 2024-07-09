@@ -20,6 +20,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   List<Map<String, dynamic>> exercisesData = [];
   int result = 0;
   int sumweight = 0;
+  int _seconds = 0;
+  late Timer _timer;
 
   @override
   void initState() {
@@ -28,9 +30,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     totalRoutineReps();
     _startTimer();
   }
-
-  int _seconds = 0;
-  late Timer _timer;
 
   @override
   void dispose() {
@@ -52,22 +51,17 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  Future<void> saveRoutine(
-      String _title, int result, int sumweight, int timerSeconds) async {
+  Future<void> saveRoutine(String title, int result, int sumweight, int timerSeconds) async {
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     try {
       final db = FirebaseFirestore.instance;
       final healthDocRef = db.collection('Calender').doc('health');
-      final existingDocsSnapshot =
-          await healthDocRef.collection('routines').get();
+      final existingDocsSnapshot = await healthDocRef.collection('routines').get();
       final newDocNumber = existingDocsSnapshot.size + 1;
 
-      await healthDocRef
-          .collection('routines')
-          .doc(newDocNumber.toString())
-          .set({
-        '오늘 한 루틴이름': _title,
+      await healthDocRef.collection('routines').doc(newDocNumber.toString()).set({
+        '오늘 한 루틴이름': title,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
         '오늘 총 시간': _formatTime(timerSeconds),
@@ -78,7 +72,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     }
   }
 
-  void myCollectionName() async {
+  Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
@@ -95,7 +89,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     }
   }
 
-  void totalRoutineReps() async {
+  Future<void> totalRoutineReps() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Routine')
@@ -185,10 +179,9 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Homepage()),
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const Homepage()),
+                          (route) => false,
                         );
                       },
                       child: const Text(
@@ -207,113 +200,112 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       body: Column(
         children: [
           Flexible(
-  flex: 3,
-  child: Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.blueGrey.shade700, Colors.blueGrey.shade900],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.5),
-          spreadRadius: 2,
-          blurRadius: 7,
-          offset: const Offset(0, 3),
-        ),
-      ],
-      border: Border.all(
-        color: Colors.blueGrey.shade600,
-        width: 2,
-      ),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 20.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.timer, color: Colors.cyan.shade300, size: 30),
-              const SizedBox(width: 8),
-              Text(
-                '운동 시간: ',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.cyan.shade300,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(2.0, 2.0),
-                      blurRadius: 3.0,
-                      color: Colors.black.withOpacity(0.5),
+            flex: 3,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blueGrey.shade700, Colors.blueGrey.shade900],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.blueGrey.shade600,
+                  width: 2,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.timer, color: Colors.cyan.shade300, size: 30),
+                        const SizedBox(width: 8),
+                        Text(
+                          '운동 시간: ',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.cyan.shade300,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(2.0, 2.0),
+                                blurRadius: 3.0,
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          _formatTime(_seconds),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.cyan,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            '오늘 총 세트수',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '$result',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            '오늘 총 볼륨',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '$sumweight',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              Text(
-                _formatTime(_seconds),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.cyan,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Column(
-              children: [
-                Text(
-                  '오늘 총 세트수',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.white70,
-                  ),
-                ),
-                Text(
-                  '$result',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              children: [
-                Text(
-                  '오늘 총 볼륨',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.white70,
-                  ),
-                ),
-                Text(
-                  '$sumweight',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    ),
-  ),
-),
-
           Flexible(
             flex: 7,
             child: Container(
@@ -336,8 +328,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                 itemCount: collectionNames.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 15.0, horizontal: 30.0),
+                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
                     child: Row(
                       children: [
                         Expanded(
@@ -418,10 +409,10 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                             sumweight,
                             _seconds,
                           );
-                          Navigator.push(
+                          Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => const Homepage()),
+                            MaterialPageRoute(builder: (context) => const Homepage()),
+                            (route) => false,
                           );
                         },
                         child: const Text(

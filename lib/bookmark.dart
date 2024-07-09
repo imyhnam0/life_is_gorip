@@ -11,6 +11,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
   List<String> collectionNames = [];
   List<String> savedCollectionNames = [];
   List<String> filteredCollectionNames = [];
+  List<String> modifiedCollectionNames = [];
 
   bool _isChecked = false;
 
@@ -23,18 +24,14 @@ class _BookMarkPageState extends State<BookMarkPage> {
 
   Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
     try {
-      // Bookmark 문서를 참조합니다.
       DocumentReference bookmarkDocRef =
           FirebaseFirestore.instance.collection("Routine").doc('Bookmark');
 
-      // Bookmark 문서를 가져와서 names 필드를 업데이트합니다.
       DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 
       if (bookmarkDocSnapshot.exists) {
-        // 변경된 순서를 names 필드에 반영합니다.
         await bookmarkDocRef.update({'names': updatedCollectionNames});
       } else {
-        // Bookmark 문서가 존재하지 않을 경우, 새로 생성합니다.
         await bookmarkDocRef.set({'names': updatedCollectionNames});
       }
 
@@ -68,7 +65,6 @@ class _BookMarkPageState extends State<BookMarkPage> {
 
   void myCollectionName() async {
     try {
-      // '_title' 컬렉션에서 하위 문서 ID들 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Routinename')
@@ -96,6 +92,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
         List<dynamic> names = bookmarkDocSnapshot.get('names');
         setState(() {
           filteredCollectionNames = List<String>.from(names);
+          modifiedCollectionNames = List<String>.from(names); // 초기화 시 현재 순서 저장
         });
       }
     } catch (e) {
@@ -109,6 +106,10 @@ class _BookMarkPageState extends State<BookMarkPage> {
           .where((name) => savedCollectionNames.contains(name))
           .toList();
     });
+  }
+
+  void saveChanges() async {
+    await updateFirestoreOrder(modifiedCollectionNames);
   }
 
   @override
@@ -144,7 +145,10 @@ class _BookMarkPageState extends State<BookMarkPage> {
               color: Colors.white,
               size: 28,
             ),
-            onPressed: () {
+            onPressed: () async {
+              if (_isChecked) {
+                saveChanges();
+              }
               setState(() {
                 _isChecked = !_isChecked;
               });
@@ -171,15 +175,14 @@ class _BookMarkPageState extends State<BookMarkPage> {
         ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex) async {
+          onReorder: (int oldIndex, int newIndex) {
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
               }
-              final String item = filteredCollectionNames.removeAt(oldIndex);
-              filteredCollectionNames.insert(newIndex, item);
+              final String item = modifiedCollectionNames.removeAt(oldIndex);
+              modifiedCollectionNames.insert(newIndex, item);
             });
-            await updateFirestoreOrder(filteredCollectionNames);
           },
           children: <Widget>[
             for (int index = 0; index < filteredCollectionNames.length; index++)
@@ -214,6 +217,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
                               deleteBookmark(filteredCollectionNames[index]);
                               setState(() {
                                 filteredCollectionNames.removeAt(index);
+                                modifiedCollectionNames.removeAt(index); // 삭제 시 수정된 리스트에서도 제거
                               });
                             },
                           ),

@@ -13,7 +13,6 @@ class SaveRoutinePage extends StatefulWidget {
 class _SaveRoutinePageState extends State<SaveRoutinePage> {
   List<String> collectionNames = [];
   List<String> savedCollectionNames = [];
-
   bool _isDelete = false;
 
   @override
@@ -23,9 +22,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     myCollectionName();
   }
 
-  void deleteCollection(String documentId) async {
+  Future<void> deleteCollection(String documentId) async {
     try {
-      // 컬렉션의 모든 문서를 가져옴
       var collectionRef = FirebaseFirestore.instance
           .collection("Routine")
           .doc('Myroutine')
@@ -33,10 +31,10 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
       var snapshots = await collectionRef.get();
 
-      // 각 문서를 삭제
       for (var doc in snapshots.docs) {
         await doc.reference.delete();
       }
+
       var namesCollectionRef = FirebaseFirestore.instance
           .collection("Routine")
           .doc('Routinename')
@@ -45,45 +43,27 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       var namesSnapshots =
           await namesCollectionRef.where('name', isEqualTo: documentId).get();
 
-      // 각 문서를 삭제
       for (var doc in namesSnapshots.docs) {
         await doc.reference.delete();
       }
-      myCollectionName();
-      // 새로고침 함수 호출
+
+      await myCollectionName();
     } catch (e) {
       print('Error deleting collection: $e');
     }
   }
 
-  void myCollectionName() async {
+  Future<void> myCollectionName() async {
     try {
-      // 'Routine' 컬렉션에서 'Routinename' 문서의 하위 컬렉션 'Names'의 문서들 가져오기
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names')
-          .get();
-
-      // `order` 필드가 없는 문서들을 이름 순서대로 리스트에 저장
-      List<String> names =
-          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
-
-      setState(() {
-        collectionNames = names;
-      });
-
-      // `order` 필드가 없는 문서에 대해 `order` 필드 업데이트
-      await updateFirestoreOrder();
-
-      // `order` 필드가 추가된 문서들을 다시 불러와 정렬
-      querySnapshot = await FirebaseFirestore.instance
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
           .orderBy('order')
           .get();
-      names = querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+      List<String> names =
+          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
 
       setState(() {
         collectionNames = names;
@@ -93,7 +73,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     }
   }
 
-  void loadStarRow() async {
+  Future<void> loadStarRow() async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
           .collection("Routine")
@@ -111,7 +91,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     }
   }
 
-  void addStarRow(String name) async {
+  Future<void> addStarRow(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
           .collection("Routine")
@@ -144,9 +124,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           .doc('Routinename')
           .collection('Names');
 
-      // `collectionNames` 리스트는 각 문서의 `name` 필드를 포함하고 있는 것으로 가정합니다.
       for (int i = 0; i < collectionNames.length; i++) {
-        // `collectionNames[i]` 값을 가진 문서를 찾습니다.
         QuerySnapshot querySnapshot = await collectionRef
             .where('name', isEqualTo: collectionNames[i])
             .get();
@@ -158,14 +136,12 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       }
 
       await batch.commit();
-
-      myCollectionName();
     } catch (e) {
       print('Error updating Firestore order: $e');
     }
   }
 
-  void removeStarRow(String name) async {
+  Future<void> removeStarRow(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
           .collection("Routine")
@@ -206,7 +182,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -215,22 +191,23 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           Row(
             children: [
               IconButton(
-                  icon: Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const RoutinePage()),
-                    ).then((value) {
-                      if (value == true) {
-                        myCollectionName();
-                      }
-                    });
-                    ;
-                  }),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RoutinePage(),
+                    ),
+                  ).then((value) {
+                    if (value == true) {
+                      myCollectionName();
+                    }
+                  });
+                },
+              ),
               IconButton(
                 icon: Icon(
                   Icons.edit,
@@ -254,7 +231,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
               color: Colors.black.withOpacity(0.5),
               spreadRadius: 2,
               blurRadius: 7,
-              offset: Offset(0, 3), // changes position of shadow
+              offset: Offset(0, 3),
             ),
           ],
           border: Border.all(
@@ -325,7 +302,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                             Visibility(
                               visible: _isDelete,
                               child: Padding(
-                                padding: const EdgeInsets.only(left: 10.0),
+                                padding: const EdgeInsets.only(left: 5.0),
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.delete,
@@ -343,7 +320,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 padding: const EdgeInsets.all(3.0),
                                 child: Icon(
                                   Icons.drag_handle,
-                                  size: 30.0, // 원하는 크기로 설정
+                                  size: 30.0,
                                   color: Colors.white,
                                 ),
                               ),

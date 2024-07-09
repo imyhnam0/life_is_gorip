@@ -51,17 +51,17 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
       appBar: AppBar(
         title: const Text('음식 추가', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.blueGrey.shade900,
-         leading: IconButton(
-    icon: Icon(
-      Icons.arrow_back,
-      color: Colors.white,
-      size: 28, // 아이콘 크기를 키움
-    ),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
-  ),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기',
+        ),
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),
@@ -91,7 +91,7 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
-                child: const Text('음식 추가', style: TextStyle(fontSize: 18,color: Colors.white)),
+                child: const Text('음식 추가', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 20),
