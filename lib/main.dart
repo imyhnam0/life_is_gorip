@@ -164,8 +164,9 @@ class _HomepageState extends State<Homepage> {
                     color: Colors.yellow,
                   ),
                   label: Text(
-                    '즐겨찾기',
-                    style: TextStyle(color: Colors.white),
+                    'Favorite',
+                    style: TextStyle(color: Colors.white,fontFamily: 'Pacifico',),
+                    
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueGrey.shade700,
@@ -223,7 +224,7 @@ class _HomepageState extends State<Homepage> {
                                 padding: const EdgeInsets.all(8.0),
                                 color: Colors.grey[800],
                                 child: Text(
-                                  '오늘 날짜: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
+                                  'Today date: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -278,7 +279,7 @@ class _HomepageState extends State<Homepage> {
                                               CrossAxisAlignment.center,
                                           children: [
                                             Text(
-                                              '루틴 이름: ${routine['오늘 한 루틴이름']}',
+                                              'Routine: ${routine['오늘 한 루틴이름']}',
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 18,
@@ -441,84 +442,86 @@ class _HomepageState extends State<Homepage> {
       bottomNavigationBar: BottomAppBar(
         color: Colors.blueGrey.shade800,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.work, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SaveRoutinePage()),
-                    );
-                  },
-                ),
-                Text(
-                  '루틴',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.event_available, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CalenderPage()),
-                    );
-                  },
-                ),
-                Text(
-                  '일지',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.directions_run, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => FoodroutinestartPage()),
-                    );
-                  },
-                ),
-                Text(
-                  '진행중',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.lunch_dining, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => FoodSavePage()),
-                    );
-                  },
-                ),
-                Text(
-                  '식단',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
-                ),
-              ],
-            ),
-          ],
-        ),
+  mainAxisAlignment: MainAxisAlignment.spaceAround,
+  children: [
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SaveRoutinePage()),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.work, color: Colors.white),
+          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+          Text(
+            '루틴',
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+        ],
+      ),
+    ),
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CalenderPage()),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event_available, color: Colors.white),
+          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+          Text(
+            '일지',
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+        ],
+      ),
+    ),
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => FoodroutinestartPage()),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.directions_run, color: Colors.white),
+          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+          Text(
+            '진행중',
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+        ],
+      ),
+    ),
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => FoodSavePage()),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lunch_dining, color: Colors.white),
+          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+          Text(
+            '식단',
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          ),
+        ],
+      ),
+    ),
+  ],
+)
       ),
     );
   }
