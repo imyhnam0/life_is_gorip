@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
 class AddMealPage extends StatefulWidget {
   const AddMealPage({Key? key}) : super(key: key);
 
@@ -13,6 +14,15 @@ class _AddMealPageState extends State<AddMealPage> {
   List<String> _searchResults = [];
   final TextEditingController _gramsController = TextEditingController();
   Map<String, dynamic>? _selectedFoodData;
+  String? uid;
+
+  @override
+  void initState() {
+    super.initState();
+   uid = Provider.of<UserProvider>(context, listen: false).uid;
+   print('유아이디인데 : $uid');
+  }
+  
 
   void _searchFood() async {
     String query = _mealController.text;

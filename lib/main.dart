@@ -17,13 +17,21 @@ import 'chart.dart';
 import 'foodsave.dart';
 import 'foodroutinestart.dart';
 import 'loginpage.dart';
+import 'user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+   runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -54,6 +62,7 @@ class _HomepageState extends State<Homepage> {
     super.initState();
     _fetchSevenDayAgoData();
   }
+  
 
   Future<void> _fetchSevenDayAgoData() async {
     List<String> names = [];

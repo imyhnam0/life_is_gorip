@@ -13,14 +13,17 @@ class AuthService {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<String?> login(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return true;
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential.user?.uid;
     } catch (e) {
-      print('Login Error: $e');
-      return false;
-    }   
+      print('Error logging in: $e');
+      return null;
+    }
   }
 
   Future<void> logout() async {

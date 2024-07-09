@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'firebase_auth_service.dart';
 import 'signuppage.dart';
 import 'main.dart';
+import 'user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -33,6 +35,26 @@ class _LoginPageState extends State<LoginPage> {
       return '비밀번호는 최소 6자리 이상이어야 합니다';
     }
     return null;
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState?.validate() == true) {
+      String? uid = await AuthService().login(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (uid != null) {
+        Provider.of<UserProvider>(context, listen: false).setUid(uid);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Homepage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login Failed')),
+        );
+      }
+    }
   }
 
   @override
@@ -99,24 +121,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState?.validate() == true) {
-                    bool result = await AuthService().login(
-                      _emailController.text,
-                      _passwordController.text,
-                    );
-                    if (result) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Homepage()),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Login Failed')),
-                      );
-                    }
-                  }
-                },
+                onPressed: _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueGrey.shade900,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
