@@ -23,35 +23,65 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   }
 
   Future<void> deleteCollection(String documentId) async {
-    try {
-      var collectionRef = FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(documentId);
+  var db = FirebaseFirestore.instance;
 
-      var snapshots = await collectionRef.get();
+  // Remove documentId from Bookmark collection
+  try {
+    DocumentSnapshot bookmarkDoc = await db
+        .collection("Routine")
+        .doc('Bookmark')
+        .get();
 
-      for (var doc in snapshots.docs) {
-        await doc.reference.delete();
+    if (bookmarkDoc.exists) {
+      List<String> names = List<String>.from(bookmarkDoc['names']);
+      if (names.contains(documentId)) {
+        names.remove(documentId);
+        await db
+            .collection("Routine")
+            .doc('Bookmark')
+            .update({'names': names});
       }
-
-      var namesCollectionRef = FirebaseFirestore.instance
-          .collection("Routine")
-          .doc('Routinename')
-          .collection("Names");
-
-      var namesSnapshots =
-          await namesCollectionRef.where('name', isEqualTo: documentId).get();
-
-      for (var doc in namesSnapshots.docs) {
-        await doc.reference.delete();
-      }
-
-      await myCollectionName();
-    } catch (e) {
-      print('Error deleting collection: $e');
     }
+  } catch (e) {
+    print('Error removing name: $e');
   }
+
+  // Batch write for deleting documents in Myroutine and Routinename collections
+  try {
+    WriteBatch batch = db.batch();
+
+    // Get all documents in the specified sub-collection under Myroutine
+    var collectionRef = db
+        .collection("Routine")
+        .doc('Myroutine')
+        .collection(documentId);
+
+    var snapshots = await collectionRef.get();
+    for (var doc in snapshots.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Get all documents in the Names collection where 'name' is equal to documentId
+    var namesCollectionRef = db
+        .collection("Routine")
+        .doc('Routinename')
+        .collection("Names");
+
+    var namesSnapshots = await namesCollectionRef.where('name', isEqualTo: documentId).get();
+    for (var doc in namesSnapshots.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Commit the batch write
+    await batch.commit();
+
+    // Refresh the collection names
+    await myCollectionName();
+  } catch (e) {
+    print('Error deleting collection: $e');
+  }
+}
+
 
   Future<void> myCollectionName() async {
     try {

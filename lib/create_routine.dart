@@ -75,7 +75,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
     }
   }
 
-  void saveRoutineData() async {
+  Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
 
     Map<String, dynamic> routine = {"exercises": []};
@@ -318,8 +318,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
             if (_rows.isEmpty) {
               Navigator.of(context).pop(false);
             } else {
-              saveRoutineData();
-              Navigator.of(context).pop(true);
+              saveRoutineData().then((_){Navigator.of(context).pop(true);});
+              
             }
           },
           tooltip: '뒤로 가기',
@@ -338,17 +338,21 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
                   _showNameInputDialog(context);
                 },
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.save,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: () {
-                  saveRoutineData();
-                  Navigator.of(context).pop(true);
-                },
-              ),
+            //   IconButton(
+            //     icon: const Icon(
+            //       Icons.save,
+            //       color: Colors.white,
+            //       size: 28,
+            //     ),
+            //     onPressed: () {
+            //       if (_rows.isEmpty) {
+            //   Navigator.of(context).pop(false);
+            // } else {
+            //   saveRoutineData();
+            //   Navigator.of(context).pop(true);
+            // }
+            //     },
+            //   ),
             ],
           )
         ],

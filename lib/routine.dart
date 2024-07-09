@@ -34,6 +34,7 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showNameInputDialog(context);
     });
+    myCollectionName();
   }
 
   @override
@@ -153,20 +154,25 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   }
 
   Future<void> saveRoutineName() async {
-    var db = FirebaseFirestore.instance;
+  var db = FirebaseFirestore.instance;
 
-    if (nameController.text.isNotEmpty) {
-      try {
-        await db
-            .collection('Routine')
-            .doc('Routinename')
-            .collection('Names')
-            .add({'name': nameController.text});
-      } catch (e) {
-        print('Error adding document: $e');
-      }
+  if (nameController.text.isNotEmpty) {
+    try {
+      int order = collectionNames.length + 1; // 새로운 order 값 설정
+      await db
+          .collection('Routine')
+          .doc('Routinename')
+          .collection('Names')
+          .add({
+        'name': nameController.text,
+        'order': order,
+      });
+    } catch (e) {
+      print('Error adding document: $e');
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +251,7 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
+                                      backgroundColor: Colors.cyan.shade900,
                                       title: Text('저장되었습니다', style: TextStyle(color: Colors.white)),
                                       actions: <Widget>[
                                         TextButton(
