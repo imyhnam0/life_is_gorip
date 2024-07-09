@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class FoodroutinestartPage extends StatefulWidget {
   @override
@@ -18,10 +21,12 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
   double totalCarbs = 0;
   double totalProtein = 0;
   double totalFat = 0;
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     _loadData();
   }
 
@@ -126,6 +131,8 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
 
   Future<void> _saveToFirebase() async {
     CollectionReference todayFood = FirebaseFirestore.instance
+    .collection('users')
+        .doc(uid)
         .collection('Calender')
         .doc('food')
         .collection('todayfood');

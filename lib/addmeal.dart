@@ -34,6 +34,8 @@ class _AddMealPageState extends State<AddMealPage> {
     }
 
     final results = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
         .collection('Food')
         .where(FieldPath.documentId, isGreaterThanOrEqualTo: query)
         .where(FieldPath.documentId, isLessThanOrEqualTo: query + '\uf8ff')
@@ -46,6 +48,8 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<void> _showFoodDetails(String foodName) async {
     DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
         .collection('Food')
         .doc(foodName)
         .get();

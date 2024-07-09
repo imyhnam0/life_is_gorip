@@ -56,10 +56,12 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   DateTime selectedDate = DateTime.now();
   List<String> collectionNames = [];
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     _fetchSevenDayAgoData();
   }
   
@@ -86,6 +88,8 @@ class _HomepageState extends State<Homepage> {
 
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -108,6 +112,8 @@ class _HomepageState extends State<Homepage> {
 
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')

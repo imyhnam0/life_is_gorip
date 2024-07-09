@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class StartRoutineNamePlay extends StatefulWidget {
   final String clickroutinename;
@@ -27,6 +31,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   int _seconds = 0;
   Timer? _timer;
   int _remainingTime = 0;
+  String ?uid;
 
   void _startTimer() {
     if (_timer != null) {
@@ -91,6 +96,8 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   Future<void> myCollectionName() async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.currentroutinename)
@@ -145,6 +152,8 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     if (routine["exercises"].isNotEmpty) {
       try {
         await db
+        .collection('users')
+        .doc(uid)
             .collection('Routine')
             .doc('Myroutine')
             .collection(widget.currentroutinename)

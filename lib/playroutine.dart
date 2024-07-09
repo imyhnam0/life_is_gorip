@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'startroutinename_play.dart';
 import 'package:intl/intl.dart';
 import 'main.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class PlayMyRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -22,10 +26,12 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   int sumweight = 0;
   int _seconds = 0;
   late Timer _timer;
+  String ?uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
     totalRoutineReps();
     _startTimer();
@@ -56,7 +62,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     try {
       final db = FirebaseFirestore.instance;
-      final healthDocRef = db.collection('Calender').doc('health');
+      final healthDocRef = db.collection('users')
+        .doc(uid).collection('Calender').doc('health');
       final existingDocsSnapshot = await healthDocRef.collection('routines').get();
       final newDocNumber = existingDocsSnapshot.size + 1;
 
@@ -75,6 +82,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.clickroutinename)
@@ -92,6 +101,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   Future<void> totalRoutineReps() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.clickroutinename)

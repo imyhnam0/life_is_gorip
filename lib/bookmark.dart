@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'start_routine.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
 
 class BookMarkPage extends StatefulWidget {
   @override
@@ -14,10 +16,12 @@ class _BookMarkPageState extends State<BookMarkPage> {
   List<String> modifiedCollectionNames = [];
 
   bool _isChecked = false;
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
     loadStarRow();
   }
@@ -25,7 +29,11 @@ class _BookMarkPageState extends State<BookMarkPage> {
   Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
     try {
       DocumentReference bookmarkDocRef =
-          FirebaseFirestore.instance.collection("Routine").doc('Bookmark');
+          FirebaseFirestore.instance
+          .collection('users')
+        .doc(uid)
+        .collection("Routine")
+        .doc('Bookmark');
 
       DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 
@@ -44,6 +52,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void deleteBookmark(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -53,6 +63,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
         if (names.contains(name)) {
           names.remove(name);
           await FirebaseFirestore.instance
+          .collection('users')
+        .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});
@@ -66,6 +78,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -84,7 +98,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void loadStarRow() async {
     try {
       DocumentReference bookmarkDocRef =
-          FirebaseFirestore.instance.collection("Routine").doc('Bookmark');
+          FirebaseFirestore.instance.collection('users')
+        .doc(uid).collection("Routine").doc('Bookmark');
 
       DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 

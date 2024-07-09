@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class CalenderPage extends StatefulWidget {
   const CalenderPage({super.key});
@@ -11,6 +14,13 @@ class CalenderPage extends StatefulWidget {
 }
 
 class _CalenderPageState extends State<CalenderPage> {
+  String? uid;
+
+  void initState() {
+    super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+  }
+
   DateTime selectedDate = DateTime.now();
 
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
@@ -20,6 +30,8 @@ class _CalenderPageState extends State<CalenderPage> {
 
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -52,6 +64,8 @@ class _CalenderPageState extends State<CalenderPage> {
 
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('food')
           .collection('todayfood')
@@ -72,6 +86,8 @@ class _CalenderPageState extends State<CalenderPage> {
     String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')

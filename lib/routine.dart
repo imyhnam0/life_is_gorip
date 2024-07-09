@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'create_routine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class RoutinePage extends StatefulWidget {
   const RoutinePage({super.key});
@@ -16,10 +20,12 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -47,6 +53,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(_title)
@@ -61,6 +69,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> deleteCollection(String collectionPath) async {
     try {
       var collectionRef = FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(collectionPath);
@@ -80,6 +90,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(_title)
@@ -160,6 +172,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
     try {
       int order = collectionNames.length + 1; // 새로운 order 값 설정
       await db
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Routinename')
           .collection('Names')

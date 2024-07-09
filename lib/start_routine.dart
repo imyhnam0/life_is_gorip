@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'playroutine.dart';
 import 'create_routine.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class StartRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -16,16 +20,21 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   TextEditingController nameController = TextEditingController();
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+
     myCollectionName();
   }
 
   Future<void> deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(widget.clickroutinename)
@@ -40,6 +49,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.clickroutinename)
@@ -113,6 +124,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
 
     try {
       await db
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Routinename')
           .collection('Names')

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class RoutineChart extends StatefulWidget {
   @override
@@ -12,12 +15,19 @@ class _RoutineChartState extends State<RoutineChart> {
   int maxVolume = 0;
   int minVolume = 0;
   String? selectname;
+  String? uid;
+  void initState() {
+    super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+  }
 
   Future<List<String>> fetchCollectionNames() async {
     List<String> names = [];
 
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -37,6 +47,8 @@ class _RoutineChartState extends State<RoutineChart> {
 
     try {
       QuerySnapshot snapshot = await db
+      .collection('users')
+        .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')

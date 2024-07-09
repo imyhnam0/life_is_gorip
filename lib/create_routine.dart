@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class CreateRoutinePage extends StatefulWidget {
   final String clickroutinename;
   final String myroutinename;
+  
   const CreateRoutinePage({
     Key? key,
     required this.clickroutinename,
@@ -26,10 +31,12 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -64,6 +71,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   void deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(widget.myroutinename)
@@ -91,6 +100,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
     if (routine["exercises"].isNotEmpty) {
       try {
         DocumentSnapshot documentSnapshot = await db
+        .collection('users')
+        .doc(uid)
             .collection('Routine')
             .doc('Myroutine')
             .collection(widget.myroutinename)
@@ -182,6 +193,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   void myCollectionName() async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.myroutinename)

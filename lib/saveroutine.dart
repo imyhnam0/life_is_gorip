@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'start_routine.dart';
 import 'routine.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
+
 
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
@@ -14,10 +18,12 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   List<String> collectionNames = [];
   List<String> savedCollectionNames = [];
   bool _isDelete = false;
+  String? uid;
 
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     loadStarRow();
     myCollectionName();
   }
@@ -28,6 +34,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   // Remove documentId from Bookmark collection
   try {
     DocumentSnapshot bookmarkDoc = await db
+    .collection('users')
+        .doc(uid)
         .collection("Routine")
         .doc('Bookmark')
         .get();
@@ -86,6 +94,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -106,6 +116,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> loadStarRow() async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -124,6 +136,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> addStarRow(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -133,6 +147,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         if (!names.contains(name)) {
           names.add(name);
           await FirebaseFirestore.instance
+          .collection('users')
+        .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});
@@ -150,6 +166,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     try {
       WriteBatch batch = FirebaseFirestore.instance.batch();
       CollectionReference collectionRef = FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names');
@@ -174,6 +192,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> removeStarRow(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+      .collection('users')
+        .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -183,6 +203,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         if (names.contains(name)) {
           names.remove(name);
           await FirebaseFirestore.instance
+          .collection('users')
+        .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});

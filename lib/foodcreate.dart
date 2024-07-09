@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class FoodCreatePage extends StatefulWidget {
   const FoodCreatePage({super.key});
@@ -22,6 +25,12 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
   double carbs = 0;
   double protein = 0;
   double fat = 0;
+  String? uid;
+
+  void initState() {
+    super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+  }
 
   Future<void> _addFood() async {
     foodName = _nameController.text;
@@ -32,7 +41,8 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
     fat = double.tryParse(_fatController.text) ?? 0;
 
     if (foodName.isNotEmpty && grams > 0 && calories > 0) {
-      await FirebaseFirestore.instance.collection('Food').doc(foodName).set({
+      await FirebaseFirestore.instance.collection('users')
+        .doc(uid).collection('Food').doc(foodName).set({
         'grams': grams,
         'calories': calories,
         'carbs': carbs,
