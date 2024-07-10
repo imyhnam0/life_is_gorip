@@ -28,12 +28,11 @@ class _BookMarkPageState extends State<BookMarkPage> {
 
   Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
     try {
-      DocumentReference bookmarkDocRef =
-          FirebaseFirestore.instance
+      DocumentReference bookmarkDocRef = FirebaseFirestore.instance
           .collection('users')
-        .doc(uid)
-        .collection("Routine")
-        .doc('Bookmark');
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark');
 
       DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 
@@ -52,8 +51,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void deleteBookmark(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -63,8 +62,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
         if (names.contains(name)) {
           names.remove(name);
           await FirebaseFirestore.instance
-          .collection('users')
-        .doc(uid)
+              .collection('users')
+              .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});
@@ -78,8 +77,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -97,9 +96,11 @@ class _BookMarkPageState extends State<BookMarkPage> {
 
   void loadStarRow() async {
     try {
-      DocumentReference bookmarkDocRef =
-          FirebaseFirestore.instance.collection('users')
-        .doc(uid).collection("Routine").doc('Bookmark');
+      DocumentReference bookmarkDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark');
 
       DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
 
@@ -208,7 +209,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
                   decoration: BoxDecoration(
                     color: Colors.blueGrey.shade800,
                     borderRadius: BorderRadius.circular(15.0),
-                    border: Border.all(color: Colors.blueGrey.shade700, width: 2),
+                    border:
+                        Border.all(color: Colors.blueGrey.shade700, width: 2),
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
@@ -232,7 +234,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
                               deleteBookmark(filteredCollectionNames[index]);
                               setState(() {
                                 filteredCollectionNames.removeAt(index);
-                                modifiedCollectionNames.removeAt(index); // 삭제 시 수정된 리스트에서도 제거
+                                modifiedCollectionNames
+                                    .removeAt(index); // 삭제 시 수정된 리스트에서도 제거
                               });
                             },
                           ),

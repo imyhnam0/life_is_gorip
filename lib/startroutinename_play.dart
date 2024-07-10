@@ -5,8 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
 class StartRoutineNamePlay extends StatefulWidget {
   final String clickroutinename;
   final String currentroutinename;
@@ -31,7 +29,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   int _seconds = 0;
   Timer? _timer;
   int _remainingTime = 0;
-  String ?uid;
+  String? uid;
 
   void _startTimer() {
     if (_timer != null) {
@@ -90,18 +88,21 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   @override
   void initState() {
     super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
   }
 
   Future<void> myCollectionName() async {
     try {
+      print(widget.currentroutinename);
+      print(_title);
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.currentroutinename)
-          .doc(widget.clickroutinename)
+          .doc(_title)
           .get();
 
       if (documentSnapshot.exists) {
@@ -152,12 +153,12 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     if (routine["exercises"].isNotEmpty) {
       try {
         await db
-        .collection('users')
-        .doc(uid)
+            .collection('users')
+            .doc(uid)
             .collection('Routine')
             .doc('Myroutine')
             .collection(widget.currentroutinename)
-            .doc(widget.clickroutinename)
+            .doc(_title)
             .set(routine);
       } catch (e) {
         print('Error adding document: $e');
@@ -184,7 +185,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
           ),
           onPressed: () {
             saveRoutineData();
-            Navigator.pop(context);
+            Navigator.of(context).pop(true);
           },
         ),
       ),
@@ -192,108 +193,122 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
         children: [
           Flexible(
             flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade600,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.blueGrey.shade500,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '남은 시간: $_remainingTime 초',
-                      style: TextStyle(fontSize: 20),
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _cancelTimer,
-                          child: Text(
-                            '취소',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Column(
-                          children: [
-                            Text('분', style: TextStyle(fontSize: 20)),
-                            Container(
-                              height: 150,
-                              width: 100,
-                              child: CupertinoPicker(
-                                itemExtent: 32.0,
-                                onSelectedItemChanged: (int index) {
-                                  setState(() {
-                                    _minutes = index;
-                                  });
-                                },
-                                children:
-                                    List<Widget>.generate(60, (int index) {
-                                  return Center(
-                                    child: Text(
-                                        '${index.toString().padLeft(2, '0')}'),
-                                  );
-                                }),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(':', style: TextStyle(fontSize: 20)),
-                        Column(
-                          children: [
-                            Text('초', style: TextStyle(fontSize: 20)),
-                            Container(
-                              height: 150,
-                              width: 100,
-                              child: CupertinoPicker(
-                                itemExtent: 32.0,
-                                onSelectedItemChanged: (int index) {
-                                  setState(() {
-                                    _seconds = index;
-                                  });
-                                },
-                                children:
-                                    List<Widget>.generate(60, (int index) {
-                                  return Center(
-                                    child: Text(
-                                        '${index.toString().padLeft(2, '0')}'),
-                                  );
-                                }),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _startTimer,
-                          child: Text(
-                            '시작',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                          ),
-                        ),
-                      ],
+            child: SingleChildScrollView(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade600,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 7,
+                      offset: Offset(0, 3),
                     ),
                   ],
+                  border: Border.all(
+                    color: Colors.blueGrey.shade500,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          text: 'Time: ',
+                          style: TextStyle(
+                              fontSize: 25,
+                              fontFamily: 'Oswald',
+                              color: Colors.black), // 기본 텍스트 스타일
+                          children: <TextSpan>[
+                            TextSpan(
+                                text: '$_remainingTime',
+                                style: TextStyle(
+                                    color: Colors.white)), // 빨간색으로 강조할 부분
+                            TextSpan(text: ' Seconds'),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _cancelTimer,
+                            child: Text(
+                              '취소',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Column(
+                            children: [
+                              Text('Minute', style: TextStyle(fontSize: 20,    fontFamily: 'Oswald',)),
+                              Container(
+                                height: 150,
+                                width: 100,
+                                child: CupertinoPicker(
+                                  itemExtent: 32.0,
+                                  onSelectedItemChanged: (int index) {
+                                    setState(() {
+                                      _minutes = index;
+                                    });
+                                  },
+                                  children:
+                                      List<Widget>.generate(60, (int index) {
+                                    return Center(
+                                      child: Text(
+                                          '${index.toString().padLeft(2, '0')}'),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(':', style: TextStyle(fontSize: 20)),
+                          Column(
+                            children: [
+                              Text('Seconds', style: TextStyle(fontSize: 20,    fontFamily: 'Oswald',)),
+                              Container(
+                                height: 150,
+                                width: 100,
+                                child: CupertinoPicker(
+                                  itemExtent: 32.0,
+                                  onSelectedItemChanged: (int index) {
+                                    setState(() {
+                                      _seconds = index;
+                                    });
+                                  },
+                                  children:
+                                      List<Widget>.generate(60, (int index) {
+                                    return Center(
+                                      child: Text(
+                                          '${index.toString().padLeft(2, '0')}'),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _startTimer,
+                            child: Text(
+                              '시작',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -329,7 +344,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                         children: [
                           Container(
                             margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                            width: 160,
+                            width: 140,
                             height: 60,
                             child: FloatingActionButton.extended(
                               onPressed: _addTextFields,
@@ -346,7 +361,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                           ),
                           Container(
                             margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
-                            width: 160,
+                            width: 140,
                             height: 60,
                             child: FloatingActionButton.extended(
                               onPressed: _deleteLastRow,

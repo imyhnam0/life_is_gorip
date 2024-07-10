@@ -4,12 +4,10 @@ import 'package:collection/collection.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
 class CreateRoutinePage extends StatefulWidget {
   final String clickroutinename;
   final String myroutinename;
-  
+
   const CreateRoutinePage({
     Key? key,
     required this.clickroutinename,
@@ -20,7 +18,8 @@ class CreateRoutinePage extends StatefulWidget {
   _CreateRoutinePageState createState() => _CreateRoutinePageState();
 }
 
-class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTickerProviderStateMixin {
+class _CreateRoutinePageState extends State<CreateRoutinePage>
+    with SingleTickerProviderStateMixin {
   TextEditingController nameController = TextEditingController();
   List<TextEditingController> _weightControllers = [];
   List<TextEditingController> _repsControllers = [];
@@ -31,13 +30,13 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-    String? uid;
+  String? uid;
 
   @override
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -71,8 +70,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   void deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(widget.myroutinename)
@@ -100,18 +99,21 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
     if (routine["exercises"].isNotEmpty) {
       try {
         DocumentSnapshot documentSnapshot = await db
-        .collection('users')
-        .doc(uid)
+            .collection('users')
+            .doc(uid)
             .collection('Routine')
             .doc('Myroutine')
             .collection(widget.myroutinename)
             .doc(_title)
             .get();
-        
+
         if (documentSnapshot.exists) {
           var existingData = documentSnapshot.data() as Map<String, dynamic>;
-          if (!DeepCollectionEquality().equals(existingData['exercises'], routine['exercises'])) {
+          if (!DeepCollectionEquality()
+              .equals(existingData['exercises'], routine['exercises'])) {
             await db
+                .collection('users')
+                .doc(uid)
                 .collection('Routine')
                 .doc('Myroutine')
                 .collection(widget.myroutinename)
@@ -120,6 +122,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
           }
         } else {
           await db
+              .collection('users')
+              .doc(uid)
               .collection('Routine')
               .doc('Myroutine')
               .collection(widget.myroutinename)
@@ -179,7 +183,9 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
                     });
                     Navigator.of(context).pop();
                   } else {
-                    _controller.forward().then((value) => _controller.reverse());
+                    _controller
+                        .forward()
+                        .then((value) => _controller.reverse());
                   }
                 },
               ),
@@ -193,8 +199,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
   void myCollectionName() async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.myroutinename)
@@ -301,7 +307,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
 
   void _addTextFields() {
     setState(() {
-      _rows.add(_buildExerciseRow('0', '0'));
+      _rows.add(_buildExerciseRow('', ''));
       _counter++;
     });
   }
@@ -331,8 +337,9 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
             if (_rows.isEmpty) {
               Navigator.of(context).pop(false);
             } else {
-              saveRoutineData().then((_){Navigator.of(context).pop(true);});
-              
+              saveRoutineData().then((_) {
+                Navigator.of(context).pop(true);
+              });
             }
           },
           tooltip: '뒤로 가기',
@@ -351,21 +358,22 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> with SingleTicker
                   _showNameInputDialog(context);
                 },
               ),
-            //   IconButton(
-            //     icon: const Icon(
-            //       Icons.save,
-            //       color: Colors.white,
-            //       size: 28,
-            //     ),
-            //     onPressed: () {
-            //       if (_rows.isEmpty) {
-            //   Navigator.of(context).pop(false);
-            // } else {
-            //   saveRoutineData();
-            //   Navigator.of(context).pop(true);
-            // }
-            //     },
-            //   ),
+              IconButton(
+                icon: const Icon(
+                  Icons.save,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  if (_rows.isEmpty) {
+                    Navigator.of(context).pop(false);
+                  } else {
+                    saveRoutineData().then((_) {
+                      Navigator.of(context).pop(true);
+                    });
+                  }
+                },
+              ),
             ],
           )
         ],

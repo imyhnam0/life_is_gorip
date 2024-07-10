@@ -334,14 +334,14 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                               children: [
                                 Text('총 탄수화물: ${totalNutrients['carbs']}  ',
                                     style: TextStyle(
-                                        color: Colors.white, fontSize: 12)),
+                                        color: Colors.white, fontSize: 10)),
                                 Text('총 단백질: ${totalNutrients['protein']}  ',
                                     style: TextStyle(
-                                        color: Colors.white, fontSize: 12)),
+                                        color: Colors.white, fontSize: 10)),
                                 Text(
                                   '총 지방: ${totalNutrients['fat']}',
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 12),
+                                      color: Colors.white, fontSize: 10),
                                 ),
                               ],
                             ),

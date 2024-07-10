@@ -5,8 +5,6 @@ import 'routine.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
 
@@ -29,73 +27,79 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   }
 
   Future<void> deleteCollection(String documentId) async {
-  var db = FirebaseFirestore.instance;
+    var db = FirebaseFirestore.instance;
 
-  // Remove documentId from Bookmark collection
-  try {
-    DocumentSnapshot bookmarkDoc = await db
-    .collection('users')
-        .doc(uid)
-        .collection("Routine")
-        .doc('Bookmark')
-        .get();
+    // Remove documentId from Bookmark collection
+    try {
+      DocumentSnapshot bookmarkDoc = await db
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark')
+          .get();
 
-    if (bookmarkDoc.exists) {
-      List<String> names = List<String>.from(bookmarkDoc['names']);
-      if (names.contains(documentId)) {
-        names.remove(documentId);
-        await db
-            .collection("Routine")
-            .doc('Bookmark')
-            .update({'names': names});
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        if (names.contains(documentId)) {
+          names.remove(documentId);
+          await db
+              .collection('users')
+              .doc(uid)
+              .collection("Routine")
+              .doc('Bookmark')
+              .update({'names': names});
+        }
       }
+    } catch (e) {
+      print('Error removing name: $e');
     }
-  } catch (e) {
-    print('Error removing name: $e');
+
+    // Batch write for deleting documents in Myroutine and Routinename collections
+    try {
+      WriteBatch batch = db.batch();
+
+      // Get all documents in the specified sub-collection under Myroutine
+      var collectionRef = db
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Myroutine')
+          .collection(documentId);
+
+      var snapshots = await collectionRef.get();
+      for (var doc in snapshots.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Get all documents in the Names collection where 'name' is equal to documentId
+      var namesCollectionRef = db
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Routinename')
+          .collection("Names");
+
+      var namesSnapshots =
+          await namesCollectionRef.where('name', isEqualTo: documentId).get();
+      for (var doc in namesSnapshots.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Commit the batch write
+      await batch.commit();
+
+      // Refresh the collection names
+      await myCollectionName();
+    } catch (e) {
+      print('Error deleting collection: $e');
+    }
   }
-
-  // Batch write for deleting documents in Myroutine and Routinename collections
-  try {
-    WriteBatch batch = db.batch();
-
-    // Get all documents in the specified sub-collection under Myroutine
-    var collectionRef = db
-        .collection("Routine")
-        .doc('Myroutine')
-        .collection(documentId);
-
-    var snapshots = await collectionRef.get();
-    for (var doc in snapshots.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Get all documents in the Names collection where 'name' is equal to documentId
-    var namesCollectionRef = db
-        .collection("Routine")
-        .doc('Routinename')
-        .collection("Names");
-
-    var namesSnapshots = await namesCollectionRef.where('name', isEqualTo: documentId).get();
-    for (var doc in namesSnapshots.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Commit the batch write
-    await batch.commit();
-
-    // Refresh the collection names
-    await myCollectionName();
-  } catch (e) {
-    print('Error deleting collection: $e');
-  }
-}
-
 
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -116,8 +120,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> loadStarRow() async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -135,9 +139,10 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
   Future<void> addStarRow(String name) async {
     try {
+      print('하하');
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -147,8 +152,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         if (!names.contains(name)) {
           names.add(name);
           await FirebaseFirestore.instance
-          .collection('users')
-        .doc(uid)
+              .collection('users')
+              .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});
@@ -166,8 +171,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     try {
       WriteBatch batch = FirebaseFirestore.instance.batch();
       CollectionReference collectionRef = FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names');
@@ -192,8 +197,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   Future<void> removeStarRow(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Bookmark')
           .get();
@@ -203,8 +208,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         if (names.contains(name)) {
           names.remove(name);
           await FirebaseFirestore.instance
-          .collection('users')
-        .doc(uid)
+              .collection('users')
+              .doc(uid)
               .collection("Routine")
               .doc('Bookmark')
               .update({'names': names});

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class RoutineChart extends StatefulWidget {
   @override
   State<RoutineChart> createState() => _RoutineChartState();
@@ -26,8 +25,8 @@ class _RoutineChartState extends State<RoutineChart> {
 
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Routinename')
           .collection('Names')
@@ -47,8 +46,8 @@ class _RoutineChartState extends State<RoutineChart> {
 
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -82,153 +81,157 @@ class _RoutineChartState extends State<RoutineChart> {
   }
 
   void _showNamesDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: Colors.blueGrey.shade900,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        title: Text(
-          '이름 목록',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
           ),
-        ),
-        content: FutureBuilder<List<String>>(
-          future: fetchCollectionNames(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator(color: Colors.white));
-            } else if (snapshot.hasError) {
-              return Center(child: Text('오류 발생: ${snapshot.error}', style: TextStyle(color: Colors.white)));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Center(child: Text('데이터가 없습니다.', style: TextStyle(color: Colors.white)));
-            } else {
-              List<String> names = snapshot.data!;
-              return Container(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: names.length,
-                  itemBuilder: (context, index) {
-                    return CheckboxListTile(
-                      checkColor: Colors.black, // 체크 표시 색상
-                      activeColor: Colors.white, // 체크박스 활성화 색상
-                      title: Text(
-                        names[index],
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      value: selectname == names[index],
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            selectname = names[index];
-                          } else {
-                            selectname = null;
-                          }
-                        });
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
-                ),
-              );
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.blueGrey.shade700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+          title: Text(
+            '이름 목록',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
             ),
-            child: Text(
-              '닫기',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
+          ),
+          content: FutureBuilder<List<String>>(
+            future: fetchCollectionNames(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                    child: CircularProgressIndicator(color: Colors.white));
+              } else if (snapshot.hasError) {
+                return Center(
+                    child: Text('오류 발생: ${snapshot.error}',
+                        style: TextStyle(color: Colors.white)));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                    child: Text('데이터가 없습니다.',
+                        style: TextStyle(color: Colors.white)));
+              } else {
+                List<String> names = snapshot.data!;
+                return Container(
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: names.length,
+                    itemBuilder: (context, index) {
+                      return CheckboxListTile(
+                        checkColor: Colors.black, // 체크 표시 색상
+                        activeColor: Colors.white, // 체크박스 활성화 색상
+                        title: Text(
+                          names[index],
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        value: selectname == names[index],
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              selectname = names[index];
+                            } else {
+                              selectname = null;
+                            }
+                          });
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  ),
+                );
+              }
             },
           ),
-        ],
-      );
-    },
-  );
-}
-
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blueGrey.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text(
+                '닫기',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
-  title: Text(
-    '루틴 변화 추세',
-    style: TextStyle(
-      color: Colors.white,
-      fontSize: 24, // 제목 폰트 크기를 키움
-      fontWeight: FontWeight.bold, // 제목 폰트를 굵게 설정
-      fontFamily: 'Oswald', // 원하는 폰트 패밀리 설정
-    ),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.blueGrey.shade900, // 더 어두운 배경색
-  leading: IconButton(
-    icon: Icon(
-      Icons.arrow_back,
-      color: Colors.white,
-      size: 28, // 아이콘 크기를 키움
-    ),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
-  ),
-  actions: [
-    Padding(
-      padding: const EdgeInsets.only(right: 5.0), // 버튼과의 간격 추가
-      child: ElevatedButton.icon(
-        onPressed: () {
-          _showNamesDialog(context);
-        },
-        icon: Icon(
-          Icons.list, // 아이콘 추가
-          color: Colors.white,
-          size: 12,
-        ),
-        label: Text(
-          "루틴이름",
+        title: Text(
+          '루틴 변화 추세',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold, // 버튼 텍스트를 굵게 설정
+            fontSize: 24, // 제목 폰트 크기를 키움
+            fontWeight: FontWeight.bold, // 제목 폰트를 굵게 설정
+            fontFamily: 'Oswald', // 원하는 폰트 패밀리 설정
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueGrey.shade700, // 버튼 배경색
-          foregroundColor: Colors.white, // 버튼 텍스트 색상
-          shadowColor: Colors.black, // 그림자 색상
-          elevation: 5, // 그림자 크기
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // 둥근 모서리
+        centerTitle: true,
+        backgroundColor: Colors.blueGrey.shade900, // 더 어두운 배경색
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28, // 아이콘 크기를 키움
           ),
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12), // 버튼 패딩
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 5.0), // 버튼과의 간격 추가
+            child: ElevatedButton.icon(
+              onPressed: () {
+                _showNamesDialog(context);
+              },
+              icon: Icon(
+                Icons.list, // 아이콘 추가
+                color: Colors.white,
+                size: 12,
+              ),
+              label: Text(
+                "루틴이름",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold, // 버튼 텍스트를 굵게 설정
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey.shade700, // 버튼 배경색
+                foregroundColor: Colors.white, // 버튼 텍스트 색상
+                shadowColor: Colors.black, // 그림자 색상
+                elevation: 5, // 그림자 크기
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero, // 둥근 모서리
+                ),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 12), // 버튼 패딩
+              ),
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
-
       body: FutureBuilder<Map<String, Map<String, int>>>(
         future: _RoutineChartGet(),
         builder: (context, snapshot) {
@@ -261,7 +264,8 @@ class _RoutineChartState extends State<RoutineChart> {
     List<String> xLabels = data.keys
         .map((date) => dateFormat.format(DateTime.parse(date)))
         .toList();
-    List<double> yValues = data.values.map((volume) => volume.toDouble()).toList();
+    List<double> yValues =
+        data.values.map((volume) => volume.toDouble()).toList();
 
     double minY = yValues.reduce((a, b) => a < b ? a : b);
     double maxY = yValues.reduce((a, b) => a > b ? a : b);

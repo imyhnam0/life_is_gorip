@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class CalenderPage extends StatefulWidget {
   const CalenderPage({super.key});
 
@@ -30,8 +29,8 @@ class _CalenderPageState extends State<CalenderPage> {
 
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -64,8 +63,8 @@ class _CalenderPageState extends State<CalenderPage> {
 
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('food')
           .collection('todayfood')
@@ -86,8 +85,8 @@ class _CalenderPageState extends State<CalenderPage> {
     String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -185,10 +184,7 @@ class _CalenderPageState extends State<CalenderPage> {
       appBar: AppBar(
         title: Text(
           "운동일지",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade700,

@@ -6,8 +6,7 @@ import 'package:intl/intl.dart';
 import 'main.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
-
-
+import 'create_routine.dart';
 
 class PlayMyRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -26,7 +25,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   int sumweight = 0;
   int _seconds = 0;
   late Timer _timer;
-  String ?uid;
+  String? uid;
 
   @override
   void initState() {
@@ -57,33 +56,69 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  Future<void> saveRoutine(String title, int result, int sumweight, int timerSeconds) async {
+  Future<void> saveRoutine(
+      String title, int result, int sumweight, int timerSeconds) async {
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+    final db = FirebaseFirestore.instance;
+    final batch = db.batch(); // Batch 쓰기 시작
+
     try {
-      final db = FirebaseFirestore.instance;
-      final healthDocRef = db.collection('users')
-        .doc(uid).collection('Calender').doc('health');
-      final existingDocsSnapshot = await healthDocRef.collection('routines').get();
+      final healthDocRef =
+          db.collection('users').doc(uid).collection('Calender').doc('health');
+      final existingDocsSnapshot =
+          await healthDocRef.collection('routines').get();
       final newDocNumber = existingDocsSnapshot.size + 1;
 
-      await healthDocRef.collection('routines').doc(newDocNumber.toString()).set({
+      final routineDocRef =
+          healthDocRef.collection('routines').doc(newDocNumber.toString());
+
+      batch.set(routineDocRef, {
         '오늘 한 루틴이름': title,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
         '오늘 총 시간': _formatTime(timerSeconds),
         '날짜': formattedDate,
       });
+
+      await batch.commit(); // Batch 쓰기 커밋
     } catch (e) {
       print('Error adding document: $e');
+    }
+  }
+
+  Future<void> saveRoutineName() async {
+    final db = FirebaseFirestore.instance;
+    final batch = db.batch(); // Batch 쓰기 시작
+
+    if (nameController.text.isNotEmpty) {
+      try {
+        int order = collectionNames.length + 1; // 새로운 order 값 설정
+        final routineNameDocRef = db
+            .collection('users')
+            .doc(uid)
+            .collection('Routine')
+            .doc('Routinename')
+            .collection('Names')
+            .doc();
+
+        batch.set(routineNameDocRef, {
+          'name': nameController.text,
+          'order': order,
+        });
+
+        await batch.commit(); // Batch 쓰기 커밋
+      } catch (e) {
+        print('Error adding document: $e');
+      }
     }
   }
 
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.clickroutinename)
@@ -101,8 +136,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   Future<void> totalRoutineReps() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(widget.clickroutinename)
@@ -125,12 +160,18 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
           for (var exercise in exercisesData) {
             int weight = 0;
+            int reps = 0;
             if (exercise['weight'] is int) {
               weight = exercise['weight'];
             } else if (exercise['weight'] is String) {
               weight = int.tryParse(exercise['weight']) ?? 0;
             }
-            totalWeight += weight;
+            if (exercise['reps'] is int) {
+              reps = exercise['reps'];
+            } else if (exercise['reps'] is String) {
+              reps = int.tryParse(exercise['reps']) ?? 0;
+            }
+            totalWeight += weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
           }
         }
       }
@@ -191,7 +232,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => const Homepage()),
+                          MaterialPageRoute(
+                              builder: (context) => const Homepage()),
                           (route) => false,
                         );
                       },
@@ -207,6 +249,31 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           },
           tooltip: '뒤로 가기',
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 28,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateRoutinePage(
+                    myroutinename: _title,
+                    clickroutinename: "",
+                  ),
+                ),
+              ).then((value) {
+                if (value == true) {
+                  myCollectionName();
+                }
+              });
+            },
+            tooltip: '편집',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -241,13 +308,15 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.timer, color: Colors.cyan.shade300, size: 30),
+                        Icon(Icons.timer,
+                            color: Colors.cyan.shade300, size: 30),
                         const SizedBox(width: 8),
                         Text(
-                          '운동 시간: ',
+                          'Exercise time: ',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'Oswald',
                             color: Colors.cyan.shade300,
                             shadows: [
                               Shadow(
@@ -263,6 +332,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'Oswald',
                             color: Colors.cyan,
                           ),
                         ),
@@ -276,9 +346,10 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       Column(
                         children: [
                           Text(
-                            '오늘 총 세트수',
+                            'Sets',
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 25,
+                              fontFamily: 'Oswald',
                               color: Colors.white70,
                             ),
                           ),
@@ -295,9 +366,10 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       Column(
                         children: [
                           Text(
-                            '오늘 총 볼륨',
+                            'Volume',
                             style: const TextStyle(
                               fontSize: 20,
+                              fontFamily: 'Oswald',
                               color: Colors.white70,
                             ),
                           ),
@@ -339,7 +411,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                 itemCount: collectionNames.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15.0, horizontal: 30.0),
                     child: Row(
                       children: [
                         Expanded(
@@ -364,7 +437,11 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                     clickroutinename: collectionNames[index],
                                   ),
                                 ),
-                              );
+                              ).then((value) {
+                                if (value == true) {
+                                  totalRoutineReps();
+                                }
+                              });
                             },
                             child: Text(
                               collectionNames[index],
@@ -414,6 +491,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       ),
                       TextButton(
                         onPressed: () {
+                          saveRoutineName();
                           saveRoutine(
                             _title,
                             result,
@@ -422,7 +500,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                           );
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => const Homepage()),
+                            MaterialPageRoute(
+                                builder: (context) => const Homepage()),
                             (route) => false,
                           );
                         },

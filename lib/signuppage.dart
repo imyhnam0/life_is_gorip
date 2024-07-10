@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'firebase_auth_service.dart';
 import 'loginpage.dart';
 
+
 class SignUpPage extends StatefulWidget {
   @override
   _SignUpPageState createState() => _SignUpPageState();
