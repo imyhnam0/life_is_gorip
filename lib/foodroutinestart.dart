@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class FoodroutinestartPage extends StatefulWidget {
   @override
   _FoodroutinestartPageState createState() => _FoodroutinestartPageState();
@@ -49,6 +48,11 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
     await prefs.remove('currentRoutineTitle');
     await prefs.remove('currentRoutineMeals');
   }
+  Future<void> _saveData() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString('currentRoutineTitle', title ?? '');
+  await prefs.setString('currentRoutineMeals', json.encode(meals));
+}
 
   void _calculateTotalRoutineNutrients() {
     totalCalories = 0;
@@ -131,7 +135,7 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
 
   Future<void> _saveToFirebase() async {
     CollectionReference todayFood = FirebaseFirestore.instance
-    .collection('users')
+        .collection('users')
         .doc(uid)
         .collection('Calender')
         .doc('food')
@@ -156,7 +160,8 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
           backgroundColor: Colors.blueGrey.shade900,
         ),
         body: const Center(
-          child: Text('아직 실행중인 식단이 없습니다.', style: TextStyle(color: Colors.white)),
+          child:
+              Text('아직 실행중인 식단이 없습니다.', style: TextStyle(color: Colors.white)),
         ),
         backgroundColor: Colors.blueGrey.shade900,
       );
@@ -167,24 +172,37 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
         title: Text(title!, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
-    icon: Icon(
-      Icons.arrow_back,
-      color: Colors.white,
-      size: 28, // 아이콘 크기를 키움
-    ),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
-  ),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28, // 아이콘 크기를 키움
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueGrey.shade700, // 스타일 지정
+            ),
+            onPressed: () async {
+              // 비동기 함수 호출을 위한 익명 함수 정의
+              await _clearData();
+              Navigator.pop(context);
+            },
+            child: const Text('종료',
+                style: TextStyle(color: Colors.white)), // 글자색 지정
+          ),
+        ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Text(
-              '루틴 총 칼로리: $totalCalories 총 탄: $totalCarbs 총 단: $totalProtein 총 지: $totalFat',
+              '총 칼로리: $totalCalories 탄: $totalCarbs 단: $totalProtein 지: $totalFat',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -214,7 +232,8 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
                       centerSpaceRadius: 40,
                       sectionsSpace: 0,
                       pieTouchData: PieTouchData(
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                        touchCallback:
+                            (FlTouchEvent event, pieTouchResponse) {},
                       ),
                     ),
                   ),
@@ -235,33 +254,45 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
                         '${meals[index]['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
                         style: TextStyle(color: Colors.white),
                       ),
-                      children: meals[index]['subMeals']
-                          .map<Widget>((subMeal) {
-                        return CheckboxListTile(
-                          title: Text(
-                              '${subMeal['name']} (${subMeal['grams']}g)',
-                              style: TextStyle(color: Colors.white)),
-                          value: meals[index]['checkedMeals'] != null &&
-                              meals[index]['checkedMeals']
-                                  .contains(subMeal['name']),
-                          onChanged: (bool? value) {
-                            setState(() {
-                              if (meals[index]['checkedMeals'] == null) {
-                                meals[index]['checkedMeals'] = [];
-                              }
-                              if (value == true) {
-                                meals[index]['checkedMeals']
-                                    .add(subMeal['name']);
-                              } else {
-                                meals[index]['checkedMeals']
-                                    .remove(subMeal['name']);
-                              }
-                            });
-                          },
-                          activeColor: Colors.cyan,
-                          checkColor: Colors.white,
-                          tileColor: Colors.blueGrey.shade700,
-                        );
+                       
+                      children: meals[index]['subMeals'].map<Widget>((subMeal) {
+                        return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blueGrey.shade700, // 박스의 배경색
+                              border: Border.all(
+                                color: Colors.white, // 테두리 색상을 보라색으로 설정
+                                width: 1, // 테두리 두께
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(5), // 테두리 둥근 정도
+                            ),
+                            child: CheckboxListTile(
+                             
+                              title: Text(
+                                  '${subMeal['name']} (${subMeal['grams']}g)',
+                                  style: TextStyle(color: Colors.white)),
+                              value: meals[index]['checkedMeals'] != null &&
+                                  meals[index]['checkedMeals']
+                                      .contains(subMeal['name']),
+                              onChanged: (bool? value) async{
+                                setState(() {
+                                  if (meals[index]['checkedMeals'] == null) {
+                                    meals[index]['checkedMeals'] = [];
+                                  }
+                                  if (value == true) {
+                                    meals[index]['checkedMeals']
+                                        .add(subMeal['name']);
+                                  } else {
+                                    meals[index]['checkedMeals']
+                                        .remove(subMeal['name']);
+                                  }
+                                });
+                                await _saveData(); 
+                              },
+                              activeColor: Colors.cyan,
+                              checkColor: Colors.white,
+                              tileColor: Colors.blueGrey.shade700,
+                            ));
                       }).toList(),
                     );
                   },

@@ -72,6 +72,7 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
           },
           tooltip: '뒤로 가기',
         ),
+        
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),

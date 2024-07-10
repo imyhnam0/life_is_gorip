@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'foodcreate.dart';
+
 class AddMealPage extends StatefulWidget {
   const AddMealPage({Key? key}) : super(key: key);
 
@@ -19,10 +21,9 @@ class _AddMealPageState extends State<AddMealPage> {
   @override
   void initState() {
     super.initState();
-   uid = Provider.of<UserProvider>(context, listen: false).uid;
-   print('유아이디인데 : $uid');
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+    print('유아이디인데 : $uid');
   }
-  
 
   void _searchFood() async {
     String query = _mealController.text;
@@ -109,10 +110,14 @@ class _AddMealPageState extends State<AddMealPage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  _buildFoodDetailText('Calories', (_selectedFoodData?['calories'] ?? 0) * ratio),
-                  _buildFoodDetailText('Carbs', (_selectedFoodData?['carbs'] ?? 0) * ratio),
-                  _buildFoodDetailText('Protein', (_selectedFoodData?['protein'] ?? 0) * ratio),
-                  _buildFoodDetailText('Fat', (_selectedFoodData?['fat'] ?? 0) * ratio),
+                  _buildFoodDetailText('Calories',
+                      (_selectedFoodData?['calories'] ?? 0) * ratio),
+                  _buildFoodDetailText(
+                      'Carbs', (_selectedFoodData?['carbs'] ?? 0) * ratio),
+                  _buildFoodDetailText(
+                      'Protein', (_selectedFoodData?['protein'] ?? 0) * ratio),
+                  _buildFoodDetailText(
+                      'Fat', (_selectedFoodData?['fat'] ?? 0) * ratio),
                 ],
               );
             },
@@ -166,8 +171,39 @@ class _AddMealPageState extends State<AddMealPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('끼니 추가'),
+        title: const Text('끼니 추가', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.blueGrey.shade700,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기',
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromARGB(255, 65, 102, 106),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FoodCreatePage()),
+              );
+            },
+            child: const Text('음식 추가',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -192,7 +228,7 @@ class _AddMealPageState extends State<AddMealPage> {
             ElevatedButton(
               onPressed: _searchFood,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyan,
+                backgroundColor: const Color.fromARGB(255, 54, 72, 75),
               ),
               child: const Text('검색', style: TextStyle(color: Colors.white)),
             ),
@@ -202,7 +238,8 @@ class _AddMealPageState extends State<AddMealPage> {
                 itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_searchResults[index], style: TextStyle(color: Colors.white)),
+                    title: Text(_searchResults[index],
+                        style: TextStyle(color: Colors.white)),
                     trailing: IconButton(
                       icon: const Icon(Icons.search, color: Colors.cyan),
                       onPressed: () => _showFoodDetails(_searchResults[index]),

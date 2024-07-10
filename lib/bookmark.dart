@@ -22,7 +22,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
-    myCollectionName();
+    
     loadStarRow();
   }
 
@@ -41,8 +41,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
       } else {
         await bookmarkDocRef.set({'names': updatedCollectionNames});
       }
-
-      myCollectionName();
+      loadStarRow();
+      
     } catch (e) {
       print('Error updating Firestore order: $e');
     }
@@ -74,25 +74,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
     }
   }
 
-  void myCollectionName() async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names')
-          .get();
-      List<String> names =
-          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
-
-      setState(() {
-        collectionNames = names;
-      });
-    } catch (e) {
-      print('Error fetching collection names: $e');
-    }
-  }
+  
 
   void loadStarRow() async {
     try {
@@ -124,9 +106,6 @@ class _BookMarkPageState extends State<BookMarkPage> {
     });
   }
 
-  void saveChanges() async {
-    await updateFirestoreOrder(modifiedCollectionNames);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,9 +141,6 @@ class _BookMarkPageState extends State<BookMarkPage> {
               size: 28,
             ),
             onPressed: () async {
-              if (_isChecked) {
-                saveChanges();
-              }
               setState(() {
                 _isChecked = !_isChecked;
               });
@@ -191,7 +167,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
         ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex) {
+          onReorder: (int oldIndex, int newIndex) async{
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
@@ -199,6 +175,8 @@ class _BookMarkPageState extends State<BookMarkPage> {
               final String item = modifiedCollectionNames.removeAt(oldIndex);
               modifiedCollectionNames.insert(newIndex, item);
             });
+             await updateFirestoreOrder(modifiedCollectionNames);
+            
           },
           children: <Widget>[
             for (int index = 0; index < filteredCollectionNames.length; index++)

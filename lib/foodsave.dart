@@ -63,16 +63,20 @@ class _FoodSavePageState extends State<FoodSavePage> {
     _saveData();
   }
 
-  void _removeMeal(int routineIndex, int mealIndex, StateSetter setModalState) {
-    setModalState(() {
-      savedRoutines[routineIndex]['meals'].removeAt(mealIndex);
-      // 끼니 이름 재정렬
-      for (int i = 0; i < savedRoutines[routineIndex]['meals'].length; i++) {
+ void _removeMeal(int routineIndex, int mealIndex, StateSetter setModalState) {
+  setModalState(() {
+    savedRoutines[routineIndex]['meals'].removeAt(mealIndex);
+    // 끼니 이름 재정렬
+    for (int i = 0; i < savedRoutines[routineIndex]['meals'].length; i++) {
+      String currentName = savedRoutines[routineIndex]['meals'][i]['name'];
+      if (currentName.endsWith('번째 끼니')) {
         savedRoutines[routineIndex]['meals'][i]['name'] = '${i + 1}번째 끼니';
       }
-    });
-    _saveData();
-  }
+    }
+  });
+  _saveData();
+}
+
 
   void _removeSubMeal(int routineIndex, int mealIndex, int subMealIndex,
       StateSetter setModalState) {
@@ -99,6 +103,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
             children: [
               TextField(
                 controller: _editController,
+                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: '끼니 이름 입력',
                   labelStyle: TextStyle(color: Colors.white),
@@ -107,7 +112,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
                     borderSide: BorderSide(color: Colors.white),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.cyan),
+                    borderSide: BorderSide(color: Colors.white),
                   ),
                 ),
               ),
@@ -470,26 +475,37 @@ class _FoodSavePageState extends State<FoodSavePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('식단 이름 수정'),
+          title: const Text('식단 이름 수정', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.blueGrey.shade900,
           content: TextField(
             controller: _editController,
+            style: const TextStyle(color: Colors.white),
             decoration: const InputDecoration(
               labelText: '식단 이름 입력',
+              labelStyle: TextStyle(color: Colors.white),
               border: OutlineInputBorder(),
             ),
           ),
           actions: [
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Color.fromARGB(255, 64, 72, 78), // 원하는 배경색으로 변경하세요.
+              ),
               onPressed: () {
                 Navigator.pop(context, _editController.text);
               },
-              child: const Text('수정'),
+              child: const Text('수정', style: TextStyle(color: Colors.white)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Color.fromARGB(255, 64, 72, 78), // 원하는 배경색으로 변경하세요.
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('취소'),
+              child: const Text('취소', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -509,7 +525,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '저장된 식단',
+          '식단 모음 ',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -530,6 +546,17 @@ class _FoodSavePageState extends State<FoodSavePage> {
           },
           tooltip: '뒤로 가기',
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 28,
+            ),
+            onPressed: _addRoutine,
+            tooltip: '추가',
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -543,7 +570,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
               child: Container(
                 height: 80, // 컨테이너의 높이를 100으로 설정
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 60, 94, 61),
+                  color: const Color.fromARGB(255, 55, 78, 81),
                   borderRadius: BorderRadius.circular(12.0),
                   border: Border.all(color: Colors.white),
                 ),

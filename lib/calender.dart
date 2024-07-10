@@ -21,6 +21,37 @@ class _CalenderPageState extends State<CalenderPage> {
   }
 
   DateTime selectedDate = DateTime.now();
+  Future<void> _deleteRoutine(String documentId) async {
+    var db = FirebaseFirestore.instance;
+    try {
+      await db
+          .collection('users')
+          .doc(uid)
+          .collection('Calender')
+          .doc('health')
+          .collection('routines')
+          .doc(documentId)
+          .delete();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
+  }
+
+  Future<void> _deleteFood(String documentId) async {
+    var db = FirebaseFirestore.instance;
+    try {
+      await db
+          .collection('users')
+          .doc(uid)
+          .collection('Calender')
+          .doc('food')
+          .collection('todayfood')
+          .doc(documentId)
+          .delete();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
+  }
 
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
       String routineName) async {
@@ -350,6 +381,10 @@ class _CalenderPageState extends State<CalenderPage> {
                 ]);
               },
             ),
+          ),
+          Divider(
+            color: Colors.grey,
+            thickness: 1,
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
