@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_auth_service.dart';
 import 'signuppage.dart';
 import 'main.dart';
@@ -19,8 +20,8 @@ class _LoginPageState extends State<LoginPage> {
     if (value == null || value.isEmpty) {
       return '이메일을 입력하세요';
     }
-    final RegExp emailRegExp = RegExp(
-        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
+    final RegExp emailRegExp =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
     if (!emailRegExp.hasMatch(value)) {
       return '유효한 이메일 주소를 입력하세요';
     }
@@ -45,6 +46,8 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (uid != null) {
         Provider.of<UserProvider>(context, listen: false).setUid(uid);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('uid', uid);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Homepage()),

@@ -18,13 +18,16 @@ import 'foodsave.dart';
 import 'foodroutinestart.dart';
 import 'loginpage.dart';
 import 'user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase_auth_service.dart';
+import 'friendship.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-   runApp(
+  runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
@@ -41,7 +44,48 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? uid = prefs.getString('uid');
+
+    if (uid != null) {
+      Provider.of<UserProvider>(context, listen: false).setUid(uid);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Homepage()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blueGrey.shade900,
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
@@ -57,14 +101,28 @@ class _HomepageState extends State<Homepage> {
   DateTime selectedDate = DateTime.now();
   List<String> collectionNames = [];
   String? uid;
+  List<Map<String, String>> friends = [];
 
   @override
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     _fetchSevenDayAgoData();
+    _loadFriends();
   }
-  
+
+  Future<void> _loadFriends() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? storedFriends = prefs.getStringList('friends');
+    if (storedFriends != null) {
+      setState(() {
+        friends = storedFriends.map((friend) {
+          var parts = friend.split('|');
+          return {'name': parts[0], 'uid': parts[1]};
+        }).toList();
+      });
+    }
+  }
 
   Future<void> _fetchSevenDayAgoData() async {
     List<String> names = [];
@@ -81,6 +139,16 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('uid');
+    await AuthService().logout();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
+  }
+
   Future<List<String>> _fetchDayAgoData(int daysAgo) async {
     var db = FirebaseFirestore.instance;
     String targetDate = DateFormat('yyyy-MM-dd')
@@ -88,8 +156,8 @@ class _HomepageState extends State<Homepage> {
 
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -112,8 +180,8 @@ class _HomepageState extends State<Homepage> {
 
     try {
       QuerySnapshot snapshot = await db
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Calender')
           .doc('health')
           .collection('routines')
@@ -167,29 +235,31 @@ class _HomepageState extends State<Homepage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ElevatedButton.icon(
+                IconButton(
+                  icon: Icon(
+                    Icons.star,
+                    color: Colors.yellow,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => BookMarkPage()),
                     );
                   },
+                ),
+                IconButton(
                   icon: Icon(
-                    Icons.star,
-                    color: Colors.yellow,
+                    Icons.person,
+                    color: Colors.blue,
                   ),
-                  label: Text(
-                    'Favorite',
-                    style: TextStyle(color: Colors.white,fontFamily: 'Pacifico',),
-                    
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey.shade700,
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ), // 버튼 배경색 설정
-                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              FriendshipPage(onFriendAdded: _loadFriends)),
+                    );
+                  },
                 ),
               ],
             ),
@@ -249,78 +319,32 @@ class _HomepageState extends State<Homepage> {
                               ),
                             ),
                           ),
-                          Expanded(
-                            child: FutureBuilder<List<Map<String, dynamic>>>(
-                              future: _fetchRoutineData(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Center(
-                                      child: CircularProgressIndicator());
-                                }
-                                if (snapshot.hasError) {
-                                  return Center(
-                                      child: Text('오류 발생: ${snapshot.error}'));
-                                }
-                                if (!snapshot.hasData ||
-                                    snapshot.data!.isEmpty) {
-                                  return Center(
-                                    child: Text(
-                                      '데이터가 없습니다.',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  );
-                                }
+                          SizedBox(height: 20),
 
-                                var data = snapshot.data!;
-                                return ListView.builder(
-                                  itemCount: data.length,
-                                  itemBuilder: (context, index) {
-                                    var routine = data[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20.0, vertical: 2.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[950],
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
-                                          border:
-                                              Border.all(color: Colors.white),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              'Routine: ${routine['오늘 한 루틴이름']}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            SizedBox(height: 4.0),
-                                            Text(
-                                              '운동 세트수: ${routine['오늘 총 세트수']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            Text(
-                                              '운동 볼륨: ${routine['오늘 총 볼륨']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            Text(
-                                              '운동 시간: ${routine['오늘 총 시간']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: friends.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // 버튼 클릭 시 수행할 작업을 여기에 작성
+                                    },
+                                    child: Text(friends[index]['name']!, style: TextStyle(color: Color.fromARGB(255, 188, 181, 181)),),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 10.0), // 패딩 사이즈 줄임
+                                      textStyle:
+                                          TextStyle(fontSize: 18), // 텍스트 사이즈 줄임
+                                      backgroundColor:
+                                          Color.fromARGB(255, 81, 103, 113), // 배경색상 지정
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            8.0), // 버튼 모서리 둥글게
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  ),
                                 );
                               },
                             ),
@@ -455,89 +479,90 @@ class _HomepageState extends State<Homepage> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.blueGrey.shade800,
-        child: Row(
-  mainAxisAlignment: MainAxisAlignment.spaceAround,
-  children: [
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SaveRoutinePage()),
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.work, color: Colors.white),
-          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
-          Text(
-            '루틴',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ],
-      ),
-    ),
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CalenderPage()),
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.event_available, color: Colors.white),
-          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
-          Text(
-            '일지',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ],
-      ),
-    ),
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FoodroutinestartPage()),
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.directions_run, color: Colors.white),
-          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
-          Text(
-            '진행중',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ],
-      ),
-    ),
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FoodSavePage()),
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lunch_dining, color: Colors.white),
-          SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
-          Text(
-            '식단',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ],
-      ),
-    ),
-  ],
-)
-      ),
+          color: Colors.blueGrey.shade800,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SaveRoutinePage()),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.work, color: Colors.white),
+                    SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+                    Text(
+                      '루틴',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CalenderPage()),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.event_available, color: Colors.white),
+                    SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+                    Text(
+                      '일지',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => FoodroutinestartPage()),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.directions_run, color: Colors.white),
+                    SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+                    Text(
+                      '진행중',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FoodSavePage()),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lunch_dining, color: Colors.white),
+                    SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
+                    Text(
+                      '식단',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )),
     );
   }
 }
