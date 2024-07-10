@@ -101,27 +101,74 @@ class _HomepageState extends State<Homepage> {
   DateTime selectedDate = DateTime.now();
   List<String> collectionNames = [];
   String? uid;
-  List<Map<String, String>> friends = [];
+  String weight = '0';
+  String muscleMass = '0';
+  String bodyFat = '0';
 
   @override
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     _fetchSevenDayAgoData();
-    _loadFriends();
+    loadMe();
   }
 
-  Future<void> _loadFriends() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? storedFriends = prefs.getStringList('friends');
-    if (storedFriends != null) {
-      setState(() {
-        friends = storedFriends.map((friend) {
-          var parts = friend.split('|');
-          return {'name': parts[0], 'uid': parts[1]};
-        }).toList();
-      });
-    }
+  Future<void> loadMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      weight = prefs.getString('weight') ?? '0';
+      muscleMass = prefs.getString('muscleMass') ?? '0';
+      bodyFat = prefs.getString('bodyFat') ?? '0';
+    });
+  }
+
+  Future<void> saveMe(String weight, String muscleMass, String bodyFat) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('weight', weight);
+    await prefs.setString('muscleMass', muscleMass);
+    await prefs.setString('bodyFat', bodyFat);
+    loadMe();
+  }
+
+  void showMeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        TextEditingController weightController =
+            TextEditingController(text: weight);
+        TextEditingController muscleMassController =
+            TextEditingController(text: muscleMass);
+        TextEditingController bodyFatController =
+            TextEditingController(text: bodyFat);
+        return AlertDialog(
+          title: Text('Edit Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: weightController,
+                  decoration: InputDecoration(labelText: 'Weight')),
+              TextField(
+                  controller: muscleMassController,
+                  decoration: InputDecoration(labelText: 'Muscle Mass')),
+              TextField(
+                  controller: bodyFatController,
+                  decoration: InputDecoration(labelText: 'Body Fat')),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Save'),
+              onPressed: () {
+                saveMe(weightController.text, muscleMassController.text,
+                    bodyFatController.text);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _fetchSevenDayAgoData() async {
@@ -254,11 +301,10 @@ class _HomepageState extends State<Homepage> {
                   ),
                   onPressed: () {
                     Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              FriendshipPage(onFriendAdded: _loadFriends)),
-                    );
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FriendshipPage(),
+                        ));
                   },
                 ),
               ],
@@ -267,8 +313,10 @@ class _HomepageState extends State<Homepage> {
         ],
       ),
       body: Container(
+        padding: const EdgeInsets.all(3.0),
         decoration: BoxDecoration(
           color: Colors.blueGrey.shade900,
+          
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.5),
@@ -285,75 +333,124 @@ class _HomepageState extends State<Homepage> {
         child: Column(
           children: [
             Flexible(
-              flex: 3, // 상단 영역
-              child: Container(
-                child: Row(children: [
-                  Image.asset(
-                    'assets/dumbbell.png',
-                    width: 140,
-                  ),
-                  Expanded(
-                    // 추가된 부분: 컨테이너를 가로로 확장
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0), // 가로 여백을 조정
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // 오늘 날짜를 항상 표시하는 Container
-                          Padding(
-                            padding: const EdgeInsets.all(0.0),
-                            child: Align(
-                              alignment: Alignment(-0.2, 0.0),
-                              child: Container(
-                                padding: const EdgeInsets.all(8.0),
-                                color: Colors.grey[800],
-                                child: Text(
-                                  'Today date: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontFamily: 'Oswald',
+              flex: 3,
+              child: Padding(
+                // 추가된 Padding 위젯
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                // 상단 영역
+                child: Container(
+                  child: Row(children: [
+                    Image.asset(
+                      'assets/dumbbell.png',
+                      width: 140,
+                    ),
+                    SizedBox(width: 20), // 이미지와 텍스트 사이의 간격
+                    Expanded(
+                      
+                      // 추가된 부분: 컨테이너를 가로로 확장
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16.0), // 가로 여백을 조정
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // 오늘 날짜를 항상 표시하는 Container
+                            Padding(
+                              padding: const EdgeInsets.all(0.0),
+                              
+                              child: Align(
+                                alignment: Alignment(-0.2, 0.0),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(color: Color.fromARGB(255, 60, 72, 77),borderRadius: BorderRadius.circular(10),),
+                                  
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Today date: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontFamily: 'Oswald',
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: Icon(Icons.edit,
+                                                color: Colors.white),
+                                            onPressed: () {
+                                              showMeDialog();
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '몸무게(Kg): ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white),
+                                            ),
+                                            TextSpan(
+                                              text: '$weight',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '골격근량(Kg): ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white),
+                                            ),
+                                            TextSpan(
+                                              text: '$muscleMass',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '체지방률(%): ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white),
+                                            ),
+                                            TextSpan(
+                                              text: '$bodyFat',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: 20),
-
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: friends.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // 버튼 클릭 시 수행할 작업을 여기에 작성
-                                    },
-                                    child: Text(friends[index]['name']!, style: TextStyle(color: Color.fromARGB(255, 188, 181, 181)),),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 10.0), // 패딩 사이즈 줄임
-                                      textStyle:
-                                          TextStyle(fontSize: 18), // 텍스트 사이즈 줄임
-                                      backgroundColor:
-                                          Color.fromARGB(255, 81, 103, 113), // 배경색상 지정
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            8.0), // 버튼 모서리 둥글게
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                            SizedBox(height: 20),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ]), // 상단 영역 배경 색상 설정
+                  ]), // 상단 영역 배경 색상 설정
+                ),
               ),
             ),
             Flexible(

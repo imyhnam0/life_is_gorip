@@ -4,9 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FriendshipPage extends StatefulWidget {
-  final VoidCallback onFriendAdded;
-
-  const FriendshipPage({Key? key, required this.onFriendAdded}) : super(key: key);
+ 
+  const FriendshipPage({Key? key}) : super(key: key);
 
   @override
   State<FriendshipPage> createState() => _FriendshipPageState();
@@ -187,7 +186,7 @@ class _FriendshipPageState extends State<FriendshipPage> {
         });
 
         print('Friend Name: $name, Friend UID: $friendUid');
-        widget.onFriendAdded();
+    
       } else {
         print('사용자를 찾을 수 없습니다.');
       }
