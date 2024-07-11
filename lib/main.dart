@@ -148,45 +148,116 @@ class _HomepageState extends State<Homepage> {
   });
 }
 
-  void showMeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        TextEditingController weightController =
-            TextEditingController(text: weight);
-        TextEditingController muscleMassController =
-            TextEditingController(text: muscleMass);
-        TextEditingController bodyFatController =
-            TextEditingController(text: bodyFat);
-        return AlertDialog(
-          title: Text('Edit Data'),
-          content: Column(
+ void showMeDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      TextEditingController weightController =
+          TextEditingController(text: weight);
+      TextEditingController muscleMassController =
+          TextEditingController(text: muscleMass);
+      TextEditingController bodyFatController =
+          TextEditingController(text: bodyFat);
+      return AlertDialog(
+        backgroundColor: Colors.blueGrey.shade900,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Text(
+          'Edit Data',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Oswald',
+            fontSize: 24,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                  controller: weightController,
-                  decoration: InputDecoration(labelText: 'Weight')),
+                controller: weightController,
+                decoration: InputDecoration(
+                  labelText: '몸무게',
+                  labelStyle: TextStyle(color: Colors.white),
+                  hintText: '몸무게를 입력하세요',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.cyan),
+                  ),
+                ),
+                style: TextStyle(color: Colors.white),
+                cursorColor: Colors.cyan,
+              ),
+              SizedBox(height: 16),
               TextField(
-                  controller: muscleMassController,
-                  decoration: InputDecoration(labelText: 'Muscle Mass')),
+                controller: muscleMassController,
+                decoration: InputDecoration(
+                  labelText: '골격근량',
+                  labelStyle: TextStyle(color: Colors.white),
+                  hintText: '골격근량을 입력하세요',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.cyan),
+                  ),
+                ),
+                style: TextStyle(color: Colors.white),
+                cursorColor: Colors.cyan,
+              ),
+              SizedBox(height: 16),
               TextField(
-                  controller: bodyFatController,
-                  decoration: InputDecoration(labelText: 'Body Fat')),
+                controller: bodyFatController,
+                decoration: InputDecoration(
+                  labelText: '체지방률',
+                  labelStyle: TextStyle(color: Colors.white),
+                  hintText: '체지방률을 입력하세요',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.cyan),
+                  ),
+                ),
+                style: TextStyle(color: Colors.white),
+                cursorColor: Colors.cyan,
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              child: Text('Save'),
-              onPressed: () {
-                saveMe(weightController.text, muscleMassController.text, bodyFatController.text);
-              Navigator.of(context).pop();
-              },
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.blueGrey.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
             ),
-          ],
-        );
-      },
-    );
-  }
+            child: Text(
+              'Save',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () {
+              saveMe(weightController.text, muscleMassController.text, bodyFatController.text);
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   Future<void> _fetchSevenDayAgoData() async {
     List<String> names = [];

@@ -30,6 +30,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   Timer? _timer;
   int _remainingTime = 0;
   String? uid;
+  bool _isCountdownActive = false;
 
   void _startTimer() {
     if (_timer != null) {
@@ -37,14 +38,21 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     }
     setState(() {
       _remainingTime = _minutes * 60 + _seconds;
+      _isCountdownActive = false;
     });
 
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingTime > 0) {
         setState(() {
           _remainingTime--;
+          if (_remainingTime <= 10) {
+            _isCountdownActive = true;
+          }
         });
       } else {
+        setState(() {
+        _isCountdownActive = false;
+      });
         timer.cancel();
       }
     });
@@ -75,6 +83,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     _timer?.cancel();
     setState(() {
       _remainingTime = 0;
+      _isCountdownActive = false;
     });
   }
 
@@ -161,7 +170,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
             .doc(_title)
             .set(routine);
       } catch (e) {
-        print('Error adding document: $e');
+        print('Error saving routine data: $e');
       }
     }
   }
@@ -189,201 +198,222 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
           },
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Flexible(
-            flex: 3,
-            child: SingleChildScrollView(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade600,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 7,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Colors.blueGrey.shade500,
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          text: 'Time: ',
-                          style: TextStyle(
-                              fontSize: 25,
-                              fontFamily: 'Oswald',
-                              color: Colors.black), // 기본 텍스트 스타일
-                          children: <TextSpan>[
-                            TextSpan(
-                                text: '$_remainingTime',
-                                style: TextStyle(
-                                    color: Colors.white)), // 빨간색으로 강조할 부분
-                            TextSpan(text: ' Seconds'),
-                          ],
+          Column(
+            children: [
+              Flexible(
+                flex: 3,
+                child: SingleChildScrollView(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade600,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 7,
+                          offset: Offset(0, 3),
                         ),
+                      ],
+                      border: Border.all(
+                        color: Colors.blueGrey.shade500,
+                        width: 2,
                       ),
-                      SizedBox(height: 10),
-                      Row(
+                    ),
+                    child: Center(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ElevatedButton(
-                            onPressed: _cancelTimer,
-                            child: Text(
-                              '취소',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey,
+                          Text.rich(
+                            TextSpan(
+                              text: 'Time: ',
+                              style: TextStyle(
+                                  fontSize: 25,
+                                  fontFamily: 'Oswald',
+                                  color: Colors.black), // 기본 텍스트 스타일
+                              children: <TextSpan>[
+                                TextSpan(
+                                    text: '$_remainingTime',
+                                    style: TextStyle(
+                                        color: Colors.white)), // 강조할 부분
+                                TextSpan(text: ' Seconds'),
+                              ],
                             ),
                           ),
-                          SizedBox(width: 10),
-                          Column(
+                          SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Minute', style: TextStyle(fontSize: 20,    fontFamily: 'Oswald',)),
-                              Container(
-                                height: 150,
-                                width: 100,
-                                child: CupertinoPicker(
-                                  itemExtent: 32.0,
-                                  onSelectedItemChanged: (int index) {
-                                    setState(() {
-                                      _minutes = index;
-                                    });
-                                  },
-                                  children:
-                                      List<Widget>.generate(60, (int index) {
-                                    return Center(
-                                      child: Text(
-                                          '${index.toString().padLeft(2, '0')}'),
-                                    );
-                                  }),
+                              ElevatedButton(
+                                onPressed: _cancelTimer,
+                                child: Text(
+                                  '취소',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Column(
+                                children: [
+                                  Text('Minute',
+                                      style: TextStyle(fontSize: 20, fontFamily: 'Oswald',)),
+                                  Container(
+                                    height: 150,
+                                    width: 100,
+                                    child: CupertinoPicker(
+                                      itemExtent: 32.0,
+                                      onSelectedItemChanged: (int index) {
+                                        setState(() {
+                                          _minutes = index;
+                                        });
+                                      },
+                                      children: List<Widget>.generate(
+                                          60, (int index) {
+                                        return Center(
+                                          child: Text(
+                                              '${index.toString().padLeft(2, '0')}'),
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(':', style: TextStyle(fontSize: 20)),
+                              Column(
+                                children: [
+                                  Text('Seconds',
+                                      style: TextStyle(fontSize: 20, fontFamily: 'Oswald',)),
+                                  Container(
+                                    height: 150,
+                                    width: 100,
+                                    child: CupertinoPicker(
+                                      itemExtent: 32.0,
+                                      onSelectedItemChanged: (int index) {
+                                        setState(() {
+                                          _seconds = index;
+                                        });
+                                      },
+                                      children: List<Widget>.generate(
+                                          60, (int index) {
+                                        return Center(
+                                          child: Text(
+                                              '${index.toString().padLeft(2, '0')}'),
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(width: 10),
+                              ElevatedButton(
+                                onPressed: _startTimer,
+                                child: Text(
+                                  '시작',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
                                 ),
                               ),
                             ],
-                          ),
-                          Text(':', style: TextStyle(fontSize: 20)),
-                          Column(
-                            children: [
-                              Text('Seconds', style: TextStyle(fontSize: 20,    fontFamily: 'Oswald',)),
-                              Container(
-                                height: 150,
-                                width: 100,
-                                child: CupertinoPicker(
-                                  itemExtent: 32.0,
-                                  onSelectedItemChanged: (int index) {
-                                    setState(() {
-                                      _seconds = index;
-                                    });
-                                  },
-                                  children:
-                                      List<Widget>.generate(60, (int index) {
-                                    return Center(
-                                      child: Text(
-                                          '${index.toString().padLeft(2, '0')}'),
-                                    );
-                                  }),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: _startTimer,
-                            child: Text(
-                              '시작',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                            ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                  ),
+                ),
+              ),
+              Flexible(
+                flex: 7,
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.shade900,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 7,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.blueGrey.shade700,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          ..._rows,
+                          SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                                width: 140,
+                                height: 60,
+                                child: FloatingActionButton.extended(
+                                  onPressed: _addTextFields,
+                                  icon: Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                  ),
+                                  label: Text(
+                                    "세트추가",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  backgroundColor: Colors.blueGrey.shade900,
+                                ),
+                              ),
+                              Container(
+                                margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                                width: 140,
+                                height: 60,
+                                child: FloatingActionButton.extended(
+                                  onPressed: _deleteLastRow,
+                                  icon: Icon(
+                                    Icons.remove,
+                                    color: Colors.yellow,
+                                  ),
+                                  label: Text(
+                                    "세트삭제",
+                                    style: TextStyle(color: Colors.yellow),
+                                  ),
+                                  backgroundColor: Colors.blueGrey.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (_isCountdownActive)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Text(
+                    '$_remainingTime',
+                    style: TextStyle(
+                      fontSize: 100,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Flexible(
-            flex: 7,
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey.shade900,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 7,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Colors.blueGrey.shade700,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      ..._rows,
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                            width: 140,
-                            height: 60,
-                            child: FloatingActionButton.extended(
-                              onPressed: _addTextFields,
-                              icon: Icon(
-                                Icons.add,
-                                color: Colors.white,
-                              ),
-                              label: Text(
-                                "세트추가",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.blueGrey.shade900,
-                            ),
-                          ),
-                          Container(
-                            margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
-                            width: 140,
-                            height: 60,
-                            child: FloatingActionButton.extended(
-                              onPressed: _deleteLastRow,
-                              icon: Icon(
-                                Icons.remove,
-                                color: Colors.yellow,
-                              ),
-                              label: Text(
-                                "세트삭제",
-                                style: TextStyle(color: Colors.yellow),
-                              ),
-                              backgroundColor: Colors.blueGrey.shade900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

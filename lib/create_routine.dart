@@ -173,6 +173,16 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
             actions: [
               TextButton(
                 child: Text(
+                  '취소',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // 대화상자 닫기
+                },
+              ),
+              TextButton(
+                child: Text(
                   '확인',
                   style: TextStyle(color: Colors.white),
                 ),

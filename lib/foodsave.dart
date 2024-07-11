@@ -63,20 +63,19 @@ class _FoodSavePageState extends State<FoodSavePage> {
     _saveData();
   }
 
- void _removeMeal(int routineIndex, int mealIndex, StateSetter setModalState) {
-  setModalState(() {
-    savedRoutines[routineIndex]['meals'].removeAt(mealIndex);
-    // 끼니 이름 재정렬
-    for (int i = 0; i < savedRoutines[routineIndex]['meals'].length; i++) {
-      String currentName = savedRoutines[routineIndex]['meals'][i]['name'];
-      if (currentName.endsWith('번째 끼니')) {
-        savedRoutines[routineIndex]['meals'][i]['name'] = '${i + 1}번째 끼니';
+  void _removeMeal(int routineIndex, int mealIndex, StateSetter setModalState) {
+    setModalState(() {
+      savedRoutines[routineIndex]['meals'].removeAt(mealIndex);
+      // 끼니 이름 재정렬
+      for (int i = 0; i < savedRoutines[routineIndex]['meals'].length; i++) {
+        String currentName = savedRoutines[routineIndex]['meals'][i]['name'];
+        if (currentName.endsWith('번째 끼니')) {
+          savedRoutines[routineIndex]['meals'][i]['name'] = '${i + 1}번째 끼니';
+        }
       }
-    }
-  });
-  _saveData();
-}
-
+    });
+    _saveData();
+  }
 
   void _removeSubMeal(int routineIndex, int mealIndex, int subMealIndex,
       StateSetter setModalState) {
@@ -92,13 +91,19 @@ class _FoodSavePageState extends State<FoodSavePage> {
     TextEditingController _editController = TextEditingController();
     _editController.text =
         savedRoutines[routineIndex]['meals'][mealIndex]['name'];
-    final result = await showModalBottomSheet(
+    final result = await showDialog(
       context: context,
-      backgroundColor: Colors.blueGrey.shade900,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          title: Text(
+            '끼니 이름 수정',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
@@ -127,14 +132,14 @@ class _FoodSavePageState extends State<FoodSavePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
+                      textStyle: TextStyle(
+                        fontSize: 10, // 글자 크기 설정
+                      ),
+                      minimumSize: Size(10, 40),
+                      padding: EdgeInsets.symmetric(horizontal: 8), // 버튼의 최소 크기 설정
                     ),
                     onPressed: () {
-                      setModalState(() {
-                        savedRoutines[routineIndex]['meals'][mealIndex]
-                            ['name'] = _editController.text;
-                      });
-                      _saveData();
-                      Navigator.pop(context);
+                      Navigator.pop(context, _editController.text);
                     },
                     child: const Text('이름 수정'),
                   ),
@@ -145,6 +150,11 @@ class _FoodSavePageState extends State<FoodSavePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
+                      textStyle: TextStyle(
+                        fontSize: 10, // 글자 크기 설정
+                      ),
+                      minimumSize: Size(10, 40),
+                      padding: EdgeInsets.symmetric(horizontal: 8),
                     ),
                     onPressed: () {
                       Navigator.pop(context);
@@ -160,6 +170,11 @@ class _FoodSavePageState extends State<FoodSavePage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
+                      textStyle: TextStyle(
+                        fontSize: 10, // 글자 크기 설정
+                      ),
+                      minimumSize: Size(10, 40),
+                      padding: EdgeInsets.symmetric(horizontal: 8),
                     ),
                     onPressed: () {
                       Navigator.pop(context);

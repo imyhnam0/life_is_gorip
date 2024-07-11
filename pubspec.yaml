@@ -24,6 +24,7 @@ dependencies:
   flutter_charts: ^0.5.2
   fl_chart: ^0.68.0
   collection: ^1.15.0
+  flutter_launcher_icons: ^0.13.1
 
  
 
@@ -35,6 +36,11 @@ dev_dependencies:
   html: ^0.15.0
   flutter_lints: ^2.0.0
   shared_preferences: ^2.0.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
  
 
 flutter:

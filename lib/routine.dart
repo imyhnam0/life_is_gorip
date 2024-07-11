@@ -4,8 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
 class RoutinePage extends StatefulWidget {
   const RoutinePage({super.key});
 
@@ -13,7 +11,8 @@ class RoutinePage extends StatefulWidget {
   State<RoutinePage> createState() => _RoutinePageState();
 }
 
-class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStateMixin {
+class _RoutinePageState extends State<RoutinePage>
+    with SingleTickerProviderStateMixin {
   TextEditingController nameController = TextEditingController();
   String _title = '';
   List<String> collectionNames = [];
@@ -53,8 +52,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(_title)
@@ -69,8 +68,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> deleteCollection(String collectionPath) async {
     try {
       var collectionRef = FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection("Routine")
           .doc('Myroutine')
           .collection(collectionPath);
@@ -90,8 +89,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
-        .doc(uid)
+          .collection('users')
+          .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
           .collection(_title)
@@ -143,6 +142,16 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
             actions: [
               TextButton(
                 child: Text(
+                  '취소',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // 대화상자 닫기
+                },
+              ),
+              TextButton(
+                child: Text(
                   '확인',
                   style: TextStyle(color: Colors.white),
                 ),
@@ -154,7 +163,9 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                     Navigator.of(context).pop();
                     myCollectionName(); // 이름 설정 후 컬렉션 이름 가져오기
                   } else {
-                    _controller.forward().then((value) => _controller.reverse());
+                    _controller
+                        .forward()
+                        .then((value) => _controller.reverse());
                   }
                 },
               ),
@@ -166,27 +177,26 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
   }
 
   Future<void> saveRoutineName() async {
-  var db = FirebaseFirestore.instance;
+    var db = FirebaseFirestore.instance;
 
-  if (nameController.text.isNotEmpty) {
-    try {
-      int order = collectionNames.length + 1; // 새로운 order 값 설정
-      await db
-      .collection('users')
-        .doc(uid)
-          .collection('Routine')
-          .doc('Routinename')
-          .collection('Names')
-          .add({
-        'name': nameController.text,
-        'order': order,
-      });
-    } catch (e) {
-      print('Error adding document: $e');
+    if (nameController.text.isNotEmpty) {
+      try {
+        int order = collectionNames.length + 1; // 새로운 order 값 설정
+        await db
+            .collection('users')
+            .doc(uid)
+            .collection('Routine')
+            .doc('Routinename')
+            .collection('Names')
+            .add({
+          'name': nameController.text,
+          'order': order,
+        });
+      } catch (e) {
+        print('Error adding document: $e');
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +220,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('생성을 종료하시겠습니까?', style: TextStyle(color: Colors.white)),
+                  title: Text('생성을 종료하시겠습니까?',
+                      style: TextStyle(color: Colors.white)),
                   backgroundColor: Colors.cyan.shade900,
                   actions: <Widget>[
                     TextButton(
@@ -247,17 +258,20 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        title: Text('저장하시겠습니까?', style: TextStyle(color: Colors.white)),
+                        title: Text('저장하시겠습니까?',
+                            style: TextStyle(color: Colors.white)),
                         backgroundColor: Colors.cyan.shade900,
                         actions: <Widget>[
                           TextButton(
-                            child: Text('아니오', style: TextStyle(color: Colors.white)),
+                            child: Text('아니오',
+                                style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               Navigator.of(context).pop(); // 팝업 닫기
                             },
                           ),
                           TextButton(
-                            child: Text('예', style: TextStyle(color: Colors.white)),
+                            child: Text('예',
+                                style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               Navigator.of(context).pop(); // 확인 팝업 닫기
                               saveRoutineName().then((_) {
@@ -266,13 +280,19 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       backgroundColor: Colors.cyan.shade900,
-                                      title: Text('저장되었습니다', style: TextStyle(color: Colors.white)),
+                                      title: Text('저장되었습니다',
+                                          style:
+                                              TextStyle(color: Colors.white)),
                                       actions: <Widget>[
                                         TextButton(
-                                          child: Text('확인', style: TextStyle(color: Colors.white)),
+                                          child: Text('확인',
+                                              style: TextStyle(
+                                                  color: Colors.white)),
                                           onPressed: () {
-                                            Navigator.of(context).pop(); // 저장 완료 팝업 닫기
-                                            Navigator.of(context).pop(true); // 이전 화면으로 이동
+                                            Navigator.of(context)
+                                                .pop(); // 저장 완료 팝업 닫기
+                                            Navigator.of(context)
+                                                .pop(true); // 이전 화면으로 이동
                                           },
                                         ),
                                       ],
@@ -362,7 +382,8 @@ class _RoutinePageState extends State<RoutinePage> with SingleTickerProviderStat
                           children: [
                             Text(
                               collectionNames[index],
-                              style: TextStyle(fontSize: 18.0, color: Colors.white),
+                              style: TextStyle(
+                                  fontSize: 18.0, color: Colors.white),
                             ),
                             IconButton(
                               icon: Icon(

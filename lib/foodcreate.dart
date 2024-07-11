@@ -83,11 +83,11 @@ class _FoodCreatePageState extends State<FoodCreatePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildTextField(_nameController, '음식 이름'),
-            _buildTextField(_gramsController, '그람수', isNumber: true),
-            _buildTextField(_caloriesController, '칼로리', isNumber: true),
-            _buildTextField(_carbsController, '탄수화물', isNumber: true),
-            _buildTextField(_proteinController, '단백질', isNumber: true),
-            _buildTextField(_fatController, '지방', isNumber: true),
+            _buildTextField(_gramsController, '그람수'),
+            _buildTextField(_caloriesController, '칼로리'),
+            _buildTextField(_carbsController, '탄수화물'),
+            _buildTextField(_proteinController, '단백질'),
+            _buildTextField(_fatController, '지방'),
             const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
