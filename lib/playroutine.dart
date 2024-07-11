@@ -26,6 +26,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   int _seconds = 0;
   late Timer _timer;
   String? uid;
+  List<bool> completionStatus = [];
 
   @override
   void initState() {
@@ -127,6 +128,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
       setState(() {
         collectionNames = names;
+        completionStatus = List<bool>.filled(names.length, false);
       });
     } catch (e) {
       print('Error fetching collection names: $e');
@@ -171,7 +173,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
             } else if (exercise['reps'] is String) {
               reps = int.tryParse(exercise['reps']) ?? 0;
             }
-            totalWeight += weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
+            totalWeight +=
+                weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
           }
         }
       }
@@ -438,19 +441,35 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                   ),
                                 ),
                               ).then((value) {
-                                if (value == true) {
+                                if (value == 'not done') {
+                                  totalRoutineReps();
+                                } else {
+                                  setState(() {
+                                    completionStatus[index] = true;
+                                  });
                                   totalRoutineReps();
                                 }
                               });
                             },
-                            child: Text(
-                              collectionNames[index],
-                              style: const TextStyle(
-                                fontSize: 18.0,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Oswald',
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  collectionNames[index],
+                                  style: const TextStyle(
+                                    fontSize: 18.0,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Oswald',
+                                  ),
+                                ),
+                                if (completionStatus[index])
+                                  const Icon(
+                                    Icons.check,
+                                    color: Colors.green,
+                                    size: 28,
+                                  ),
+                              ],
                             ),
                           ),
                         ),

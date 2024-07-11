@@ -20,6 +20,20 @@ class StartRoutineNamePlay extends StatefulWidget {
 
 class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   TextEditingController nameController = TextEditingController();
+  List<bool> _checkedStates = [];
+    void _initializeCheckedStates(int count) {
+    _checkedStates = List<bool>.filled(count, false);
+  }
+   void _handleCheckChanged(int index, bool isChecked) {
+    setState(() {
+      _checkedStates[index] = isChecked;
+    });
+
+    if (_checkedStates.every((checked) => checked)) {
+      saveRoutineData();
+      Navigator.of(context).pop(true);
+    }
+  }
 
   late String _title = widget.clickroutinename;
   List<ExerciseRow> _rows = [];
@@ -66,7 +80,9 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
         repsController: TextEditingController(text: '0'),
         counter: _counter,
         onCheckPressed: _startTimer,
+        onCheckChanged: (isChecked) => _handleCheckChanged(_counter - 1, isChecked),
       ));
+       _initializeCheckedStates(_counter);
     });
   }
 
@@ -75,6 +91,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
       if (_rows.isNotEmpty) {
         _rows.removeLast();
         _counter--;
+         _initializeCheckedStates(_counter);
       }
     });
   }
@@ -99,51 +116,56 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
+    _initializeCheckedStates(_counter);
+     
   }
 
   Future<void> myCollectionName() async {
-    try {
-      print(widget.currentroutinename);
-      print(_title);
-      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(widget.currentroutinename)
-          .doc(_title)
-          .get();
+  try {
+    print(widget.currentroutinename);
+    print(_title);
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .collection(widget.currentroutinename)
+        .doc(_title)
+        .get();
 
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
-        if (data.containsKey('exercises')) {
-          List<Map<String, dynamic>> exercisesData =
-              List<Map<String, dynamic>>.from(data['exercises']
-                  .map((exercise) => {
-                        'reps': exercise['reps'],
-                        'weight': exercise['weight'],
-                      })
-                  .toList());
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+      if (data.containsKey('exercises')) {
+        List<Map<String, dynamic>> exercisesData =
+            List<Map<String, dynamic>>.from(data['exercises']
+                .map((exercise) => {
+                      'reps': exercise['reps'],
+                      'weight': exercise['weight'],
+                    })
+                .toList());
 
-          setState(() {
-            _rows = exercisesData.map((exercise) {
-              _counter++;
-              return ExerciseRow(
-                weightController:
-                    TextEditingController(text: exercise['weight'].toString()),
-                repsController:
-                    TextEditingController(text: exercise['reps'].toString()),
-                counter: _counter,
-                onCheckPressed: _startTimer,
-              );
-            }).toList();
-          });
-        }
+        setState(() {
+          _counter = exercisesData.length;
+          _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
+          _rows = exercisesData.map((exercise) {
+            int currentIndex = exercisesData.indexOf(exercise);
+            return ExerciseRow(
+              weightController:
+                  TextEditingController(text: exercise['weight'].toString()),
+              repsController:
+                  TextEditingController(text: exercise['reps'].toString()),
+              counter: currentIndex + 1,
+              onCheckPressed: _startTimer,
+              onCheckChanged: (isChecked) => _handleCheckChanged(currentIndex, isChecked),
+            );
+          }).toList();
+        });
       }
-    } catch (e) {
-      print('Error fetching document data: $e');
     }
+  } catch (e) {
+    print('Error fetching document data: $e');
   }
+}
 
   Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -194,7 +216,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
           ),
           onPressed: () {
             saveRoutineData();
-            Navigator.of(context).pop(true);
+            Navigator.of(context).pop('not done');
           },
         ),
       ),
@@ -425,12 +447,14 @@ class ExerciseRow extends StatefulWidget {
   final TextEditingController repsController;
   final int counter;
   final VoidCallback onCheckPressed;
+  final ValueChanged<bool> onCheckChanged;
 
   ExerciseRow({
     required this.weightController,
     required this.repsController,
     required this.counter,
     required this.onCheckPressed,
+    required this.onCheckChanged,
   });
 
   @override
@@ -496,6 +520,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
                 _isChecked = !_isChecked;
               });
               widget.onCheckPressed();
+              widget.onCheckChanged(_isChecked); 
             },
           ),
         ],
