@@ -340,7 +340,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                           );
                         },
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             StarRow(
                               name: collectionNames[index],
@@ -356,21 +356,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 color: Colors.white,
                               ),
                             ),
-                            Visibility(
-                              visible: _isDelete,
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 5.0),
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.delete,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    deleteCollection(collectionNames[index]);
-                                  },
-                                ),
-                              ),
-                            ),
+                            Spacer(), 
                             ReorderableDragStartListener(
                               index: index,
                               child: Container(
@@ -383,6 +369,21 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    Visibility(
+                      visible: _isDelete,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5.0),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            deleteCollection(collectionNames[index]);
+                          },
                         ),
                       ),
                     ),

@@ -570,7 +570,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
               child: Container(
                 height: 80, // 컨테이너의 높이를 100으로 설정
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 55, 78, 81),
+                  color: Color.fromARGB(255, 46, 62, 68),
                   borderRadius: BorderRadius.circular(12.0),
                   border: Border.all(color: Colors.white),
                 ),

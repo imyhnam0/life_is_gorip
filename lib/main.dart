@@ -123,12 +123,30 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> saveMe(String weight, String muscleMass, String bodyFat) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('weight', weight);
-    await prefs.setString('muscleMass', muscleMass);
-    await prefs.setString('bodyFat', bodyFat);
-    loadMe();
-  }
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('weight', weight);
+  await prefs.setString('muscleMass', muscleMass);
+  await prefs.setString('bodyFat', bodyFat);
+  loadMe();
+
+  // Firestore에 데이터 저장
+  var db = FirebaseFirestore.instance;
+  String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+  await db
+      .collection('users')
+      .doc(uid)
+      .collection('Calender')
+      .doc('body')
+      .collection('weight')
+      .doc(todayDate) // 오늘 날짜를 문서 ID로 사용
+      .set({
+    'date': todayDate,
+    'weight': weight,
+    'muscleMass': muscleMass,
+    'bodyFat': bodyFat,
+  });
+}
 
   void showMeDialog() {
     showDialog(
@@ -160,9 +178,8 @@ class _HomepageState extends State<Homepage> {
             TextButton(
               child: Text('Save'),
               onPressed: () {
-                saveMe(weightController.text, muscleMassController.text,
-                    bodyFatController.text);
-                Navigator.of(context).pop();
+                saveMe(weightController.text, muscleMassController.text, bodyFatController.text);
+              Navigator.of(context).pop();
               },
             ),
           ],
@@ -316,7 +333,6 @@ class _HomepageState extends State<Homepage> {
         padding: const EdgeInsets.all(3.0),
         decoration: BoxDecoration(
           color: Colors.blueGrey.shade900,
-          
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.5),
@@ -346,7 +362,6 @@ class _HomepageState extends State<Homepage> {
                     ),
                     SizedBox(width: 20), // 이미지와 텍스트 사이의 간격
                     Expanded(
-                      
                       // 추가된 부분: 컨테이너를 가로로 확장
                       child: Padding(
                         padding: const EdgeInsets.only(top: 16.0), // 가로 여백을 조정
@@ -356,13 +371,14 @@ class _HomepageState extends State<Homepage> {
                             // 오늘 날짜를 항상 표시하는 Container
                             Padding(
                               padding: const EdgeInsets.all(0.0),
-                              
                               child: Align(
                                 alignment: Alignment(-0.2, 0.0),
                                 child: Container(
                                   padding: const EdgeInsets.all(8.0),
-                                  decoration: BoxDecoration(color: Color.fromARGB(255, 60, 72, 77),borderRadius: BorderRadius.circular(10),),
-                                  
+                                  decoration: BoxDecoration(
+                                    color: Color.fromARGB(255, 60, 72, 77),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -457,58 +473,86 @@ class _HomepageState extends State<Homepage> {
               flex: 7,
               child: Stack(
                 children: [
-                  Container(
-                    child: ListView.builder(
-                      itemCount: collectionNames.length,
-                      itemBuilder: (context, index) {
-                        String collectionName = collectionNames[index];
-                        List<String> parts = collectionName.split(' - ');
-                        String routineName = parts[0];
-                        String dayInfo = parts[1];
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 16.0),
-                          child: Card(
-                            color: Colors.blueGrey.shade800,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15.0),
-                            ),
-                            child: ListTile(
-                              contentPadding: EdgeInsets.all(16.0),
-                              title: Text(
-                                routineName,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 20.0,
-                                  color: Colors.white,
-                                  fontFamily: 'Oswald',
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                dayInfo,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15.0,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => StartRoutinePage(
-                                      clickroutinename: routineName,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                  Positioned(
+                    // Positioned 위젯을 추가하여 텍스트 위치 지정
+                    top: 0, // 상단에서 0의 위치
+                    left: 0, // 좌측에서 0의 위치
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0), // 적절한 패딩 제공
+                      child: Text(
+                        '7일 동안의 루틴',
+                        style: TextStyle(
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
+                  ),
+                  Container(
+                    child: collectionNames.isEmpty
+                        ? Center(
+                            // 값이 없을 때 중앙에 메시지 표시
+                            child: Text(
+                              '루틴이 없습니다.',
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: collectionNames.length,
+                            itemBuilder: (context, index) {
+                              String collectionName = collectionNames[index];
+                              List<String> parts = collectionName.split(' - ');
+                              String routineName = parts[0];
+                              String dayInfo = parts[1];
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16.0),
+                                child: Card(
+                                  color: Colors.blueGrey.shade800,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.all(16.0),
+                                    title: Text(
+                                      routineName,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 20.0,
+                                        color: Colors.white,
+                                        fontFamily: 'Oswald',
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      dayInfo,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 15.0,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              StartRoutinePage(
+                                            clickroutinename: routineName,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                   Align(
                     alignment: Alignment.bottomRight,
@@ -555,7 +599,7 @@ class _HomepageState extends State<Homepage> {
                           );
                         },
                         icon: Icon(
-                          Icons.food_bank,
+                          Icons.restaurant,
                           color: Colors.white,
                         ),
                         label: Text(
@@ -591,7 +635,7 @@ class _HomepageState extends State<Homepage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.work, color: Colors.white),
+                    Icon(Icons.fitness_center, color: Colors.white),
                     SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
                     Text(
                       '루틴',

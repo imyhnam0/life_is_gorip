@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class FriendshipPage extends StatefulWidget {
  
@@ -112,59 +113,105 @@ class _FriendshipPageState extends State<FriendshipPage> {
   }
 
   Future<void> _showAddFriendDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('친구 추가'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('이름을 입력하세요:'),
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(hintText: "이름"),
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.blueGrey.shade900,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Text(
+          '친구 추가',
+          style: TextStyle(color: Colors.white, fontFamily: 'Oswald', fontSize: 24),
+        ),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text(
+                '이름을 입력하세요:',
+                style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+              ),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: "이름",
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white70),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
-                SizedBox(height: 20),
-                Text('이메일을 입력하세요:'),
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(hintText: "이메일"),
+                style: TextStyle(color: Colors.white),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '이메일을 입력하세요:',
+                style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+              ),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  hintText: "이메일",
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white70),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
-                SizedBox(height: 20),
-                Text('비밀번호를 입력하세요:'),
-                TextField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(hintText: "비밀번호"),
-                  obscureText: true,
+                style: TextStyle(color: Colors.white),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '비밀번호를 입력하세요:',
+                style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+              ),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  hintText: "비밀번호",
+                  hintStyle: TextStyle(color: Colors.white70),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white70),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
-              ],
-            ),
+                obscureText: true,
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('취소'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('확인'),
-              onPressed: () {
-                _addFriendByEmail(
-                  _nameController.text,
-                  _emailController.text,
-                  _passwordController.text,
-                );
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text('취소', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: Text('확인', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+            onPressed: () {
+              _addFriendByEmail(
+                _nameController.text,
+                _emailController.text,
+                _passwordController.text,
+              );
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _addFriendByEmail(String name, String email, String password) async {
     try {
@@ -355,6 +402,111 @@ class _FriendshipPageState extends State<FriendshipPage> {
     },
   );
 }
+void _showFriendCalendar(String friendUid) async {
+  final DateTime? pickedDate = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2000),
+    lastDate: DateTime(2101),
+    builder: (BuildContext context, Widget? child) {
+      return Theme(
+        data: ThemeData.dark().copyWith(
+          colorScheme: ColorScheme.dark(
+            primary: Colors.blueGrey.shade700,
+            onPrimary: Colors.white,
+            surface: Colors.grey,
+            onSurface: Colors.white,
+          ),
+          dialogBackgroundColor: Colors.black,
+        ),
+        child: child!,
+      );
+    },
+  );
+
+  if (pickedDate != null) {
+    _fetchFriendRoutineData(friendUid, pickedDate);
+  }
+}
+
+Future<void> _fetchFriendRoutineData(String friendUid, DateTime date) async {
+  var db = FirebaseFirestore.instance;
+  String selectedDate = DateFormat('yyyy-MM-dd').format(date);
+
+  try {
+    QuerySnapshot snapshot = await db
+        .collection('users')
+        .doc(friendUid)
+        .collection('Calender')
+        .doc('health')
+        .collection('routines')
+        .where('날짜', isEqualTo: selectedDate)
+        .get();
+
+    List<Map<String, dynamic>> friendRoutineData = snapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    // You can show the data in a new dialog or navigate to a new page to display it
+    _showFriendRoutineDataDialog(friendRoutineData);
+  } catch (e) {
+    print('Error fetching friend routine data: $e');
+  }
+}
+
+void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Friend Routine Data', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+        backgroundColor: Colors.blueGrey.shade900,
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: routineData.map((routine) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '루틴 이름: ${routine['오늘 한 루틴이름']}',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                    ),
+                    Text(
+                      '총 세트수: ${routine['오늘 총 세트수']}',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                    ),
+                    Text(
+                      '총 볼륨: ${routine['오늘 총 볼륨']}',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                    ),
+                    Text(
+                      '총 시간: ${routine['오늘 총 시간']}',
+                      style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text('닫기', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
+
 
  void _showFriendOptions(String friendUid) {
   showModalBottomSheet(
@@ -371,6 +523,7 @@ class _FriendshipPageState extends State<FriendshipPage> {
             title: Text('친구 일정', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
             onTap: () {
               Navigator.pop(context);
+                _showFriendCalendar(friendUid);
               // Perform action for 친구 일정
             },
           ),
@@ -382,14 +535,7 @@ class _FriendshipPageState extends State<FriendshipPage> {
               friendroutineName(friendUid);
             },
           ),
-          ListTile(
-            leading: Icon(Icons.restaurant, color: Colors.white),
-            title: Text('친구 식단', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
-            onTap: () {
-              Navigator.pop(context);
-              // Perform action for 친구 식단
-            },
-          ),
+          
         ],
       );
     },

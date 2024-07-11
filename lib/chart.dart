@@ -15,6 +15,8 @@ class _RoutineChartState extends State<RoutineChart> {
   int minVolume = 0;
   String? selectname;
   String? uid;
+  bool isRoutineChart = true; // 현재 보여줄 차트 종류를 결정
+
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
@@ -80,6 +82,34 @@ class _RoutineChartState extends State<RoutineChart> {
     }
   }
 
+  Future<Map<String, double>> _WeightChartGet() async {
+    var db = FirebaseFirestore.instance;
+    Map<String, double> weightData = {};
+
+    try {
+      QuerySnapshot snapshot = await db
+          .collection('users')
+          .doc(uid)
+          .collection('Calender')
+          .doc('body')
+          .collection('weight')
+          .get();
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        double weight = double.parse(data['weight'] ?? '0');
+        String formattedDate = data['date'];
+
+        weightData[formattedDate] = weight;
+      }
+
+      return weightData;
+    } catch (e) {
+      print('Error fetching weight data: $e');
+      return {};
+    }
+  }
+
   void _showNamesDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -120,8 +150,8 @@ class _RoutineChartState extends State<RoutineChart> {
                     itemCount: names.length,
                     itemBuilder: (context, index) {
                       return CheckboxListTile(
-                        checkColor: Colors.black, // 체크 표시 색상
-                        activeColor: Colors.white, // 체크박스 활성화 색상
+                        checkColor: Colors.black,
+                        activeColor: Colors.white,
                         title: Text(
                           names[index],
                           style: TextStyle(color: Colors.white),
@@ -170,92 +200,258 @@ class _RoutineChartState extends State<RoutineChart> {
     );
   }
 
+  void _showChartOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          title: Text(
+            '차트 선택',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          children: [
+            SimpleDialogOption(
+              child: Text(
+                '루틴 변화 추세',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              onPressed: () {
+                setState(() {
+                  isRoutineChart = true;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+            SimpleDialogOption(
+              child: Text(
+                '몸무게 변화 추세',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              onPressed: () {
+                setState(() {
+                  isRoutineChart = false;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
-        title: Text(
-          '루틴 변화 추세',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24, // 제목 폰트 크기를 키움
-            fontWeight: FontWeight.bold, // 제목 폰트를 굵게 설정
-            fontFamily: 'Oswald', // 원하는 폰트 패밀리 설정
+        title: InkWell(
+          onTap: () => _showChartOptions(context),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isRoutineChart ? '루틴 변화 추세' : '몸무게 변화 추세',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Oswald',
+                ),
+              ),
+              Icon(Icons.arrow_drop_down, color: Colors.white),
+            ],
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blueGrey.shade900, // 더 어두운 배경색
+        backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-            size: 28, // 아이콘 크기를 키움
+            size: 28,
           ),
           onPressed: () {
             Navigator.pop(context);
           },
-          tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
+          tooltip: '뒤로 가기',
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5.0), // 버튼과의 간격 추가
-            child: ElevatedButton.icon(
-              onPressed: () {
-                _showNamesDialog(context);
-              },
-              icon: Icon(
-                Icons.list, // 아이콘 추가
-                color: Colors.white,
-                size: 12,
-              ),
-              label: Text(
-                "루틴이름",
-                style: TextStyle(
+          if (isRoutineChart)
+            Padding(
+              padding: const EdgeInsets.only(right: 5.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showNamesDialog(context);
+                },
+                icon: Icon(
+                  Icons.list,
                   color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold, // 버튼 텍스트를 굵게 설정
+                  size: 12,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey.shade700, // 버튼 배경색
-                foregroundColor: Colors.white, // 버튼 텍스트 색상
-                shadowColor: Colors.black, // 그림자 색상
-                elevation: 5, // 그림자 크기
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero, // 둥근 모서리
+                label: Text(
+                  "루틴이름",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                padding:
-                    EdgeInsets.symmetric(horizontal: 20, vertical: 12), // 버튼 패딩
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey.shade700,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.black,
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
               ),
             ),
-          ),
         ],
       ),
-      body: FutureBuilder<Map<String, Map<String, int>>>(
-        future: _RoutineChartGet(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No data available'));
-          }
+      body: isRoutineChart ? _buildRoutineChart() : _buildWeightChart(),
+    );
+  }
 
-          Map<String, Map<String, int>> routineData = snapshot.data!;
+  Widget _buildRoutineChart() {
+    return FutureBuilder<Map<String, Map<String, int>>>(
+      future: _RoutineChartGet(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No data available'));
+        }
 
-          if (selectname != null && routineData.containsKey(selectname)) {
-            return _buildChart(selectname!, routineData[selectname]!);
-          } else {
-            return ListView(
-              children: routineData.entries.map((entry) {
-                return _buildChart(entry.key, entry.value);
-              }).toList(),
-            );
-          }
-        },
-      ),
+        Map<String, Map<String, int>> routineData = snapshot.data!;
+
+        if (selectname != null && routineData.containsKey(selectname)) {
+          return _buildChart(selectname!, routineData[selectname]!);
+        } else {
+          return ListView(
+            children: routineData.entries.map((entry) {
+              return _buildChart(entry.key, entry.value);
+            }).toList(),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildWeightChart() {
+    return FutureBuilder<Map<String, double>>(
+      future: _WeightChartGet(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No data available'));
+        }
+
+        Map<String, double> weightData = snapshot.data!;
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '몸무게 변화 추세',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(
+                height: 200,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            if (value.toInt() < weightData.keys.length) {
+                              return Text(
+                                DateFormat('MM/dd').format(DateTime.parse(weightData.keys.elementAt(value.toInt()))),
+                                style: TextStyle(color: Colors.white),
+                              );
+                            }
+                            return Text('');
+                          },
+                          interval: 1,
+                          reservedSize: 22,
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              '${value.toInt()}',
+                              style: TextStyle(color: Colors.white),
+                            );
+                          },
+                          interval: 1,
+                          reservedSize: 28,
+                        ),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.white, width: 1),
+                        left: BorderSide(color: Colors.white, width: 1),
+                        right: BorderSide.none,
+                        top: BorderSide.none,
+                      ),
+                    ),
+                    minX: 0,
+                    maxX: (weightData.length - 1).toDouble(),
+                    minY: weightData.values.reduce((a, b) => a < b ? a : b),
+                    maxY: weightData.values.reduce((a, b) => a > b ? a : b),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: weightData.entries
+                            .map((e) => FlSpot(weightData.keys.toList().indexOf(e.key).toDouble(), e.value))
+                            .toList(),
+                        isCurved: true,
+                        barWidth: 5,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(show: true),
+                        belowBarData: BarAreaData(show: false),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
