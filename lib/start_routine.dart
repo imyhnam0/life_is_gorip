@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'playroutine.dart';
 import 'create_routine.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
-
-
 
 class StartRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -21,25 +20,31 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
   String? uid;
+  SharedPreferences? prefs;
 
   @override
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
 
-    myCollectionName();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    prefs = await SharedPreferences.getInstance();
+    await myCollectionName();
   }
 
   Future<void> deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
-      .collection('users')
+        .collection('users')
         .doc(uid)
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(widget.clickroutinename)
-          .doc(documentId)
-          .delete();
+        .collection("Routine")
+        .doc('Myroutine')
+        .collection(widget.clickroutinename)
+        .doc(documentId)
+        .delete();
       await myCollectionName();
     } catch (e) {
       print('Error deleting document: $e');
@@ -49,20 +54,32 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   Future<void> myCollectionName() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      .collection('users')
+        .collection('users')
         .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(widget.clickroutinename)
-          .get();
+        .collection('Routine')
+        .doc('Myroutine')
+        .collection(widget.clickroutinename)
+        .get();
       List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
 
-      setState(() {
-        collectionNames = names;
-      });
+      List<String>? savedOrder = prefs?.getStringList('order_${widget.clickroutinename}');
+      if (savedOrder != null && savedOrder.length == names.length) {
+        setState(() {
+          collectionNames = savedOrder;
+        });
+      } else {
+        setState(() {
+          collectionNames = names;
+        });
+        await prefs?.setStringList('order_${widget.clickroutinename}', names);
+      }
     } catch (e) {
       print('Error fetching collection names: $e');
     }
+  }
+
+  Future<void> _updatePreferences() async {
+    await prefs?.setStringList('order_${widget.clickroutinename}', collectionNames);
   }
 
   void _showNameInputDialog(BuildContext context) {
@@ -124,12 +141,12 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
 
     try {
       await db
-      .collection('users')
+        .collection('users')
         .doc(uid)
-          .collection('Routine')
-          .doc('Routinename')
-          .collection('Names')
-          .add({'name': nameController.text});
+        .collection('Routine')
+        .doc('Routinename')
+        .collection('Names')
+        .add({'name': nameController.text});
     } catch (e) {
       print('Error adding document: $e');
     }
@@ -194,70 +211,98 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
             width: 2,
           ),
         ),
-        child: ListView.builder(
-          itemCount: collectionNames.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(
+        child: ReorderableListView(
+            
+          
+          onReorder: (oldIndex, newIndex) {
+            if (newIndex > oldIndex) {
+              newIndex -= 1;
+            }
+            setState(() {
+              final item = collectionNames.removeAt(oldIndex);
+              collectionNames.insert(newIndex, item);
+            });
+            _updatePreferences();
+          },
+          children: [
+            for (final name in collectionNames)
+              Padding(
+                key: ValueKey(name),
+                padding: const EdgeInsets.symmetric(
                   vertical: 15.0, horizontal: 30.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.all(30.0),
-                        backgroundColor: Colors.blueGrey.shade800,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                          side: BorderSide(
-                            color: Colors.blueGrey.shade700,
-                            width: 2,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.all(30.0),
+                          backgroundColor: Colors.blueGrey.shade800,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: Colors.blueGrey.shade700,
+                              width: 2,
+                            ),
                           ),
                         ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateRoutinePage(
-                              myroutinename: _title,
-                              clickroutinename: collectionNames[index],
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateRoutinePage(
+                                myroutinename: _title,
+                                clickroutinename: name,
+                              ),
                             ),
-                          ),
-                        ).then((value) {
-                          if (value == true) {
-                            myCollectionName();
+                          ).then((value) {
+                            if (value == true) {
+                              myCollectionName();
+                            }
+                            if (value == false) {
+                              deleteData(name);
+                            }
                           }
-                          if (value == false) {
-                            deleteData(collectionNames[index]);
-                          }
-                        });
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            collectionNames[index],
-                            style: TextStyle(
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(
                                 fontSize: 18.0, color: Colors.white),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.white,
                             ),
-                            onPressed: () {
-                              deleteData(collectionNames[index]);
-                            },
-                          ),
-                        ],
+                            Spacer(),
+                            
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                deleteData(name);
+                              },
+                            ),
+                          
+                            ReorderableDragStartListener(
+                              index: collectionNames.indexOf(name),
+                              child: Container(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Icon(
+                                  Icons.drag_handle,
+                                  size: 30.0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            );
-          },
+          ],
         ),
       ),
       bottomNavigationBar: BottomAppBar(
