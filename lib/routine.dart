@@ -273,33 +273,12 @@ class _RoutinePageState extends State<RoutinePage>
                             child: Text('예',
                                 style: TextStyle(color: Colors.white)),
                             onPressed: () {
-                              Navigator.of(context).pop(); // 확인 팝업 닫기
-                              saveRoutineName().then((_) {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      backgroundColor: Colors.cyan.shade900,
-                                      title: Text('저장되었습니다',
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          child: Text('확인',
-                                              style: TextStyle(
-                                                  color: Colors.white)),
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // 저장 완료 팝업 닫기
-                                            Navigator.of(context)
-                                                .pop(true); // 이전 화면으로 이동
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              });
+                              saveRoutineName();
+                              Navigator.of(context).pop(); 
+                              Navigator.of(context).pop(true);// 확인 팝업 닫기
+                              
+                              
+                              
                             },
                           ),
                         ],

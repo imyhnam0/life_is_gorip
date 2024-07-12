@@ -136,7 +136,8 @@ class _FoodSavePageState extends State<FoodSavePage> {
                         fontSize: 10, // 글자 크기 설정
                       ),
                       minimumSize: Size(10, 40),
-                      padding: EdgeInsets.symmetric(horizontal: 8), // 버튼의 최소 크기 설정
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8), // 버튼의 최소 크기 설정
                     ),
                     onPressed: () {
                       Navigator.pop(context, _editController.text);
@@ -213,10 +214,10 @@ class _FoodSavePageState extends State<FoodSavePage> {
     }
 
     return {
-      'calories': totalCalories,
-      'carbs': totalCarbs,
-      'protein': totalProtein,
-      'fat': totalFat,
+      'calories': double.parse(totalCalories.toStringAsFixed(1)),
+      'carbs': double.parse(totalCarbs.toStringAsFixed(1)),
+      'protein': double.parse(totalProtein.toStringAsFixed(1)),
+      'fat': double.parse(totalFat.toStringAsFixed(1)),
     };
   }
 
@@ -237,10 +238,10 @@ class _FoodSavePageState extends State<FoodSavePage> {
     }
 
     return {
-      'calories': totalCalories,
-      'carbs': totalCarbs,
-      'protein': totalProtein,
-      'fat': totalFat,
+      'calories': double.parse(totalCalories.toStringAsFixed(1)),
+      'carbs': double.parse(totalCarbs.toStringAsFixed(1)),
+      'protein': double.parse(totalProtein.toStringAsFixed(1)),
+      'fat': double.parse(totalFat.toStringAsFixed(1)),
     };
   }
 
@@ -331,17 +332,17 @@ class _FoodSavePageState extends State<FoodSavePage> {
                                             MainAxisAlignment.start,
                                         children: [
                                           Text(
-                                              '총 탄수화물: ${totalNutrients['carbs']}  ',
+                                              '총 탄: ${totalNutrients['carbs']}  ',
                                               style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 12)),
                                           Text(
-                                              '총 단백질: ${totalNutrients['protein']}  ',
+                                              '총 단: ${totalNutrients['protein']}  ',
                                               style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 12)),
                                           Text(
-                                            '총 지방: ${totalNutrients['fat']}',
+                                            '총 지: ${totalNutrients['fat']}',
                                             style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 12),
@@ -386,7 +387,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                   subtitle: Text(
-                                    'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                                    'Calories: ${subMeal['calories'].toStringAsFixed(1)} Carbs: ${subMeal['carbs'].toStringAsFixed(1)} Protein: ${subMeal['protein'].toStringAsFixed(1)} Fat: ${subMeal['fat'].toStringAsFixed(1)}',
                                     style: const TextStyle(
                                         color: Colors.white70, fontSize: 12),
                                   ),

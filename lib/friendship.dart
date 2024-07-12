@@ -24,6 +24,17 @@ class _FriendshipPageState extends State<FriendshipPage> {
     super.initState();
     _loadFriends();
   }
+  Future<void> _deleteFriend(String friendUid) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String> storedFriends = prefs.getStringList('friends') ?? [];
+  storedFriends.removeWhere((friend) => friend.split('|')[1] == friendUid);
+  await prefs.setStringList('friends', storedFriends);
+
+  setState(() {
+    friends.removeWhere((friend) => friend['uid'] == friendUid);
+  });
+}
+
 
   Future<void> friendroutineName(String friendUid) async {
     try {
@@ -535,6 +546,15 @@ void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
               friendroutineName(friendUid);
             },
           ),
+           ListTile(
+            leading: Icon(Icons.delete, color: Colors.white),
+            title: Text('친구 삭제', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteFriend(friendUid);
+        
+            },
+          ),
           
         ],
       );
@@ -606,13 +626,19 @@ void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
                           friends[index]['name']!,
                           style: TextStyle(fontSize: 20.0, color: Colors.white, fontFamily: 'Oswald'),
                         ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.more_vert, color: Colors.white),
-                          onPressed: () {
-                            String friendUid = friends[index]['uid']!;
-                            _showFriendOptions(friendUid);
-                          },
-                        ),
+                       trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.more_vert, color: Colors.white),
+                            onPressed: () {
+                              String friendUid = friends[index]['uid']!;
+                              _showFriendOptions(friendUid);
+                            },
+                          ),
+                         
+                        ],
+                      ),
                       ),
                     ),
                   );

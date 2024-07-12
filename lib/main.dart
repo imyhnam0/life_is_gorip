@@ -544,28 +544,13 @@ class _HomepageState extends State<Homepage> {
               flex: 7,
               child: Stack(
                 children: [
-                  Positioned(
-                    // Positioned 위젯을 추가하여 텍스트 위치 지정
-                    top: 0, // 상단에서 0의 위치
-                    left: 0, // 좌측에서 0의 위치
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0), // 적절한 패딩 제공
-                      child: Text(
-                        '7일 동안의 루틴',
-                        style: TextStyle(
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+                  
                   Container(
                     child: collectionNames.isEmpty
                         ? Center(
                             // 값이 없을 때 중앙에 메시지 표시
                             child: Text(
-                              '루틴이 없습니다.',
+                              '일주일 전 루틴 모음(아직 없음).',
                               style: TextStyle(
                                 fontSize: 20.0,
                                 color: Colors.white70,

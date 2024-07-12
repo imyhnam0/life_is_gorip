@@ -31,6 +31,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
   late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? uid;
+  String lastname =''; // 마지막으로 입력한 루틴 이름
 
   @override
   void initState() {
@@ -85,6 +86,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
 
   Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
+   
 
     Map<String, dynamic> routine = {"exercises": []};
     for (int i = 0; i < _weightControllers.length; i++) {
@@ -188,6 +190,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                 ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
+                    deleteData(lastname);
                     setState(() {
                       _title = nameController.text;
                     });
@@ -364,7 +367,9 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                   size: 28,
                 ),
                 onPressed: () {
-                  deleteData(_title);
+                  lastname=_title;
+                  print(lastname);
+               
                   _showNameInputDialog(context);
                 },
               ),

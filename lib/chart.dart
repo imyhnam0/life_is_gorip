@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -82,9 +84,13 @@ class _RoutineChartState extends State<RoutineChart> {
     }
   }
 
-  Future<Map<String, double>> _WeightChartGet() async {
+  Future<Map<String, Map<String, double>>> _WeightChartGet() async {
     var db = FirebaseFirestore.instance;
-    Map<String, double> weightData = {};
+    Map<String, Map<String, double>> weightData = {
+      'weight': {},
+      'muscle': {},
+      'fat': {},
+    };
 
     try {
       QuerySnapshot snapshot = await db
@@ -98,9 +104,13 @@ class _RoutineChartState extends State<RoutineChart> {
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
         double weight = double.parse(data['weight'] ?? '0');
+        double muscle = double.parse(data['muscleMass'] ?? '0');
+        double fat = double.parse(data['bodyFat'] ?? '0');
         String formattedDate = data['date'];
 
-        weightData[formattedDate] = weight;
+        weightData['weight']![formattedDate] = weight;
+        weightData['muscle']![formattedDate] = muscle;
+        weightData['fat']![formattedDate] = fat;
       }
 
       return weightData;
@@ -313,8 +323,7 @@ class _RoutineChartState extends State<RoutineChart> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
                   ),
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ),
@@ -352,7 +361,7 @@ class _RoutineChartState extends State<RoutineChart> {
   }
 
   Widget _buildWeightChart() {
-    return FutureBuilder<Map<String, double>>(
+    return FutureBuilder<Map<String, Map<String, double>>>(
       future: _WeightChartGet(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -363,7 +372,18 @@ class _RoutineChartState extends State<RoutineChart> {
           return Center(child: Text('No data available'));
         }
 
-        Map<String, double> weightData = snapshot.data!;
+        Map<String, Map<String, double>> data = snapshot.data!;
+        Map<String, double> weightData = data['weight']!;
+        Map<String, double> muscleData = data['muscle']!;
+        Map<String, double> fatData = data['fat']!;
+
+        List<String> dates = weightData.keys.toList();
+        double minY = [weightData.values, muscleData.values, fatData.values]
+            .expand((e) => e)
+            .reduce((a, b) => a < b ? a : b);
+        double maxY = [weightData.values, muscleData.values, fatData.values]
+            .expand((e) => e)
+            .reduce((a, b) => a > b ? a : b);
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -388,10 +408,15 @@ class _RoutineChartState extends State<RoutineChart> {
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
-                            if (value.toInt() < weightData.keys.length) {
-                              return Text(
-                                DateFormat('MM/dd').format(DateTime.parse(weightData.keys.elementAt(value.toInt()))),
-                                style: TextStyle(color: Colors.white),
+                            if (value.toInt() < dates.length) {
+                              return Column(
+                                children: [
+                                  Text(
+                                    DateFormat('MM/dd').format(
+                                        DateTime.parse(dates[value.toInt()])),
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
                               );
                             }
                             return Text('');
@@ -402,14 +427,14 @@ class _RoutineChartState extends State<RoutineChart> {
                       ),
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
-                          showTitles: true,
+                          showTitles: false,
                           getTitlesWidget: (value, meta) {
                             return Text(
                               '${value.toInt()}',
                               style: TextStyle(color: Colors.white),
                             );
                           },
-                          interval: 1,
+                          interval: 0.01,
                           reservedSize: 28,
                         ),
                       ),
@@ -430,22 +455,150 @@ class _RoutineChartState extends State<RoutineChart> {
                       ),
                     ),
                     minX: 0,
-                    maxX: (weightData.length - 1).toDouble(),
-                    minY: weightData.values.reduce((a, b) => a < b ? a : b),
-                    maxY: weightData.values.reduce((a, b) => a > b ? a : b),
+                    maxX: (dates.length - 1).toDouble(),
+                    minY: minY,
+                    maxY: maxY,
                     lineBarsData: [
                       LineChartBarData(
                         spots: weightData.entries
-                            .map((e) => FlSpot(weightData.keys.toList().indexOf(e.key).toDouble(), e.value))
+                            .map((e) => FlSpot(
+                                dates.indexOf(e.key).toDouble(), e.value))
                             .toList(),
                         isCurved: true,
                         barWidth: 5,
                         isStrokeCapRound: true,
                         dotData: FlDotData(show: true),
                         belowBarData: BarAreaData(show: false),
+                        color: Colors.red,
+                      ),
+                      LineChartBarData(
+                        spots: muscleData.entries
+                            .map((e) => FlSpot(
+                                dates.indexOf(e.key).toDouble(), e.value))
+                            .toList(),
+                        isCurved: true,
+                        barWidth: 5,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(show: true),
+                        belowBarData: BarAreaData(show: false),
+                        color: Colors.green,
+                      ),
+                      LineChartBarData(
+                        spots: fatData.entries
+                            .map((e) => FlSpot(
+                                dates.indexOf(e.key).toDouble(), e.value))
+                            .toList(),
+                        isCurved: true,
+                        barWidth: 5,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(show: true),
+                        belowBarData: BarAreaData(show: false),
+                        color: Colors.blue,
                       ),
                     ],
                   ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  
+                  Text(
+                    '몸무게',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Icon(Icons.circle, color: Colors.red),
+                 SizedBox(width: 20),
+                  Text(
+                    '골격근량',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                      Icon(Icons.circle, color: Colors.green),
+                  SizedBox(width: 20),
+                  Text(
+                    '체지방량',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Icon(Icons.circle, color: Colors.blue),
+                ],
+              ),
+              SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '날짜',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        ...dates.map((date) => Text(
+                              DateFormat('MM/dd').format(DateTime.parse(date)),
+                              style: TextStyle(color: Colors.white),
+                            )),
+                      ],
+                    ),
+                    SizedBox(width: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '몸무게',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        ...dates.map((date) => Text(
+                              weightData[date].toString(),
+                              style: TextStyle(color: Colors.white),
+                            )),
+                      ],
+                    ),
+                    SizedBox(width: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '골격근량',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        ...dates.map((date) => Text(
+                              muscleData[date].toString(),
+                              style: TextStyle(color: Colors.white),
+                            )),
+                      ],
+                    ),
+                    SizedBox(width: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '체지방량',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        ...dates.map((date) => Text(
+                              fatData[date].toString(),
+                              style: TextStyle(color: Colors.white),
+                            )),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],

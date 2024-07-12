@@ -14,6 +14,7 @@ class AddMealPage extends StatefulWidget {
 class _AddMealPageState extends State<AddMealPage> {
   final TextEditingController _mealController = TextEditingController();
   List<String> _searchResults = [];
+  List<String> _allFoods = [];
   final TextEditingController _gramsController = TextEditingController();
   Map<String, dynamic>? _selectedFoodData;
   String? uid;
@@ -23,29 +24,36 @@ class _AddMealPageState extends State<AddMealPage> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     print('유아이디인데 : $uid');
+    _fetchAllFoods(); 
   }
 
-  void _searchFood() async {
-    String query = _mealController.text;
-    if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-      });
-      return;
-    }
+void _fetchAllFoods() async {
+  final results = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('Food')
+      .get();
 
-    final results = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Food')
-        .where(FieldPath.documentId, isGreaterThanOrEqualTo: query)
-        .where(FieldPath.documentId, isLessThanOrEqualTo: query + '\uf8ff')
-        .get();
+  setState(() {
+    _allFoods = results.docs.map((doc) => doc.id).toList();
+    _searchResults = _allFoods; // 초기 상태에서 모든 음식을 표시합니다.
+  });
+}
 
+void _searchFood(String query) {
+  if (query.isEmpty) {
     setState(() {
-      _searchResults = results.docs.map((doc) => doc.id).toList();
+      _searchResults = _allFoods; // 검색어가 비어있을 때 모든 음식을 표시합니다.
     });
+    return;
   }
+
+  setState(() {
+    _searchResults = _allFoods
+        .where((food) => food.contains(query))
+        .toList();
+  });
+}
 
   Future<void> _showFoodDetails(String foodName) async {
     DocumentSnapshot doc = await FirebaseFirestore.instance
@@ -223,16 +231,11 @@ class _AddMealPageState extends State<AddMealPage> {
                   borderSide: BorderSide(color: Colors.cyan),
                 ),
               ),
+              onChanged: _searchFood, 
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _searchFood,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 54, 72, 75),
-              ),
-              child: const Text('검색', style: TextStyle(color: Colors.white)),
-            ),
-            const SizedBox(height: 16),
+           
+           
+            const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
                 itemCount: _searchResults.length,

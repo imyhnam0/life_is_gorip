@@ -251,7 +251,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                             TextSpan(
                               text: 'Time: ',
                               style: TextStyle(
-                                  fontSize: 25,
+                                  fontSize: 40,
                                   fontFamily: 'Oswald',
                                   color: Colors.black), // 기본 텍스트 스타일
                               children: <TextSpan>[
