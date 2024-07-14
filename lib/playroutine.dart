@@ -58,62 +58,32 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   }
 
   Future<void> saveRoutine(
-      String title, int result, int sumweight, int timerSeconds) async {
-    final DateTime now = DateTime.now();
-    final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
-    final db = FirebaseFirestore.instance;
-    final batch = db.batch(); // Batch 쓰기 시작
+    String title, int result, int sumweight, int timerSeconds) async {
+  final DateTime now = DateTime.now();
+  final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+  final db = FirebaseFirestore.instance;
+  final batch = db.batch(); // Batch 쓰기 시작
 
-    try {
-      final healthDocRef =
-          db.collection('users').doc(uid).collection('Calender').doc('health');
-      final existingDocsSnapshot =
-          await healthDocRef.collection('routines').get();
-      final newDocNumber = existingDocsSnapshot.size + 1;
+  try {
+    final healthDocRef =
+        db.collection('users').doc(uid).collection('Calender').doc('health');
 
-      final routineDocRef =
-          healthDocRef.collection('routines').doc(newDocNumber.toString());
+    // 새로운 문서 ID 생성
+    final routineDocRef = healthDocRef.collection('routines').doc();
 
-      batch.set(routineDocRef, {
-        '오늘 한 루틴이름': title,
-        '오늘 총 세트수': result,
-        '오늘 총 볼륨': sumweight,
-        '오늘 총 시간': _formatTime(timerSeconds),
-        '날짜': formattedDate,
-      });
+    batch.set(routineDocRef, {
+      '오늘 한 루틴이름': title,
+      '오늘 총 세트수': result,
+      '오늘 총 볼륨': sumweight,
+      '오늘 총 시간': _formatTime(timerSeconds),
+      '날짜': formattedDate,
+    });
 
-      await batch.commit(); // Batch 쓰기 커밋
-    } catch (e) {
-      print('Error adding document: $e');
-    }
+    await batch.commit(); // Batch 쓰기 커밋
+  } catch (e) {
+    print('Error adding document: $e');
   }
-
-  Future<void> saveRoutineName() async {
-    final db = FirebaseFirestore.instance;
-    final batch = db.batch(); // Batch 쓰기 시작
-
-    if (nameController.text.isNotEmpty) {
-      try {
-        int order = collectionNames.length + 1; // 새로운 order 값 설정
-        final routineNameDocRef = db
-            .collection('users')
-            .doc(uid)
-            .collection('Routine')
-            .doc('Routinename')
-            .collection('Names')
-            .doc();
-
-        batch.set(routineNameDocRef, {
-          'name': nameController.text,
-          'order': order,
-        });
-
-        await batch.commit(); // Batch 쓰기 커밋
-      } catch (e) {
-        print('Error adding document: $e');
-      }
-    }
-  }
+}
 
   Future<void> myCollectionName() async {
     try {
@@ -510,7 +480,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          saveRoutineName();
+                
                           saveRoutine(
                             _title,
                             result,

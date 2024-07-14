@@ -98,13 +98,7 @@ class _BookMarkPageState extends State<BookMarkPage> {
     }
   }
 
-  void filterCollectionNames() {
-    setState(() {
-      filteredCollectionNames = collectionNames
-          .where((name) => savedCollectionNames.contains(name))
-          .toList();
-    });
-  }
+ 
 
 
   @override

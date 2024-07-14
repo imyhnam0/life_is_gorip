@@ -139,33 +139,32 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
   Future<void> addStarRow(String name) async {
     try {
-      print('하하');
-      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+      DocumentReference bookmarkDocRef = FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection("Routine")
-          .doc('Bookmark')
-          .get();
+          .doc('Bookmark');
+
+      DocumentSnapshot bookmarkDoc = await bookmarkDocRef.get();
 
       if (bookmarkDoc.exists) {
         List<String> names = List<String>.from(bookmarkDoc['names']);
         if (!names.contains(name)) {
           names.add(name);
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(uid)
-              .collection("Routine")
-              .doc('Bookmark')
-              .update({'names': names});
-          setState(() {
-            savedCollectionNames = names;
-          });
+          await bookmarkDocRef.update({'names': names});
         }
+      } else {
+        await bookmarkDocRef.set({'names': [name]});
       }
+
+      setState(() {
+        savedCollectionNames.add(name);
+      });
     } catch (e) {
       print('Error adding name: $e');
     }
   }
+
 
   Future<void> updateFirestoreOrder() async {
     try {
@@ -241,7 +240,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
             color: Colors.white,
           ),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
         actions: [

@@ -68,7 +68,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
     super.dispose();
   }
 
-  void deleteData(String documentId) async {
+  Future<void> deleteData(String documentId) async {
     try {
       await FirebaseFirestore.instance
           .collection('users')
@@ -188,9 +188,9 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                   '확인',
                   style: TextStyle(color: Colors.white),
                 ),
-                onPressed: () {
+                onPressed: () async{
                   if (_formKey.currentState!.validate()) {
-                    deleteData(lastname);
+                    await deleteData(lastname);
                     setState(() {
                       _title = nameController.text;
                     });
@@ -268,6 +268,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
           Expanded(
             child: TextField(
               controller: weightController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "무게를 입력하세요",
@@ -287,6 +288,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
           Expanded(
             child: TextField(
               controller: repsController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "횟수를 입력하세요",
@@ -327,7 +329,11 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+    onTap: () {
+      FocusScope.of(context).unfocus(); // 화면을 클릭하면 키보드 숨기기
+    },
+    child: Scaffold(
       appBar: AppBar(
         title: Text(
           _title,
@@ -368,8 +374,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                 ),
                 onPressed: () {
                   lastname=_title;
-                  print(lastname);
-               
+             
                   _showNameInputDialog(context);
                 },
               ),
@@ -469,6 +474,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
           ),
         ],
       ),
+    ),
     );
   }
 }

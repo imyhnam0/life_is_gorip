@@ -104,6 +104,8 @@ class _HomepageState extends State<Homepage> {
   String weight = '0';
   String muscleMass = '0';
   String bodyFat = '0';
+  List<String> filteredCollectionNames = [];
+  List<String> modifiedCollectionNames = [];
 
   @override
   void initState() {
@@ -111,6 +113,50 @@ class _HomepageState extends State<Homepage> {
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     _fetchSevenDayAgoData();
     loadMe();
+    loadStarRow();
+  }
+
+  void loadStarRow() async {
+    try {
+      DocumentReference bookmarkDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark');
+
+      DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
+
+      if (bookmarkDocSnapshot.exists) {
+        List<dynamic> names = bookmarkDocSnapshot.get('names');
+        setState(() {
+          filteredCollectionNames = List<String>.from(names);
+          modifiedCollectionNames = List<String>.from(names); // 초기화 시 현재 순서 저장
+        });
+      }
+    } catch (e) {
+      print('Error fetching names from Firestore: $e');
+    }
+  }
+
+  Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
+    try {
+      DocumentReference bookmarkDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark');
+
+      DocumentSnapshot bookmarkDocSnapshot = await bookmarkDocRef.get();
+
+      if (bookmarkDocSnapshot.exists) {
+        await bookmarkDocRef.update({'names': updatedCollectionNames});
+      } else {
+        await bookmarkDocRef.set({'names': updatedCollectionNames});
+      }
+      loadStarRow();
+    } catch (e) {
+      print('Error updating Firestore order: $e');
+    }
   }
 
   Future<void> loadMe() async {
@@ -123,141 +169,141 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> saveMe(String weight, String muscleMass, String bodyFat) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('weight', weight);
-  await prefs.setString('muscleMass', muscleMass);
-  await prefs.setString('bodyFat', bodyFat);
-  loadMe();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('weight', weight);
+    await prefs.setString('muscleMass', muscleMass);
+    await prefs.setString('bodyFat', bodyFat);
+    loadMe();
 
-  // Firestore에 데이터 저장
-  var db = FirebaseFirestore.instance;
-  String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    // Firestore에 데이터 저장
+    var db = FirebaseFirestore.instance;
+    String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-  await db
-      .collection('users')
-      .doc(uid)
-      .collection('Calender')
-      .doc('body')
-      .collection('weight')
-      .doc(todayDate) // 오늘 날짜를 문서 ID로 사용
-      .set({
-    'date': todayDate,
-    'weight': weight,
-    'muscleMass': muscleMass,
-    'bodyFat': bodyFat,
-  });
-}
+    await db
+        .collection('users')
+        .doc(uid)
+        .collection('Calender')
+        .doc('body')
+        .collection('weight')
+        .doc(todayDate) // 오늘 날짜를 문서 ID로 사용
+        .set({
+      'date': todayDate,
+      'weight': weight,
+      'muscleMass': muscleMass,
+      'bodyFat': bodyFat,
+    });
+  }
 
- void showMeDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      TextEditingController weightController =
-          TextEditingController(text: weight);
-      TextEditingController muscleMassController =
-          TextEditingController(text: muscleMass);
-      TextEditingController bodyFatController =
-          TextEditingController(text: bodyFat);
-      return AlertDialog(
-        backgroundColor: Colors.blueGrey.shade900,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-        ),
-        title: Text(
-          'Edit Data',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Oswald',
-            fontSize: 24,
+  void showMeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        TextEditingController weightController =
+            TextEditingController(text: weight);
+        TextEditingController muscleMassController =
+            TextEditingController(text: muscleMass);
+        TextEditingController bodyFatController =
+            TextEditingController(text: bodyFat);
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20.0)),
           ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: weightController,
-                decoration: InputDecoration(
-                  labelText: '몸무게',
-                  labelStyle: TextStyle(color: Colors.white),
-                  hintText: '몸무게를 입력하세요',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.cyan),
-                  ),
-                ),
-                style: TextStyle(color: Colors.white),
-                cursorColor: Colors.cyan,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: muscleMassController,
-                decoration: InputDecoration(
-                  labelText: '골격근량',
-                  labelStyle: TextStyle(color: Colors.white),
-                  hintText: '골격근량을 입력하세요',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.cyan),
-                  ),
-                ),
-                style: TextStyle(color: Colors.white),
-                cursorColor: Colors.cyan,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: bodyFatController,
-                decoration: InputDecoration(
-                  labelText: '체지방률',
-                  labelStyle: TextStyle(color: Colors.white),
-                  hintText: '체지방률을 입력하세요',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.cyan),
-                  ),
-                ),
-                style: TextStyle(color: Colors.white),
-                cursorColor: Colors.cyan,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.blueGrey.shade700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+          title: Text(
+            'Edit Data',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Oswald',
+              fontSize: 24,
             ),
-            child: Text(
-              'Save',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onPressed: () {
-              saveMe(weightController.text, muscleMassController.text, bodyFatController.text);
-              Navigator.of(context).pop();
-            },
           ),
-        ],
-      );
-    },
-  );
-}
-
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: weightController,
+                  decoration: InputDecoration(
+                    labelText: '몸무게',
+                    labelStyle: TextStyle(color: Colors.white),
+                    hintText: '몸무게를 입력하세요',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyan),
+                    ),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  cursorColor: Colors.cyan,
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: muscleMassController,
+                  decoration: InputDecoration(
+                    labelText: '골격근량',
+                    labelStyle: TextStyle(color: Colors.white),
+                    hintText: '골격근량을 입력하세요',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyan),
+                    ),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  cursorColor: Colors.cyan,
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: bodyFatController,
+                  decoration: InputDecoration(
+                    labelText: '체지방률',
+                    labelStyle: TextStyle(color: Colors.white),
+                    hintText: '체지방률을 입력하세요',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyan),
+                    ),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  cursorColor: Colors.cyan,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blueGrey.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                saveMe(weightController.text, muscleMassController.text,
+                    bodyFatController.text);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _fetchSevenDayAgoData() async {
     List<String> names = [];
@@ -372,14 +418,11 @@ class _HomepageState extends State<Homepage> {
               children: [
                 IconButton(
                   icon: Icon(
-                    Icons.star,
-                    color: Colors.yellow,
+                    Icons.settings,
+                    color: Colors.white,
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => BookMarkPage()),
-                    );
+                   
                   },
                 ),
                 IconButton(
@@ -544,70 +587,107 @@ class _HomepageState extends State<Homepage> {
               flex: 7,
               child: Stack(
                 children: [
-                  
                   Container(
-                    child: collectionNames.isEmpty
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade900,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 7,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Colors.blueGrey.shade700,
+                        width: 2,
+                      ),
+                    ),
+                    child: filteredCollectionNames.isEmpty
                         ? Center(
-                            // 값이 없을 때 중앙에 메시지 표시
                             child: Text(
-                              '일주일 전 루틴 모음(아직 없음).',
+                              '루틴 즐겨찾기 항목.',
                               style: TextStyle(
-                                fontSize: 20.0,
-                                color: Colors.white70,
+                                fontSize: 18.0,
+                                color: Colors.grey.shade400,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Oswald',
                               ),
                             ),
                           )
-                        : ListView.builder(
-                            itemCount: collectionNames.length,
-                            itemBuilder: (context, index) {
-                              String collectionName = collectionNames[index];
-                              List<String> parts = collectionName.split(' - ');
-                              String routineName = parts[0];
-                              String dayInfo = parts[1];
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 8.0, horizontal: 16.0),
-                                child: Card(
-                                  color: Colors.blueGrey.shade800,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15.0),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: EdgeInsets.all(16.0),
-                                    title: Text(
-                                      routineName,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 20.0,
-                                        color: Colors.white,
-                                        fontFamily: 'Oswald',
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                        : ReorderableListView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            onReorder: (int oldIndex, int newIndex) async {
+                              setState(() {
+                                if (oldIndex < newIndex) {
+                                  newIndex -= 1;
+                                }
+                                final String item =
+                                    modifiedCollectionNames.removeAt(oldIndex);
+                                modifiedCollectionNames.insert(newIndex, item);
+                              });
+                              await updateFirestoreOrder(
+                                  modifiedCollectionNames);
+                            },
+                            children: <Widget>[
+                              for (int index = 0;
+                                  index < filteredCollectionNames.length;
+                                  index++)
+                                Padding(
+                                  key: Key('$index'),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.blueGrey.shade800,
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      border: Border.all(
+                                          color: Colors.blueGrey.shade700,
+                                          width: 2),
                                     ),
-                                    subtitle: Text(
-                                      dayInfo,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 15.0,
-                                        color: Colors.white70,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              StartRoutinePage(
-                                            clickroutinename: routineName,
-                                          ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 5.0, horizontal: 20.0),
+                                      title: Text(
+                                        filteredCollectionNames[index],
+                                        style: const TextStyle(
+                                          fontSize: 18.0,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Oswald',
                                         ),
-                                      );
-                                    },
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ReorderableDragStartListener(
+                                            index: index,
+                                            child: const Icon(
+                                              Icons.drag_handle,
+                                              size: 30.0,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                StartRoutinePage(
+                                              clickroutinename:
+                                                  filteredCollectionNames[
+                                                      index],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
+                            ],
                           ),
                   ),
                   Align(
@@ -686,7 +766,11 @@ class _HomepageState extends State<Homepage> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => const SaveRoutinePage()),
-                  );
+                  ).then((value) {
+                    if (value == true) {
+                      loadStarRow();
+                    }
+                  });
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
