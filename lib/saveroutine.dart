@@ -28,7 +28,6 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
   Future<void> deleteCollection(String documentId) async {
     var db = FirebaseFirestore.instance;
-
     // Remove documentId from Bookmark collection
     try {
       DocumentSnapshot bookmarkDoc = await db
@@ -54,68 +53,83 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       print('Error removing name: $e');
     }
 
-    // Batch write for deleting documents in Myroutine and Routinename collections
     try {
-      WriteBatch batch = db.batch();
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
 
-      // Get all documents in the specified sub-collection under Myroutine
-      var collectionRef = db
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(documentId);
+    DocumentSnapshot documentSnapshot = await docRef.get();
 
-      var snapshots = await collectionRef.get();
-      for (var doc in snapshots.docs) {
-        batch.delete(doc.reference);
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(documentId)) {
+        // Remove the entire collection (_title)
+        data.remove(documentId);
+        await docRef.set(data);
       }
-
-      // Get all documents in the Names collection where 'name' is equal to documentId
-      var namesCollectionRef = db
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection("Names");
-
-      var namesSnapshots =
-          await namesCollectionRef.where('name', isEqualTo: documentId).get();
-      for (var doc in namesSnapshots.docs) {
-        batch.delete(doc.reference);
-      }
-
-      // Commit the batch write
-      await batch.commit();
-
-      // Refresh the collection names
-      await myCollectionName();
-    } catch (e) {
-      print('Error deleting collection: $e');
     }
+
+    await myCollectionName();
+  } catch (e) {
+    print('Error deleting collection: $e');
   }
 
-  Future<void> myCollectionName() async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names')
-          .orderBy('order')
-          .get();
 
-      List<String> names =
-          querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+   
+  }
+
+
+  Future<void> myCollectionName() async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      List<String> names = [];
+      data.forEach((key, value) {
+        names.add(key);
+      });
 
       setState(() {
         collectionNames = names;
       });
-    } catch (e) {
-      print('Error fetching collection names: $e');
     }
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+}
+
+
+  // Future<void> myCollectionName() async {
+  //   try {
+  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection("Routine")
+  //         .doc('Routinename')
+  //         .collection('Names')
+  //         .orderBy('order')
+  //         .get();
+
+  //     List<String> names =
+  //         querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+  //     setState(() {
+  //       collectionNames = names;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching collection names: $e');
+  //   }
+  // }
 
   Future<void> loadStarRow() async {
     try {
@@ -166,32 +180,32 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
   }
 
 
-  Future<void> updateFirestoreOrder() async {
-    try {
-      WriteBatch batch = FirebaseFirestore.instance.batch();
-      CollectionReference collectionRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names');
+  // Future<void> updateFirestoreOrder() async {
+  //   try {
+  //     WriteBatch batch = FirebaseFirestore.instance.batch();
+  //     CollectionReference collectionRef = FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection("Routine")
+  //         .doc('Routinename')
+  //         .collection('Names');
 
-      for (int i = 0; i < collectionNames.length; i++) {
-        QuerySnapshot querySnapshot = await collectionRef
-            .where('name', isEqualTo: collectionNames[i])
-            .get();
+  //     for (int i = 0; i < collectionNames.length; i++) {
+  //       QuerySnapshot querySnapshot = await collectionRef
+  //           .where('name', isEqualTo: collectionNames[i])
+  //           .get();
 
-        if (querySnapshot.docs.isNotEmpty) {
-          DocumentReference docRef = querySnapshot.docs[0].reference;
-          batch.update(docRef, {'order': i});
-        }
-      }
+  //       if (querySnapshot.docs.isNotEmpty) {
+  //         DocumentReference docRef = querySnapshot.docs[0].reference;
+  //         batch.update(docRef, {'order': i});
+  //       }
+  //     }
 
-      await batch.commit();
-    } catch (e) {
-      print('Error updating Firestore order: $e');
-    }
-  }
+  //     await batch.commit();
+  //   } catch (e) {
+  //     print('Error updating Firestore order: $e');
+  //   }
+  // }
 
   Future<void> removeStarRow(String name) async {
     try {
@@ -297,7 +311,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex) async {
+          onReorder: (int oldIndex, int newIndex)  {
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
@@ -305,7 +319,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
               final String item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
             });
-            await updateFirestoreOrder();
+            
           },
           children: <Widget>[
             for (int index = 0; index < collectionNames.length; index++)
@@ -336,7 +350,11 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 clickroutinename: collectionNames[index],
                               ),
                             ),
-                          );
+                          ).then((value) {
+                            if (value == true) {
+                              myCollectionName();
+                            }
+                          });
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,

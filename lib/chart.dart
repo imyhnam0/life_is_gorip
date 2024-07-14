@@ -23,26 +23,29 @@ class _RoutineChartState extends State<RoutineChart> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
   }
+Future<List<String>> fetchCollectionNames() async {
+  //루틴 이름 불러오는 거 저장
+  List<String> names = [];
 
-  Future<List<String>> fetchCollectionNames() async {
-    List<String> names = [];
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names')
-          .get();
-
-      names = querySnapshot.docs.map((doc) => doc['name'] as String).toList();
-    } catch (e) {
-      print('Error fetching collection names: $e');
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+      names = data.keys.toList();
     }
-
-    return names;
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+
+  return names;
+}
+
 
   Future<Map<String, Map<String, int>>> _RoutineChartGet() async {
     var db = FirebaseFirestore.instance;

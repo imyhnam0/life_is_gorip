@@ -84,70 +84,93 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     print('Error adding document: $e');
   }
 }
+Future<void> myCollectionName() async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-  Future<void> myCollectionName() async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(widget.clickroutinename)
-          .get();
-      List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      setState(() {
-        collectionNames = names;
-        completionStatus = List<bool>.filled(names.length, false);
-      });
-    } catch (e) {
-      print('Error fetching collection names: $e');
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+         List<String> names = [];
+        for (var routine in myRoutineList) {
+          routine.forEach((key, value) {
+            names.add(key);
+          });
+        }
+
+        setState(() {
+          collectionNames = names;
+        });
+      }
     }
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+}
 
   Future<void> totalRoutineReps() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .collection('Routine')
           .doc('Myroutine')
-          .collection(widget.clickroutinename)
           .get();
 
       int totalExercises = 0;
       int totalWeight = 0;
 
-      for (var doc in querySnapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        if (data.containsKey('exercises')) {
-          exercisesData = List<Map<String, dynamic>>.from(data['exercises']
-              .map((exercise) => {
-                    'reps': exercise['reps'],
-                    'weight': exercise['weight'],
-                  })
-              .toList());
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-          totalExercises += exercisesData.length;
+        if (data.containsKey(_title)) {
+          List<dynamic> myRoutineList = data[_title];
 
-          for (var exercise in exercisesData) {
-            int weight = 0;
-            int reps = 0;
-            if (exercise['weight'] is int) {
-              weight = exercise['weight'];
-            } else if (exercise['weight'] is String) {
-              weight = int.tryParse(exercise['weight']) ?? 0;
+          for (var routine in myRoutineList) {
+            if (routine.containsKey(_title)) {
+              var routineData = routine[_title];
+              if (routineData.containsKey('exercises')) {
+                List<Map<String, dynamic>> exercises = List<Map<String, dynamic>>.from(routineData['exercises']
+                    .map((exercise) => {
+                          'reps': exercise['reps'],
+                          'weight': exercise['weight'],
+                        })
+                    .toList());
+
+                totalExercises += exercises.length;
+
+                for (var exercise in exercises) {
+                  int weight = 0;
+                  int reps = 0;
+
+                  if (exercise['weight'] is int) {
+                    weight = exercise['weight'];
+                  } else if (exercise['weight'] is String) {
+                    weight = int.tryParse(exercise['weight']) ?? 0;
+                  }
+
+                  if (exercise['reps'] is int) {
+                    reps = exercise['reps'];
+                  } else if (exercise['reps'] is String) {
+                    reps = int.tryParse(exercise['reps']) ?? 0;
+                  }
+
+                  totalWeight += weight * reps;
+                }
+              }
             }
-            if (exercise['reps'] is int) {
-              reps = exercise['reps'];
-            } else if (exercise['reps'] is String) {
-              reps = int.tryParse(exercise['reps']) ?? 0;
-            }
-            totalWeight +=
-                weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
           }
         }
       }
+
       setState(() {
         result = totalExercises;
         sumweight = totalWeight;
@@ -156,6 +179,80 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       print('Error fetching document data: $e');
     }
   }
+
+
+  
+  // Future<void> myCollectionName() async {
+  //   try {
+  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Routine')
+  //         .doc('Myroutine')
+  //         .collection(widget.clickroutinename)
+  //         .get();
+  //     List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+
+  //     setState(() {
+  //       collectionNames = names;
+  //       completionStatus = List<bool>.filled(names.length, false);
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching collection names: $e');
+  //   }
+  // }
+
+  // Future<void> totalRoutineReps() async {
+  //   try {
+  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Routine')
+  //         .doc('Myroutine')
+  //         .collection(widget.clickroutinename)
+  //         .get();
+
+  //     int totalExercises = 0;
+  //     int totalWeight = 0;
+
+  //     for (var doc in querySnapshot.docs) {
+  //       var data = doc.data() as Map<String, dynamic>;
+  //       if (data.containsKey('exercises')) {
+  //         exercisesData = List<Map<String, dynamic>>.from(data['exercises']
+  //             .map((exercise) => {
+  //                   'reps': exercise['reps'],
+  //                   'weight': exercise['weight'],
+  //                 })
+  //             .toList());
+
+  //         totalExercises += exercisesData.length;
+
+  //         for (var exercise in exercisesData) {
+  //           int weight = 0;
+  //           int reps = 0;
+  //           if (exercise['weight'] is int) {
+  //             weight = exercise['weight'];
+  //           } else if (exercise['weight'] is String) {
+  //             weight = int.tryParse(exercise['weight']) ?? 0;
+  //           }
+  //           if (exercise['reps'] is int) {
+  //             reps = exercise['reps'];
+  //           } else if (exercise['reps'] is String) {
+  //             reps = int.tryParse(exercise['reps']) ?? 0;
+  //           }
+  //           totalWeight +=
+  //               weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
+  //         }
+  //       }
+  //     }
+  //     setState(() {
+  //       result = totalExercises;
+  //       sumweight = totalWeight;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching document data: $e');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

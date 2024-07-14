@@ -36,79 +36,101 @@ class _FriendshipPageState extends State<FriendshipPage> {
 }
 
 
-  Future<void> friendroutineName(String friendUid) async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(friendUid)
-          .collection("Routine")
-          .doc('Routinename')
-          .collection('Names')
-          .orderBy('order')
-          .get();
+ Future<void> friendroutineName(String friendUid) async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(friendUid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-      List<String> names = querySnapshot.docs.map((doc) => doc['name'] as String).toList();
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+      List<String> names = data.keys.toList();
 
       setState(() {
         collectionNames = names;
       });
 
       _showRoutineNamesDialog(names, friendUid);
-    } catch (e) {
-      print('Error fetching collection names: $e');
     }
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+}
 
-  Future<void> friendRoutinedetail(String friendUid, String title) async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(friendUid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(title)
-          .get();
+Future<void> friendRoutinedetail(String friendUid, String title) async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(friendUid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-      List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      setState(() {
-        collectionNames = names;
-      });
+      if (data.containsKey(title)) {
+        List<dynamic> routineList = data[title];
+        List<String> names = routineList.map((routine) {
+          return routine.keys.first.toString();
+        }).toList();
 
-      _showRoutineDetailsDialog(names, friendUid, title);
-    } catch (e) {
-      print('Error fetching collection names: $e');
-    }
-  }
-
-  void moremoreroutine(String friendUid, String routineName, String detail) async {
-    try {
-      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(friendUid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(routineName)
-          .doc(detail)
-          .get();
-
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
-        List<Map<String, dynamic>> exercisesData = [];
-        if (data.containsKey('exercises')) {
-          exercisesData = List<Map<String, dynamic>>.from(data['exercises'].map((exercise) => {
-                'reps': exercise['reps'],
-                'weight': exercise['weight'],
-              }).toList());
-        }
         setState(() {
-          _showExerciseDetailsDialog(exercisesData);
+          collectionNames = names;
         });
+
+        _showRoutineDetailsDialog(names, friendUid, title);
       }
-    } catch (e) {
-      print('Error fetching document data: $e');
     }
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+}
+
+void moremoreroutine(String friendUid, String routineName, String detail) async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(friendUid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(routineName)) {
+        List<dynamic> routineList = data[routineName];
+        Map<String, dynamic>? routineDetail;
+
+        for (var routine in routineList) {
+          if (routine.containsKey(detail)) {
+            routineDetail = routine[detail];
+            break;
+          }
+        }
+
+        if (routineDetail != null && routineDetail.containsKey('exercises')) {
+          List<Map<String, dynamic>> exercisesData = List<Map<String, dynamic>>.from(
+            routineDetail['exercises'].map((exercise) => {
+              'reps': exercise['reps'],
+              'weight': exercise['weight'],
+            }).toList(),
+          );
+
+          setState(() {
+            _showExerciseDetailsDialog(exercisesData);
+          });
+        }
+      }
+    }
+  } catch (e) {
+    print('Error fetching document data: $e');
+  }
+}
 
   Future<void> _loadFriends() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();

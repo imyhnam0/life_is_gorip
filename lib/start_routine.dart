@@ -20,67 +20,118 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
   String? uid;
-  SharedPreferences? prefs;
 
   @override
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
-
-    _loadPreferences();
+    myCollectionName();
   }
 
-  Future<void> _loadPreferences() async {
-    prefs = await SharedPreferences.getInstance();
-    await myCollectionName();
-  }
-
-  Future<void> deleteData(String documentId) async {
-    try {
-      await FirebaseFirestore.instance
+  Future<void> deleteData(String routineTitle) async {
+  try {
+    DocumentReference docRef = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
-        .collection("Routine")
-        .doc('Myroutine')
-        .collection(widget.clickroutinename)
-        .doc(documentId)
-        .delete();
-      await myCollectionName();
-    } catch (e) {
-      print('Error deleting document: $e');
+        .collection('Routine')
+        .doc('Myroutine');
+
+    DocumentSnapshot documentSnapshot = await docRef.get();
+    print(_title);
+    print(routineTitle);
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+        // Find the index of the routine to delete
+        int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(routineTitle));
+
+        // Remove the routine if found
+        if (routineIndex != -1) {
+          myRoutineList.removeAt(routineIndex);
+          await docRef.update({_title: myRoutineList});
+        }
+      }
     }
+
+    await myCollectionName();
+  } catch (e) {
+    print('Error deleting document: $e');
   }
+}
 
   Future<void> myCollectionName() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('Routine')
         .doc('Myroutine')
-        .collection(widget.clickroutinename)
         .get();
-      List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
 
-      List<String>? savedOrder = prefs?.getStringList('order_${widget.clickroutinename}');
-      if (savedOrder != null && savedOrder.length == names.length) {
-        setState(() {
-          collectionNames = savedOrder;
-        });
-      } else {
+       var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+         List<String> names = [];
+        for (var routine in myRoutineList) {
+          routine.forEach((key, value) {
+            names.add(key);
+          });
+        }
+
         setState(() {
           collectionNames = names;
         });
-        await prefs?.setStringList('order_${widget.clickroutinename}', names);
       }
+      
+      
     } catch (e) {
       print('Error fetching collection names: $e');
     }
   }
+  Future<void> _updateRoutineTitle(String newTitle) async {
+  try {
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
 
-  Future<void> _updatePreferences() async {
-    await prefs?.setStringList('order_${widget.clickroutinename}', collectionNames);
+    DocumentSnapshot documentSnapshot = await docRef.get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+        // Remove the old title
+        await docRef.update({_title: FieldValue.delete()});
+
+        // Add the new title with the same list
+        data.remove(_title);
+        data[newTitle] = myRoutineList;
+
+        await docRef.set(data, SetOptions(merge: true));
+      }
+    }
+
+    setState(() {
+      _title = newTitle;
+    });
+
+   
+  } catch (e) {
+    print('Error updating document: $e');
   }
+}
+
+
 
   void _showNameInputDialog(BuildContext context) {
     showDialog(
@@ -124,10 +175,10 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                setState(() {
-                  _title = nameController.text;
-                });
-                Navigator.of(context).pop();
+                
+               _updateRoutineTitle(nameController.text);
+              Navigator.of(context).pop();
+
               },
             ),
           ],
@@ -136,22 +187,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     );
   }
 
-  Future<void> saveRoutineName() async {
-    var db = FirebaseFirestore.instance;
-
-    try {
-      await db
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Routinename')
-        .collection('Names')
-        .add({'name': nameController.text});
-    } catch (e) {
-      print('Error adding document: $e');
-    }
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,7 +206,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
             color: Colors.white,
           ),
           onPressed: () {
-            Navigator.pop(context);
+     Navigator.pop(context, true);
           },
         ),
         actions: [
@@ -183,16 +219,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
               _showNameInputDialog(context);
             },
           ),
-          IconButton(
-            icon: Icon(
-              Icons.save,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              saveRoutineName();
-              Navigator.of(context).pop();
-            },
-          ),
+        
         ],
       ),
       body: Container(
@@ -222,7 +249,6 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
               final item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
             });
-            _updatePreferences();
           },
           children: [
             for (final name in collectionNames)
