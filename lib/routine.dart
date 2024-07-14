@@ -49,61 +49,169 @@ class _RoutinePageState extends State<RoutinePage>
     super.dispose();
   }
 
+
   Future<void> deleteData(String documentId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(_title)
-          .doc(documentId)
-          .delete();
-      await myCollectionName();
-    } catch (e) {
-      print('Error deleting document: $e');
-    }
-  }
+  try {
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
 
-  Future<void> deleteCollection(String collectionPath) async {
-    try {
-      var collectionRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(collectionPath);
+    DocumentSnapshot documentSnapshot = await docRef.get();
 
-      var snapshots = await collectionRef.get();
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      for (var doc in snapshots.docs) {
-        await doc.reference.delete();
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+          // Find the index of the routine to delete
+        int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(routineTitle));
+
+        // Remove the routine if found
+        if (routineIndex != -1) {
+          myRoutineList.removeAt(routineIndex);
+          await docRef.update(_title: myRoutineList});
+        }
       }
-
-      await myCollectionName();
-    } catch (e) {
-      print('Error deleting collection: $e');
     }
+
+    await myCollectionName();
+  } catch (e) {
+    print('Error deleting document: $e');
   }
+}
 
-  Future<void> myCollectionName() async {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(_title)
-          .get();
-      List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
 
-      setState(() {
-        collectionNames = names;
-      });
-    } catch (e) {
-      print('Error fetching collection names: $e');
+Future<void> deleteCollection(String collectionPath) async {
+  try {
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
+
+    DocumentSnapshot documentSnapshot = await docRef.get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+        // Find the index of the collection to delete
+        int collectionIndex = -1;
+        for (int i = 0; i < myRoutineList.length; i++) {
+          if (myRoutineList[i].containsKey(collectionPath)) {
+            collectionIndex = i;
+            break;
+          }
+        }
+
+        // Remove the collection if found
+        if (collectionIndex != -1) {
+          myRoutineList.removeAt(collectionIndex);
+          await docRef.update({_title: myRoutineList});
+        }
+      }
     }
+
+    await myCollectionName();
+  } catch (e) {
+    print('Error deleting collection: $e');
   }
+}
+
+
+Future<void> myCollectionName() async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+         List<String> names = [];
+        for (var routine in myRoutineList) {
+          routine.forEach((key, value) {
+            names.add(key);
+          });
+        }
+
+        setState(() {
+          collectionNames = names;
+        });
+      }
+    }
+  } catch (e) {
+    print('Error fetching collection names: $e');
+  }
+}
+
+
+  // Future<void> deleteData(String documentId) async {
+  //   try {
+  //     await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection("Routine")
+  //         .doc('Myroutine')
+  //         .collection(_title)
+  //         .doc(documentId)
+  //         .delete();
+  //     await myCollectionName();
+  //   } catch (e) {
+  //     print('Error deleting document: $e');
+  //   }
+  // }
+
+  // Future<void> deleteCollection(String collectionPath) async {
+  //   try {
+  //     var collectionRef = FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection("Routine")
+  //         .doc('Myroutine')
+  //         .collection(collectionPath);
+
+  //     var snapshots = await collectionRef.get();
+
+  //     for (var doc in snapshots.docs) {
+  //       await doc.reference.delete();
+  //     }
+
+  //     await myCollectionName();
+  //   } catch (e) {
+  //     print('Error deleting collection: $e');
+  //   }
+  // }
+
+  // Future<void> myCollectionName() async {
+  //   try {
+  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Routine')
+  //         .doc('Myroutine')
+  //         .collection(_title)
+  //         .get();
+  //     List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
+
+  //     setState(() {
+  //       collectionNames = names;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching collection names: $e');
+  //   }
+  // }
 
   void _showNameInputDialog(BuildContext context) {
     showDialog(
@@ -176,27 +284,27 @@ class _RoutinePageState extends State<RoutinePage>
     );
   }
 
-  Future<void> saveRoutineName() async {
-    var db = FirebaseFirestore.instance;
+  // Future<void> saveRoutineName() async {
+  //   var db = FirebaseFirestore.instance;
 
-    if (nameController.text.isNotEmpty) {
-      try {
-        int order = collectionNames.length + 1; // 새로운 order 값 설정
-        await db
-            .collection('users')
-            .doc(uid)
-            .collection('Routine')
-            .doc('Routinename')
-            .collection('Names')
-            .add({
-          'name': nameController.text,
-          'order': order,
-        });
-      } catch (e) {
-        print('Error adding document: $e');
-      }
-    }
-  }
+  //   if (nameController.text.isNotEmpty) {
+  //     try {
+  //       int order = collectionNames.length + 1; // 새로운 order 값 설정
+  //       await db
+  //           .collection('users')
+  //           .doc(uid)
+  //           .collection('Routine')
+  //           .doc('Routinename')
+  //           .collection('Names')
+  //           .add({
+  //         'name': nameController.text,
+  //         'order': order,
+  //       });
+  //     } catch (e) {
+  //       print('Error adding document: $e');
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +381,7 @@ class _RoutinePageState extends State<RoutinePage>
                             child: Text('예',
                                 style: TextStyle(color: Colors.white)),
                             onPressed: () {
-                              saveRoutineName();
+                              // saveRoutineName();
                               Navigator.of(context).pop(); 
                               Navigator.of(context).pop(true);// 확인 팝업 닫기
                               
