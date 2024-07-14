@@ -155,7 +155,6 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
      _loadEndTimeFromPrefs();
      
   }
-
   Future<void> myCollectionName() async {
   try {
     print(widget.currentroutinename);
@@ -165,37 +164,45 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
         .doc(uid)
         .collection('Routine')
         .doc('Myroutine')
-        .collection(widget.currentroutinename)
-        .doc(_title)
         .get();
 
     if (documentSnapshot.exists) {
       var data = documentSnapshot.data() as Map<String, dynamic>;
-      if (data.containsKey('exercises')) {
-        List<Map<String, dynamic>> exercisesData =
-            List<Map<String, dynamic>>.from(data['exercises']
-                .map((exercise) => {
-                      'reps': exercise['reps'],
-                      'weight': exercise['weight'],
-                    })
-                .toList());
 
-        setState(() {
-          _counter = exercisesData.length;
-          _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
-          _rows = exercisesData.map((exercise) {
-            int currentIndex = exercisesData.indexOf(exercise);
-            return ExerciseRow(
-              weightController:
-                  TextEditingController(text: exercise['weight'].toString()),
-              repsController:
-                  TextEditingController(text: exercise['reps'].toString()),
-              counter: currentIndex + 1,
-              onCheckPressed: _startTimer,
-              onCheckChanged: (isChecked) => _handleCheckChanged(currentIndex, isChecked),
-            );
-          }).toList();
-        });
+      if (data.containsKey(widget.currentroutinename)) {
+        List<dynamic> myRoutineList = data[widget.currentroutinename];
+
+        var routineData = myRoutineList.firstWhere(
+          (routine) => routine.containsKey(_title),
+          orElse: () => null,
+        );
+
+        if (routineData != null && routineData[_title].containsKey('exercises')) {
+          List<Map<String, dynamic>> exercisesData =
+              List<Map<String, dynamic>>.from(routineData[_title]['exercises']
+                  .map((exercise) => {
+                        'reps': exercise['reps'],
+                        'weight': exercise['weight'],
+                      })
+                  .toList());
+
+          setState(() {
+            _counter = exercisesData.length;
+            _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
+            _rows = exercisesData.map((exercise) {
+              int currentIndex = exercisesData.indexOf(exercise);
+              return ExerciseRow(
+                weightController:
+                    TextEditingController(text: exercise['weight'].toString()),
+                repsController:
+                    TextEditingController(text: exercise['reps'].toString()),
+                counter: currentIndex + 1,
+                onCheckPressed: _startTimer,
+                onCheckChanged: (isChecked) => _handleCheckChanged(currentIndex, isChecked),
+              );
+            }).toList();
+          });
+        }
       }
     }
   } catch (e) {
@@ -203,35 +210,137 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   }
 }
 
-  Future<void> saveRoutineData() async {
-    var db = FirebaseFirestore.instance;
 
-    Map<String, dynamic> routine = {"exercises": []};
-    for (var row in _rows) {
-      String weight = row.weightController.text;
-      String reps = row.repsController.text;
+//   Future<void> myCollectionName() async {
+//   try {
+//     print(widget.currentroutinename);
+//     print(_title);
+//     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+//         .collection('users')
+//         .doc(uid)
+//         .collection('Routine')
+//         .doc('Myroutine')
+//         .collection(widget.currentroutinename)
+//         .doc(_title)
+//         .get();
 
-      routine["exercises"].add({
-        "weight": weight,
-        "reps": reps,
-      });
-    }
+//     if (documentSnapshot.exists) {
+//       var data = documentSnapshot.data() as Map<String, dynamic>;
+//       if (data.containsKey('exercises')) {
+//         List<Map<String, dynamic>> exercisesData =
+//             List<Map<String, dynamic>>.from(data['exercises']
+//                 .map((exercise) => {
+//                       'reps': exercise['reps'],
+//                       'weight': exercise['weight'],
+//                     })
+//                 .toList());
 
-    if (routine["exercises"].isNotEmpty) {
-      try {
-        await db
-            .collection('users')
-            .doc(uid)
-            .collection('Routine')
-            .doc('Myroutine')
-            .collection(widget.currentroutinename)
-            .doc(_title)
-            .set(routine);
-      } catch (e) {
-        print('Error saving routine data: $e');
+//         setState(() {
+//           _counter = exercisesData.length;
+//           _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
+//           _rows = exercisesData.map((exercise) {
+//             int currentIndex = exercisesData.indexOf(exercise);
+//             return ExerciseRow(
+//               weightController:
+//                   TextEditingController(text: exercise['weight'].toString()),
+//               repsController:
+//                   TextEditingController(text: exercise['reps'].toString()),
+//               counter: currentIndex + 1,
+//               onCheckPressed: _startTimer,
+//               onCheckChanged: (isChecked) => _handleCheckChanged(currentIndex, isChecked),
+//             );
+//           }).toList();
+//         });
+//       }
+//     }
+//   } catch (e) {
+//     print('Error fetching document data: $e');
+//   }
+// }
+
+Future<void> saveRoutineData() async {
+  var db = FirebaseFirestore.instance;
+
+  Map<String, dynamic> routine = {"exercises": []};
+  for (var row in _rows) {
+    String weight = row.weightController.text;
+    String reps = row.repsController.text;
+
+    routine["exercises"].add({
+      "weight": weight,
+      "reps": reps,
+    });
+  }
+
+  if (routine["exercises"].isNotEmpty) {
+    try {
+      DocumentReference myRoutineRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      DocumentSnapshot documentSnapshot = await myRoutineRef.get();
+
+      if (documentSnapshot.exists) {
+        var existingData = documentSnapshot.data() as Map<String, dynamic>;
+        List<dynamic> myRoutineList = existingData[widget.currentroutinename] ?? [];
+
+        // _title이 같은 루틴을 찾기
+        int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(_title));
+
+        if (routineIndex != -1) {
+          // 기존 _title을 가진 루틴 업데이트
+          myRoutineList[routineIndex][_title] = routine;
+        } else {
+          // 새로운 루틴 추가
+          myRoutineList.add({_title: routine});
+        }
+
+        await myRoutineRef.update({widget.currentroutinename: myRoutineList});
+      } else {
+        // 문서가 없을 경우 새로 생성
+        await myRoutineRef.set({
+          widget.currentroutinename: [
+            {_title: routine}
+          ]
+        });
       }
+    } catch (e) {
+      print('Error adding document: $e');
     }
   }
+}
+
+  // Future<void> saveRoutineData() async {
+  //   var db = FirebaseFirestore.instance;
+
+  //   Map<String, dynamic> routine = {"exercises": []};
+  //   for (var row in _rows) {
+  //     String weight = row.weightController.text;
+  //     String reps = row.repsController.text;
+
+  //     routine["exercises"].add({
+  //       "weight": weight,
+  //       "reps": reps,
+  //     });
+  //   }
+
+  //   if (routine["exercises"].isNotEmpty) {
+  //     try {
+  //       await db
+  //           .collection('users')
+  //           .doc(uid)
+  //           .collection('Routine')
+  //           .doc('Myroutine')
+  //           .collection(widget.currentroutinename)
+  //           .doc(_title)
+  //           .set(routine);
+  //     } catch (e) {
+  //       print('Error saving routine data: $e');
+  //     }
+  //   }
+  // }
 
  @override
 Widget build(BuildContext context) {
@@ -256,8 +365,8 @@ Widget build(BuildContext context) {
             Icons.arrow_back,
             color: Colors.white,
           ),
-          onPressed: () {
-            saveRoutineData();
+          onPressed: () async{
+            await saveRoutineData();
             Navigator.of(context).pop('not done');
           },
         ),

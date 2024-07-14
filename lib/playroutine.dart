@@ -27,6 +27,10 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   late Timer _timer;
   String? uid;
   List<bool> completionStatus = [];
+  int totalWeight = 0; // 총 무게 상태 변수 추가
+int totalRows = 0; // 총 행 수 상태 변수 추가
+
+
 
   @override
   void initState() {
@@ -86,6 +90,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 }
 Future<void> myCollectionName() async {
   try {
+    // Firestore에서 데이터를 가져옵니다.
     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -93,59 +98,70 @@ Future<void> myCollectionName() async {
         .doc('Myroutine')
         .get();
 
+    // 문서가 존재하는지 확인합니다.
     if (documentSnapshot.exists) {
       var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      if (data.containsKey(_title)) {
-        List<dynamic> myRoutineList = data[_title];
+      // _title이 키로 존재하는지 확인합니다.
+      if (data.containsKey(widget.clickroutinename)) {
+        List<dynamic> myRoutineList = data[widget.clickroutinename];
 
-         List<String> names = [];
+        List<String> names = [];
+        // 각 루틴을 순회하며 키 값을 가져옵니다.
         for (var routine in myRoutineList) {
-          routine.forEach((key, value) {
-            names.add(key);
-          });
+          if (routine is Map<String, dynamic>) {
+            routine.forEach((key, value) {
+              names.add(key);
+            });
+          }
         }
 
+        // 상태를 업데이트합니다.
         setState(() {
           collectionNames = names;
+          completionStatus = List<bool>.filled(names.length, false);
         });
       }
     }
   } catch (e) {
+    // 에러 발생 시 콘솔에 출력합니다.
     print('Error fetching collection names: $e');
   }
 }
 
   Future<void> totalRoutineReps() async {
-    try {
-      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .get();
+  try {
+    // Firestore에서 데이터를 가져옵니다.
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-      int totalExercises = 0;
-      int totalWeight = 0;
+       int tempTotalWeight = 0;
+    int tempTotalRows = 0; // 총 행 수를 저장할 변수
 
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
+    // 문서가 존재하는지 확인합니다.
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
 
-        if (data.containsKey(_title)) {
-          List<dynamic> myRoutineList = data[_title];
+      // _title이 키로 존재하는지 확인합니다.
+      if (data.containsKey(widget.clickroutinename)) {
+        List<dynamic> myRoutineList = data[widget.clickroutinename];
 
-          for (var routine in myRoutineList) {
-            if (routine.containsKey(_title)) {
-              var routineData = routine[_title];
-              if (routineData.containsKey('exercises')) {
-                List<Map<String, dynamic>> exercises = List<Map<String, dynamic>>.from(routineData['exercises']
+        for (var routine in myRoutineList) {
+          if (routine is Map<String, dynamic>) {
+            routine.forEach((key, value) {
+              if (value.containsKey('exercises')) {
+                List<Map<String, dynamic>> exercises = List<Map<String, dynamic>>.from(value['exercises']
                     .map((exercise) => {
                           'reps': exercise['reps'],
                           'weight': exercise['weight'],
                         })
                     .toList());
 
-                totalExercises += exercises.length;
+                     tempTotalRows += exercises.length;// 총 행 수를 더합니다.
 
                 for (var exercise in exercises) {
                   int weight = 0;
@@ -163,25 +179,28 @@ Future<void> myCollectionName() async {
                     reps = int.tryParse(exercise['reps']) ?? 0;
                   }
 
-                  totalWeight += weight * reps;
+                     tempTotalWeight += weight * reps;
                 }
               }
-            }
+            });
           }
         }
       }
-
-      setState(() {
-        result = totalExercises;
-        sumweight = totalWeight;
-      });
-    } catch (e) {
-      print('Error fetching document data: $e');
     }
+
+       setState(() {
+      totalWeight = tempTotalWeight;
+      totalRows = tempTotalRows;
+    });
+    // 결과 출력
+    print('Total weight: $totalWeight');
+    print('Total rows: $totalRows'); // 총 행 수를 출력합니다.
+  } catch (e) {
+    // 에러 발생 시 콘솔에 출력합니다.
+    print('Error fetching routine stats: $e');
   }
+}
 
-
-  
   // Future<void> myCollectionName() async {
   //   try {
   //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -423,8 +442,10 @@ Future<void> myCollectionName() async {
                               color: Colors.white70,
                             ),
                           ),
+
+
                           Text(
-                            '$result',
+                            '$totalRows',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -444,7 +465,7 @@ Future<void> myCollectionName() async {
                             ),
                           ),
                           Text(
-                            '$sumweight',
+                            '$totalWeight',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
