@@ -68,75 +68,103 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
     super.dispose();
   }
 
-  Future<void> deleteData(String documentId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection("Routine")
-          .doc('Myroutine')
-          .collection(widget.myroutinename)
-          .doc(_title)
-          .delete();
-      myCollectionName();
-    } catch (e) {
-      print('Error deleting document: $e');
-    }
-  }
+Future<void> updateRoutineTitle(String newTitle) async {
+  //이름 수정해주는 함수
+  var db = FirebaseFirestore.instance;
 
-  Future<void> saveRoutineData() async {
-    var db = FirebaseFirestore.instance;
-   
+  try {
+    DocumentReference myRoutineRef = db
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
 
-    Map<String, dynamic> routine = {"exercises": []};
-    for (int i = 0; i < _weightControllers.length; i++) {
-      String weight = _weightControllers[i].text;
-      String reps = _repsControllers[i].text;
+    DocumentSnapshot documentSnapshot = await myRoutineRef.get();
 
-      routine["exercises"].add({
-        "weight": weight,
-        "reps": reps,
-      });
-    }
-    if (routine["exercises"].isNotEmpty) {
-      try {
-        DocumentSnapshot documentSnapshot = await db
-            .collection('users')
-            .doc(uid)
-            .collection('Routine')
-            .doc('Myroutine')
-            .collection(widget.myroutinename)
-            .doc(_title)
-            .get();
+    if (documentSnapshot.exists) {
+      var existingData = documentSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> myRoutineList = existingData[widget.myroutinename] ?? [];
 
-        if (documentSnapshot.exists) {
-          var existingData = documentSnapshot.data() as Map<String, dynamic>;
-          if (!DeepCollectionEquality()
-              .equals(existingData['exercises'], routine['exercises'])) {
-            await db
-                .collection('users')
-                .doc(uid)
-                .collection('Routine')
-                .doc('Myroutine')
-                .collection(widget.myroutinename)
-                .doc(_title)
-                .set(routine);
-          }
-        } else {
-          await db
-              .collection('users')
-              .doc(uid)
-              .collection('Routine')
-              .doc('Myroutine')
-              .collection(widget.myroutinename)
-              .doc(_title)
-              .set(routine);
-        }
-      } catch (e) {
-        print('Error adding document: $e');
+      // _title이 같은 루틴을 찾기
+      int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(_title));
+
+      if (routineIndex != -1) {
+        var routineData = myRoutineList[routineIndex][_title];
+
+        // 기존 루틴 삭제
+        myRoutineList.removeAt(routineIndex);
+
+        // 새로운 이름으로 루틴 추가
+        myRoutineList.add({newTitle: routineData});
+
+        // Firestore 업데이트
+        await myRoutineRef.update({widget.myroutinename: myRoutineList});
+
+        // 로컬 상태 업데이트
+        setState(() {
+          _title = newTitle;
+        });
       }
     }
+  } catch (e) {
+    print('Error updating routine title: $e');
   }
+}
+
+ Future<void> saveRoutineData() async {
+  var db = FirebaseFirestore.instance;
+
+  Map<String, dynamic> routine = {"exercises": []};
+  for (int i = 0; i < _weightControllers.length; i++) {
+    String weight = _weightControllers[i].text;
+    String reps = _repsControllers[i].text;
+
+    routine["exercises"].add({
+      "weight": weight,
+      "reps": reps,
+    });
+  }
+
+  if (routine["exercises"].isNotEmpty) {
+    try {
+      DocumentReference myRoutineRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      DocumentSnapshot documentSnapshot = await myRoutineRef.get();
+
+      if (documentSnapshot.exists) {
+        var existingData = documentSnapshot.data() as Map<String, dynamic>;
+        List<dynamic> myRoutineList = existingData[widget.myroutinename] ?? [];
+
+        // _title이 같은 루틴을 찾기
+        int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(_title));
+
+        if (routineIndex != -1) {
+          // 기존 _title을 가진 루틴 업데이트
+          myRoutineList[routineIndex][_title] = routine;
+        } else {
+          // 새로운 루틴 추가
+          myRoutineList.add({_title: routine});
+        }
+
+        await myRoutineRef.update({widget.myroutinename: myRoutineList});
+      } else {
+        // 문서가 없을 경우 새로 생성
+        await myRoutineRef.set({
+          widget.myroutinename: [
+            {_title: routine}
+          ]
+        });
+      }
+    } catch (e) {
+      print('Error adding document: $e');
+    }
+  }
+}
+
 
   void _showNameInputDialog(BuildContext context) {
     showDialog(
@@ -190,7 +218,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                 ),
                 onPressed: () async{
                   if (_formKey.currentState!.validate()) {
-                    await deleteData(lastname);
+                    await updateRoutineTitle(nameController.text);
                     setState(() {
                       _title = nameController.text;
                     });
@@ -208,28 +236,38 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
       },
     );
   }
-
   void myCollectionName() async {
-    try {
-      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .collection(widget.myroutinename)
-          .doc(widget.clickroutinename)
-          .get();
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
-        if (data.containsKey('exercises')) {
-          exercisesData = List<Map<String, dynamic>>.from(data['exercises']
-              .map((exercise) => {
-                    'reps': exercise['reps'],
-                    'weight': exercise['weight'],
-                  })
-              .toList());
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+      
+      // Check if the widget.myroutinename exists
+      if (data.containsKey(widget.myroutinename)) {
+        List<dynamic> myRoutineList = data[widget.myroutinename];
+        
+        // Find the routine with the title widget.clickroutinename
+        for (var routine in myRoutineList) {
+          if (routine.containsKey(widget.clickroutinename)) {
+            var routineData = routine[widget.clickroutinename];
+            if (routineData.containsKey('exercises')) {
+              exercisesData = List<Map<String, dynamic>>.from(routineData['exercises']
+                .map((exercise) => {
+                      'reps': exercise['reps'],
+                      'weight': exercise['weight'],
+                    })
+                .toList());
+            }
+            break;
+          }
         }
+
         setState(() {
           _rows = exercisesData.map((exercise) {
             Widget row = _buildExerciseRow(
@@ -239,10 +277,14 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
           }).toList();
         });
       }
-    } catch (e) {
-      print('Error fetching document data: $e');
     }
+  } catch (e) {
+    print('Error fetching document data: $e');
   }
+}
+
+
+  
 
   Widget _buildExerciseRow(String weight, String reps) {
     final weightController = TextEditingController(text: weight.toString());
