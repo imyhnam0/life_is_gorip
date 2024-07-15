@@ -421,9 +421,7 @@ class _HomepageState extends State<Homepage> {
                     Icons.settings,
                     color: Colors.white,
                   ),
-                  onPressed: () {
-                   
-                  },
+                  onPressed: () {},
                 ),
                 IconButton(
                   icon: Icon(
@@ -628,6 +626,15 @@ class _HomepageState extends State<Homepage> {
                               });
                               await updateFirestoreOrder(
                                   modifiedCollectionNames);
+                            },
+                            proxyDecorator: (Widget child, int index,
+                                Animation<double> animation) {
+                              return Material(
+                                color: Colors
+                                    .transparent, // Material 위젯의 color 속성을 직접 조정
+                                child: child,
+                                elevation: 0.0,
+                              );
                             },
                             children: <Widget>[
                               for (int index = 0;

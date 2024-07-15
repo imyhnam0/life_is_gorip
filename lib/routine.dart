@@ -339,6 +339,14 @@ Future<void> myCollectionName() async {
               collectionNames.insert(newIndex, item);
             });
           },
+           proxyDecorator:
+              (Widget child, int index, Animation<double> animation) {
+            return Material(
+              color: Colors.transparent, // Material 위젯의 color 속성을 직접 조정
+              child: child,
+              elevation: 0.0,
+            );
+          },
           children: [
             for (int index = 0; index < collectionNames.length; index++)
               Padding(

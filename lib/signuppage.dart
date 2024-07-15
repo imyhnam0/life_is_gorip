@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'firebase_auth_service.dart';
 import 'loginpage.dart';
 
-
 class SignUpPage extends StatefulWidget {
   @override
   _SignUpPageState createState() => _SignUpPageState();
@@ -17,8 +16,8 @@ class _SignUpPageState extends State<SignUpPage> {
     if (value == null || value.isEmpty) {
       return '이메일을 입력하세요';
     }
-    final RegExp emailRegExp = RegExp(
-        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
+    final RegExp emailRegExp =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
     if (!emailRegExp.hasMatch(value)) {
       return '유효한 이메일 주소를 입력하세요';
     }
@@ -49,6 +48,15 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade900,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -57,7 +65,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             children: [
               Text(
-                'Join Us!',
+                '회원가입',
                 style: TextStyle(
                   fontFamily: 'Pacifico',
                   fontSize: 32.0,

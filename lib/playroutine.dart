@@ -7,6 +7,7 @@ import 'main.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 import 'create_routine.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PlayMyRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -46,6 +47,8 @@ int totalRows = 0; // 총 행 수 상태 변수 추가
     _timer.cancel();
     super.dispose();
   }
+  
+  
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -114,6 +117,15 @@ Future<void> myCollectionName() async {
               names.add(key);
             });
           }
+        }
+
+         final prefs = await SharedPreferences.getInstance();
+        List<String>? savedNames = prefs.getStringList('$_title-collectionNames');
+
+        if (savedNames != null && savedNames.length == names.length && savedNames.every((element) => names.contains(element))) {
+          names = savedNames;
+        } else {
+          prefs.setStringList('$_title-collectionNames', names);
         }
 
         // 상태를 업데이트합니다.

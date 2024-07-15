@@ -158,6 +158,17 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
         appBar: AppBar(
           title: const Text('None'),
           backgroundColor: Colors.blueGrey.shade900,
+           leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기',
+        ),
         ),
         body: const Center(
           child:

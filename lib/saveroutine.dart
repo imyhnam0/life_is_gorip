@@ -4,6 +4,7 @@ import 'start_routine.dart';
 import 'routine.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
@@ -23,6 +24,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     loadStarRow();
+    loadSavedCollectionNames(); // 저장된 순서를 불러오기
     myCollectionName();
   }
 
@@ -54,82 +56,81 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     }
 
     try {
-    DocumentReference docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine');
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
 
-    DocumentSnapshot documentSnapshot = await docRef.get();
+      DocumentSnapshot documentSnapshot = await docRef.get();
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      if (data.containsKey(documentId)) {
-        // Remove the entire collection (_title)
-        data.remove(documentId);
-        await docRef.set(data);
+        if (data.containsKey(documentId)) {
+          // Remove the entire collection (_title)
+          data.remove(documentId);
+          await docRef.set(data);
+        }
       }
+
+      await myCollectionName();
+    } catch (e) {
+      print('Error deleting collection: $e');
     }
-
-    await myCollectionName();
-  } catch (e) {
-    print('Error deleting collection: $e');
   }
-
-
-   
-  }
-
 
   Future<void> myCollectionName() async {
-  try {
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine')
-        .get();
+    try {
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
+        List<String> names = [];
+        data.forEach((key, value) {
+          names.add(key);
+        });
 
-      List<String> names = [];
-      data.forEach((key, value) {
-        names.add(key);
-      });
+        final prefs = await SharedPreferences.getInstance();
+        List<String>? savedNames = prefs.getStringList('collectionNames');
 
+        if (savedNames != null &&
+            savedNames.length == names.length &&
+            savedNames.every((element) => names.contains(element))) {
+          setState(() {
+            collectionNames = savedNames;
+          });
+        } else {
+          setState(() {
+            collectionNames = names;
+          });
+          saveCollectionNames(names);
+        }
+      }
+    } catch (e) {
+      print('Error fetching collection names: $e');
+    }
+  }
+
+  Future<void> saveCollectionNames(List<String> names) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('collectionNames', names);
+  }
+
+  Future<void> loadSavedCollectionNames() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? savedNames = prefs.getStringList('collectionNames');
+    if (savedNames != null) {
       setState(() {
-        collectionNames = names;
+        collectionNames = savedNames;
       });
     }
-  } catch (e) {
-    print('Error fetching collection names: $e');
   }
-}
-
-
-  // Future<void> myCollectionName() async {
-  //   try {
-  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection("Routine")
-  //         .doc('Routinename')
-  //         .collection('Names')
-  //         .orderBy('order')
-  //         .get();
-
-  //     List<String> names =
-  //         querySnapshot.docs.map((doc) => doc['name'] as String).toList();
-
-  //     setState(() {
-  //       collectionNames = names;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching collection names: $e');
-  //   }
-  // }
 
   Future<void> loadStarRow() async {
     try {
@@ -168,7 +169,9 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           await bookmarkDocRef.update({'names': names});
         }
       } else {
-        await bookmarkDocRef.set({'names': [name]});
+        await bookmarkDocRef.set({
+          'names': [name]
+        });
       }
 
       setState(() {
@@ -178,34 +181,6 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
       print('Error adding name: $e');
     }
   }
-
-
-  // Future<void> updateFirestoreOrder() async {
-  //   try {
-  //     WriteBatch batch = FirebaseFirestore.instance.batch();
-  //     CollectionReference collectionRef = FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection("Routine")
-  //         .doc('Routinename')
-  //         .collection('Names');
-
-  //     for (int i = 0; i < collectionNames.length; i++) {
-  //       QuerySnapshot querySnapshot = await collectionRef
-  //           .where('name', isEqualTo: collectionNames[i])
-  //           .get();
-
-  //       if (querySnapshot.docs.isNotEmpty) {
-  //         DocumentReference docRef = querySnapshot.docs[0].reference;
-  //         batch.update(docRef, {'order': i});
-  //       }
-  //     }
-
-  //     await batch.commit();
-  //   } catch (e) {
-  //     print('Error updating Firestore order: $e');
-  //   }
-  // }
 
   Future<void> removeStarRow(String name) async {
     try {
@@ -311,15 +286,23 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex)  {
+          onReorder: (int oldIndex, int newIndex) {
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
               }
               final String item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
+              saveCollectionNames(collectionNames); // 순서가 바뀔 때마다 저장
             });
-            
+          },
+          proxyDecorator:
+              (Widget child, int index, Animation<double> animation) {
+            return Material(
+              color: Colors.transparent, // Material 위젯의 color 속성을 직접 조정
+              child: child,
+              elevation: 0.0,
+            );
           },
           children: <Widget>[
             for (int index = 0; index < collectionNames.length; index++)
@@ -373,7 +356,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                 color: Colors.white,
                               ),
                             ),
-                            Spacer(), 
+                            Spacer(),
                             ReorderableDragStartListener(
                               index: index,
                               child: Container(

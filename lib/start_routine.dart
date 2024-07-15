@@ -25,6 +25,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
+    loadSavedCollectionNames(); // 저장된 순서를 불러오기
     myCollectionName();
   }
 
@@ -62,38 +63,65 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     print('Error deleting document: $e');
   }
 }
-
-  Future<void> myCollectionName() async {
-    try {
-       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+Future<void> myCollectionName() async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('Routine')
         .doc('Myroutine')
         .get();
 
-       var data = documentSnapshot.data() as Map<String, dynamic>;
-
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
       if (data.containsKey(_title)) {
         List<dynamic> myRoutineList = data[_title];
-
-         List<String> names = [];
+        List<String> names = [];
         for (var routine in myRoutineList) {
           routine.forEach((key, value) {
             names.add(key);
           });
         }
 
-        setState(() {
-          collectionNames = names;
-        });
+        final prefs = await SharedPreferences.getInstance();
+        List<String>? savedNames = prefs.getStringList('$_title-collectionNames');
+
+        if (savedNames != null &&
+            savedNames.length == names.length &&
+            savedNames.every((element) => names.contains(element))) {
+          setState(() {
+            collectionNames = savedNames;
+          });
+        } else {
+          setState(() {
+            collectionNames = names;
+          });
+          saveCollectionNames(names);
+        }
       }
-      
-      
-    } catch (e) {
-      print('Error fetching collection names: $e');
     }
+  } catch (e) {
+    print('Error fetching collection names: $e');
   }
+}
+
+Future<void> saveCollectionNames(List<String> names) async {
+  final prefs = await SharedPreferences.getInstance();
+  prefs.setStringList('$_title-collectionNames', names);
+}
+
+Future<void> loadSavedCollectionNames() async {
+  final prefs = await SharedPreferences.getInstance();
+  List<String>? savedNames = prefs.getStringList('$_title-collectionNames');
+  if (savedNames != null) {
+    setState(() {
+      collectionNames = savedNames;
+    });
+  }
+}
+
+
+
   Future<void> _updateRoutineTitle(String newTitle) async {
   try {
     DocumentReference docRef = FirebaseFirestore.instance
@@ -248,7 +276,16 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
             setState(() {
               final item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
+              saveCollectionNames(collectionNames); // 순서가 바뀔 때마다 저장
             });
+          },
+           proxyDecorator:
+              (Widget child, int index, Animation<double> animation) {
+            return Material(
+              color: Colors.transparent, // Material 위젯의 color 속성을 직접 조정
+              child: child,
+              elevation: 0.0,
+            );
           },
           children: [
             for (final name in collectionNames)

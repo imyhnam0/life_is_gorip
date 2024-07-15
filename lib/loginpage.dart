@@ -77,105 +77,106 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: Stack(
         children: [
-          Center( // Center widget to align the image in the center
-      child: Container(
-        width: MediaQuery.of(context).size.width * 1.0, // Adjust the width as needed
-        height: MediaQuery.of(context).size.height * 1.5, // Adjust the height as needed
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/main.jpg'),
-            fit: BoxFit.contain, // Adjust the fit as needed
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/cat.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-    ),
-          Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Text(
-                    'Only pain No gain!',
-                    style: TextStyle(
-                      fontFamily: 'Pacifico',
-                      fontSize: 32.0,
-                      color: Colors.blueGrey.shade900,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      labelStyle: TextStyle(color: Colors.blueGrey.shade700),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blueGrey.shade700),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blueGrey.shade900),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.8),
-                    ),
-                    validator: _validateEmail,
-                  ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.blueGrey.shade700),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blueGrey.shade700),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blueGrey.shade900),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.8),
-                    ),
-                    obscureText: true,
-                    validator: _validatePassword,
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey.shade900,
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                    child: Text(
-                      'Login',
+          Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Only pain No gain!',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontFamily: 'Pacifico',
+                        fontSize: 32.0,
                         color: Colors.white,
-                        fontFamily: 'Oswald',
                       ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignUpPage()),
-                      );
-                    },
-                    child: Text(
-                      'Sign Up',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Oswald',
-                        fontSize: 16,
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.blueGrey.shade700),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey.shade700),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey.shade900),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      validator: _validateEmail,
+                    ),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(color: Colors.blueGrey.shade700),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey.shade700),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey.shade900),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      obscureText: true,
+                      validator: _validatePassword,
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey.shade900,
+                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      child: Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontFamily: 'Oswald',
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SignUpPage()),
+                        );
+                      },
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Oswald',
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
