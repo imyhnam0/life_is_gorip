@@ -611,7 +611,39 @@ class _FoodSavePageState extends State<FoodSavePage> {
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.white),
                         onPressed: () {
-                          _removeRoutine(index);
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                backgroundColor: Colors.blueGrey.shade800,
+                                title: Text(
+                                  '정말 삭제하시겠습니까?',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      '아니요',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      _removeRoutine(index);
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      '예',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
                         },
                       ),
                     ],

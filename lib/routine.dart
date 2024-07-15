@@ -48,104 +48,137 @@ class _RoutinePageState extends State<RoutinePage>
     _controller.dispose();
     super.dispose();
   }
+  Future<void> _updateRoutineTitle(String newTitle) async {
+  try {
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine');
+
+    DocumentSnapshot documentSnapshot = await docRef.get();
+
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(_title)) {
+        List<dynamic> myRoutineList = data[_title];
+
+        // Remove the old title
+        await docRef.update({_title: FieldValue.delete()});
+
+        // Add the new title with the same list
+        data.remove(_title);
+        data[newTitle] = myRoutineList;
+
+        await docRef.set(data, SetOptions(merge: true));
+      }
+    }
+
+    setState(() {
+      _title = newTitle;
+    });
+
+   
+  } catch (e) {
+    print('Error updating document: $e');
+  }
+}
 
 
   Future<void> deleteData(String routineTitle) async {
-  try {
-    DocumentReference docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine');
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
 
-    DocumentSnapshot documentSnapshot = await docRef.get();
-    print(_title);
-    print(routineTitle);
+      DocumentSnapshot documentSnapshot = await docRef.get();
+      print(_title);
+      print(routineTitle);
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      if (data.containsKey(_title)) {
-        List<dynamic> myRoutineList = data[_title];
+        if (data.containsKey(_title)) {
+          List<dynamic> myRoutineList = data[_title];
 
-        // Find the index of the routine to delete
-        int routineIndex = myRoutineList.indexWhere((routine) => routine.containsKey(routineTitle));
+          // Find the index of the routine to delete
+          int routineIndex = myRoutineList
+              .indexWhere((routine) => routine.containsKey(routineTitle));
 
-        // Remove the routine if found
-        if (routineIndex != -1) {
-          myRoutineList.removeAt(routineIndex);
-          await docRef.update({_title: myRoutineList});
+          // Remove the routine if found
+          if (routineIndex != -1) {
+            myRoutineList.removeAt(routineIndex);
+            await docRef.update({_title: myRoutineList});
+          }
         }
       }
+
+      await myCollectionName();
+    } catch (e) {
+      print('Error deleting document: $e');
     }
-
-    await myCollectionName();
-  } catch (e) {
-    print('Error deleting document: $e');
   }
-}
 
+  Future<void> deleteAllData(String collectionPath) async {
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
 
+      DocumentSnapshot documentSnapshot = await docRef.get();
 
-Future<void> deleteAllData(String collectionPath) async {
-  try {
-    DocumentReference docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine');
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-    DocumentSnapshot documentSnapshot = await docRef.get();
-
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
-
-      if (data.containsKey(_title)) {
-        // Remove the entire collection (_title)
-        data.remove(_title);
-        await docRef.set(data);
+        if (data.containsKey(_title)) {
+          // Remove the entire collection (_title)
+          data.remove(_title);
+          await docRef.set(data);
+        }
       }
-    }
 
-    await myCollectionName();
-  } catch (e) {
-    print('Error deleting collection: $e');
+      await myCollectionName();
+    } catch (e) {
+      print('Error deleting collection: $e');
+    }
   }
 
-}
+  Future<void> myCollectionName() async {
+    try {
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
 
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-Future<void> myCollectionName() async {
-  try {
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine')
-        .get();
+        if (data.containsKey(_title)) {
+          List<dynamic> myRoutineList = data[_title];
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+          List<String> names = [];
+          for (var routine in myRoutineList) {
+            routine.forEach((key, value) {
+              names.add(key);
+            });
+          }
 
-      if (data.containsKey(_title)) {
-        List<dynamic> myRoutineList = data[_title];
-
-         List<String> names = [];
-        for (var routine in myRoutineList) {
-          routine.forEach((key, value) {
-            names.add(key);
+          setState(() {
+            collectionNames = names;
           });
         }
-
-        setState(() {
-          collectionNames = names;
-        });
       }
+    } catch (e) {
+      print('Error fetching collection names: $e');
     }
-  } catch (e) {
-    print('Error fetching collection names: $e');
   }
-}
 
   void _showNameInputDialog(BuildContext context) {
     showDialog(
@@ -157,7 +190,7 @@ Future<void> myCollectionName() async {
           child: AlertDialog(
             backgroundColor: Colors.cyan.shade900,
             title: Text(
-              'My routine name',
+              '루틴 이름 생성',
               style: TextStyle(color: Colors.white),
             ),
             content: Form(
@@ -198,17 +231,8 @@ Future<void> myCollectionName() async {
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    setState(() {
-                      _title = nameController.text;
-                    });
-                    Navigator.of(context).pop();
-                    myCollectionName(); // 이름 설정 후 컬렉션 이름 가져오기
-                  } else {
-                    _controller
-                        .forward()
-                        .then((value) => _controller.reverse());
-                  }
+                  _updateRoutineTitle(nameController.text);
+              Navigator.of(context).pop();
                 },
               ),
             ],
@@ -218,7 +242,6 @@ Future<void> myCollectionName() async {
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -271,6 +294,15 @@ Future<void> myCollectionName() async {
             children: [
               IconButton(
                 icon: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  _showNameInputDialog(context);
+                },
+              ),
+              IconButton(
+                icon: Icon(
                   Icons.save,
                   color: Colors.white,
                 ),
@@ -295,11 +327,8 @@ Future<void> myCollectionName() async {
                                 style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               // saveRoutineName();
-                              Navigator.of(context).pop(); 
-                              Navigator.of(context).pop(true);// 확인 팝업 닫기
-                              
-                              
-                              
+                              Navigator.of(context).pop();
+                              Navigator.of(context).pop(true); // 확인 팝업 닫기
                             },
                           ),
                         ],
@@ -339,7 +368,7 @@ Future<void> myCollectionName() async {
               collectionNames.insert(newIndex, item);
             });
           },
-           proxyDecorator:
+          proxyDecorator:
               (Widget child, int index, Animation<double> animation) {
             return Material(
               color: Colors.transparent, // Material 위젯의 color 속성을 직접 조정

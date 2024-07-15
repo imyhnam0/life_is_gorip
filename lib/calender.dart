@@ -21,6 +21,7 @@ class _CalenderPageState extends State<CalenderPage> {
   }
 
   DateTime selectedDate = DateTime.now();
+
   Future<void> _deleteRoutine(String documentId) async {
     var db = FirebaseFirestore.instance;
     try {
@@ -35,6 +36,11 @@ class _CalenderPageState extends State<CalenderPage> {
     } catch (e) {
       print('Error deleting document: $e');
     }
+   setState(() {
+    // 상태 변경 후 UI를 다시 빌드하도록 설정
+  });
+  _fetchRoutineData();
+    
   }
 
   Future<void> _deleteFood(String documentId) async {
@@ -51,6 +57,10 @@ class _CalenderPageState extends State<CalenderPage> {
     } catch (e) {
       print('Error deleting document: $e');
     }
+    setState(() {
+    // 상태 변경 후 UI를 다시 빌드하도록 설정
+  });
+  _fetchFoodData();
   }
 
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
@@ -102,9 +112,11 @@ class _CalenderPageState extends State<CalenderPage> {
           .where('date', isEqualTo: todayDate)
           .get();
 
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      return snapshot.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        data['documentId'] = doc.id; // 문서 ID를 포함시킴
+        return data;
+      }).toList();
     } catch (e) {
       print('Error fetching documents: $e');
       return [];
@@ -125,6 +137,7 @@ class _CalenderPageState extends State<CalenderPage> {
       List<Map<String, dynamic>> matchedDocuments = [];
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
+        data['documentId'] = doc.id; // 문서 ID를 포함시킴
         if (data['날짜'] == todayDate) {
           matchedDocuments.add(data);
         }
@@ -291,94 +304,51 @@ class _CalenderPageState extends State<CalenderPage> {
                 var totalCalories = data.fold<double>(
                     0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
 
-                return ListView(children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '오늘 먹은 칼로리: $totalCalories',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold, // 글자를 두껍게
-                            fontSize: 15, // 글자 크기를 20으로 설정
-                          ),
-                        ),
-                        Text(
-                          '탄수화물: $totalCarbs',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        Text(
-                          '단백질: $totalProtein',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        Text(
-                          '지방: $totalFat',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: <Widget>[
-                            Text(
-                              '탄수화물 : ',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                            Container(
-                              width: 12,
-                              height: 12,
-                              color: Colors.blue,
-                            ),
-                            SizedBox(width: 10), // 간격 추가
-                            Text(
-                              '단백질 : ',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                            Container(
-                              width: 12,
-                              height: 12,
-                              color: Colors.red,
-                            ),
-                            SizedBox(width: 10), // 간격 추가
-                            Text(
-                              '지방 : ',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                            Container(
-                              width: 12,
-                              height: 12,
-                              color: Colors.green,
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 200,
-                          child: PieChart(
-                            PieChartData(
-                              sections: showingSections(
-                                  totalCarbs, totalProtein, totalFat),
-                              centerSpaceRadius: 40,
-                              sectionsSpace: 0,
-                              pieTouchData: PieTouchData(
-                                touchCallback:
-                                    (FlTouchEvent event, pieTouchResponse) {},
+                return ListView.builder(
+                  itemCount: data.length,
+                  itemBuilder: (context, index) {
+                    var item = data[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '오늘 먹은 칼로리: ${item['totalCalories']}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold, // 글자를 두껍게
+                                  fontSize: 15, // 글자 크기를 20으로 설정
+                                ),
                               ),
-                            ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.white),
+                                onPressed: () {
+                                  _deleteFood(item['documentId']);
+                                },
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ]);
+                          Text(
+                            '탄수화물: ${item['totalCarbs']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '단백질: ${item['totalProtein']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '지방: ${item['totalFat']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
               },
             ),
           ),
@@ -410,16 +380,28 @@ class _CalenderPageState extends State<CalenderPage> {
                     var routine = data[index];
                     return Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Column(
+                     
+                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '오늘 한 루틴 이름: ${routine['오늘 한 루틴이름']}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold, // 글자를 두껍게
-                              fontSize: 15, // 글자 크기를 20으로 설정
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '오늘 한 루틴 이름: ${routine['오늘 한 루틴이름']}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold, // 글자를 두껍게
+                                  fontSize: 15, // 글자 크기를 20으로 설정
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.white),
+                                onPressed: () {
+                                  _deleteRoutine(routine['documentId']);
+                                },
+                              ),
+                            ],
                           ),
                           Text(
                             '오늘 총 운동 세트수: ${routine['오늘 총 세트수']}',

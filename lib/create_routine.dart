@@ -176,7 +176,7 @@ Future<void> updateRoutineTitle(String newTitle) async {
           child: AlertDialog(
             backgroundColor: Colors.cyan.shade900,
             title: Text(
-              'My routine name',
+              '운동 종목 생성',
               style: TextStyle(color: Colors.white),
             ),
             content: Form(
