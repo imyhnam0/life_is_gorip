@@ -109,7 +109,7 @@ class _SettingPageState extends State<SettingPage>
                 backgroundColor: Colors.blueGrey.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: Text('사진 관리'),
+              child: Text('사진첩'),
             ),
             SizedBox(height: 16),
             ElevatedButton(

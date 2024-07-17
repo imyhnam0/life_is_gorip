@@ -373,53 +373,52 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                       ),
                     ),
                     Visibility(
-                  visible: _isDelete,
-  child: Padding(
-    padding: const EdgeInsets.only(left: 5.0),
-    child: IconButton(
-      icon: Icon(
-        Icons.delete,
-        color: Colors.white,
-      ),
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: Colors.blueGrey.shade800,
-              title: Text(
-                '정말 삭제하시겠습니까?',
-                style: TextStyle(color: Colors.white),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    '아니요',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    deleteCollection(collectionNames[index]);
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    '예',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ),
-  ),
-
-
+                      visible: _isDelete,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5.0),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  backgroundColor: Colors.blueGrey.shade800,
+                                  title: Text(
+                                    '정말 삭제하시겠습니까?',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text(
+                                        '아니요',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        deleteCollection(
+                                            collectionNames[index]);
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text(
+                                        '예',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),
