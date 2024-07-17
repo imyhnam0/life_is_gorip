@@ -21,6 +21,7 @@ import 'user_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_auth_service.dart';
 import 'friendship.dart';
+import 'setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -398,18 +399,7 @@ class _HomepageState extends State<Homepage> {
         ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade700,
-        leading: IconButton(
-          icon: Icon(
-            Icons.query_stats,
-            color: Colors.white,
-          ), // Icons.list 대신 Icons.menu를 사용
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => RoutineChart()),
-            );
-          },
-        ),
+       
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -421,21 +411,14 @@ class _HomepageState extends State<Homepage> {
                     Icons.settings,
                     color: Colors.white,
                   ),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.person,
-                    color: Colors.blue,
-                  ),
                   onPressed: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FriendshipPage(),
-                        ));
+                      context,
+                      MaterialPageRoute(builder: (context) => SettingPage()),
+                    );
                   },
                 ),
+               
               ],
             ),
           ),

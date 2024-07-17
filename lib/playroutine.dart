@@ -213,78 +213,6 @@ Future<void> myCollectionName() async {
   }
 }
 
-  // Future<void> myCollectionName() async {
-  //   try {
-  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection('Routine')
-  //         .doc('Myroutine')
-  //         .collection(widget.clickroutinename)
-  //         .get();
-  //     List<String> names = querySnapshot.docs.map((doc) => doc.id).toList();
-
-  //     setState(() {
-  //       collectionNames = names;
-  //       completionStatus = List<bool>.filled(names.length, false);
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching collection names: $e');
-  //   }
-  // }
-
-  // Future<void> totalRoutineReps() async {
-  //   try {
-  //     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection('Routine')
-  //         .doc('Myroutine')
-  //         .collection(widget.clickroutinename)
-  //         .get();
-
-  //     int totalExercises = 0;
-  //     int totalWeight = 0;
-
-  //     for (var doc in querySnapshot.docs) {
-  //       var data = doc.data() as Map<String, dynamic>;
-  //       if (data.containsKey('exercises')) {
-  //         exercisesData = List<Map<String, dynamic>>.from(data['exercises']
-  //             .map((exercise) => {
-  //                   'reps': exercise['reps'],
-  //                   'weight': exercise['weight'],
-  //                 })
-  //             .toList());
-
-  //         totalExercises += exercisesData.length;
-
-  //         for (var exercise in exercisesData) {
-  //           int weight = 0;
-  //           int reps = 0;
-  //           if (exercise['weight'] is int) {
-  //             weight = exercise['weight'];
-  //           } else if (exercise['weight'] is String) {
-  //             weight = int.tryParse(exercise['weight']) ?? 0;
-  //           }
-  //           if (exercise['reps'] is int) {
-  //             reps = exercise['reps'];
-  //           } else if (exercise['reps'] is String) {
-  //             reps = int.tryParse(exercise['reps']) ?? 0;
-  //           }
-  //           totalWeight +=
-  //               weight * reps; // weight와 reps를 곱한 값을 totalWeight에 더합니다.
-  //         }
-  //       }
-  //     }
-  //     setState(() {
-  //       result = totalExercises;
-  //       sumweight = totalWeight;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching document data: $e');
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -613,8 +541,8 @@ Future<void> myCollectionName() async {
                 
                           saveRoutine(
                             _title,
-                            result,
-                            sumweight,
+                            totalRows,
+                            totalWeight,
                             _seconds,
                           );
                           Navigator.pushAndRemoveUntil(

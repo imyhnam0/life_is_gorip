@@ -23,29 +23,29 @@ class _RoutineChartState extends State<RoutineChart> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
   }
-Future<List<String>> fetchCollectionNames() async {
-  //루틴 이름 불러오는 거 저장
-  List<String> names = [];
 
-  try {
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine')
-        .get();
+  Future<List<String>> fetchCollectionNames() async {
+    //루틴 이름 불러오는 거 저장
+    List<String> names = [];
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
-      names = data.keys.toList();
+    try {
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
+
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
+        names = data.keys.toList();
+      }
+    } catch (e) {
+      print('Error fetching collection names: $e');
     }
-  } catch (e) {
-    print('Error fetching collection names: $e');
+
+    return names;
   }
-
-  return names;
-}
-
 
   Future<Map<String, Map<String, int>>> _RoutineChartGet() async {
     var db = FirebaseFirestore.instance;
@@ -212,6 +212,39 @@ Future<List<String>> fetchCollectionNames() async {
       },
     );
   }
+
+  Future<void> _deleteRoutineData(String routineName) async {
+  var db = FirebaseFirestore.instance;
+
+  try {
+    QuerySnapshot snapshot = await db
+        .collection('users')
+        .doc(uid)
+        .collection('Calender')
+        .doc('health')
+        .collection('routines')
+        .where('오늘 한 루틴이름', isEqualTo: routineName)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      await db
+          .collection('users')
+          .doc(uid)
+          .collection('Calender')
+          .doc('health')
+          .collection('routines')
+          .doc(doc.id)
+          .delete();
+    }
+
+    setState(() {
+      // 데이터를 삭제한 후 UI를 갱신하기 위해 FutureBuilder를 다시 호출합니다.
+    });
+  } catch (e) {
+    print('Error deleting routine data: $e');
+  }
+}
+
 
   void _showChartOptions(BuildContext context) {
     showDialog(
@@ -505,7 +538,6 @@ Future<List<String>> fetchCollectionNames() async {
               SizedBox(height: 20),
               Row(
                 children: [
-                  
                   Text(
                     '몸무게',
                     style: TextStyle(
@@ -515,7 +547,7 @@ Future<List<String>> fetchCollectionNames() async {
                     ),
                   ),
                   Icon(Icons.circle, color: Colors.red),
-                 SizedBox(width: 20),
+                  SizedBox(width: 20),
                   Text(
                     '골격근량',
                     style: TextStyle(
@@ -524,7 +556,7 @@ Future<List<String>> fetchCollectionNames() async {
                       color: Colors.white,
                     ),
                   ),
-                      Icon(Icons.circle, color: Colors.green),
+                  Icon(Icons.circle, color: Colors.green),
                   SizedBox(width: 20),
                   Text(
                     '체지방량',
@@ -632,13 +664,25 @@ Future<List<String>> fetchCollectionNames() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            routineName,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Text(
+                routineName,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 20),
+              IconButton(
+                  icon: Icon(Icons.delete, color: Colors.white),// 예시 아이콘, 원하는 아이콘으로 변경 가능
+                color: Colors.white,
+                onPressed: () {
+                _deleteRoutineData(routineName);
+              },
+              ),
+            ],
           ),
           SizedBox(
             height: 200,
