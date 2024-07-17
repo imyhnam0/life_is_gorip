@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health/routine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
@@ -6,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'playroutine.dart';
 
 class FoodroutinestartPage extends StatefulWidget {
   @override
@@ -13,7 +15,7 @@ class FoodroutinestartPage extends StatefulWidget {
 }
 
 class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
-  String? title;
+  String? title = '진행중 식단';
   List<Map<String, dynamic>> meals = [];
 
   double totalCalories = 0;
@@ -48,11 +50,12 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
     await prefs.remove('currentRoutineTitle');
     await prefs.remove('currentRoutineMeals');
   }
+
   Future<void> _saveData() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setString('currentRoutineTitle', title ?? '');
-  await prefs.setString('currentRoutineMeals', json.encode(meals));
-}
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currentRoutineTitle', title ?? '');
+    await prefs.setString('currentRoutineMeals', json.encode(meals));
+  }
 
   void _calculateTotalRoutineNutrients() {
     totalCalories = 0;
@@ -153,34 +156,104 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (title == null || meals.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('None'),
-          backgroundColor: Colors.blueGrey.shade900,
-           leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 28,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          tooltip: '뒤로 가기',
-        ),
-        ),
-        body: const Center(
-          child:
-              Text('아직 실행중인 식단이 없습니다.', style: TextStyle(color: Colors.white)),
-        ),
-        backgroundColor: Colors.blueGrey.shade900,
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(title!, style: const TextStyle(color: Colors.white)),
+        title: GestureDetector(
+          onTapDown: (TapDownDetails details) async {
+            final RenderBox overlay =
+                Overlay.of(context).context.findRenderObject() as RenderBox;
+            final result = await showMenu<String>(
+              context: context,
+              position: RelativeRect.fromRect(
+                details.globalPosition & Size(40, 40), // 터치 위치에서 메뉴를 표시
+                Offset.zero & overlay.size, // 화면 전체 크기
+              ),
+              items: [
+                PopupMenuItem<String>(
+                  value: '루틴',
+                  child: Text(
+                    '진행중 루틴',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: '식단',
+                  child: Text(
+                    '진행중 식단',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+              color: Colors.blueGrey.shade800,
+            );
+
+            if (result != null) {
+              if (result == '식단') {
+                setState(() {
+                  title = '진행중 식단';
+                });
+                // 현재 페이지 유지
+              } else if (result == '루틴') {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                String? savedTitle = prefs.getString('title');
+                setState(() {
+                  title = '진행중 루틴';
+                });
+                if (savedTitle == null || savedTitle == 'defaultTitle') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(
+                          title:
+                              Text('없음', style: TextStyle(color: Colors.white)),
+                          backgroundColor: Colors.blueGrey.shade900,
+                          leading: IconButton(
+                            icon: Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              setState(() {
+                                title = '진행중 식단';
+                              });
+                            },
+                          ),
+                        ),
+                        body: Center(
+                          child: Text(
+                            '아직 실행중인 루틴이 없습니다.',
+                            style: TextStyle(color: Colors.white, fontSize: 24),
+                          ),
+                        ),
+                        backgroundColor: Colors.blueGrey.shade900,
+                      ),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlayMyRoutinePage(
+                        clickroutinename: savedTitle ?? 'defaultTitle',
+                      ),
+                    ),
+                  );
+                }
+              }
+            }
+          },
+          child: Text(
+            title ?? 'None',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
         backgroundColor: Colors.blueGrey.shade900,
         leading: IconButton(
           icon: Icon(
@@ -203,8 +276,10 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
               await _clearData();
               Navigator.pop(context);
             },
-            child: const Text('종료',
-                style: TextStyle(color: Colors.white)), // 글자색 지정
+            child: const Text(
+              '종료',
+              style: TextStyle(color: Colors.white), // 글자색 지정
+            ),
           ),
         ],
       ),
@@ -265,7 +340,6 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
                         '${meals[index]['name']} - 총 칼로리: ${totalNutrients['calories']} 총 탄: ${totalNutrients['carbs']} 총 단: ${totalNutrients['protein']} 총 지: ${totalNutrients['fat']}',
                         style: TextStyle(color: Colors.white),
                       ),
-                       
                       children: meals[index]['subMeals'].map<Widget>((subMeal) {
                         return Container(
                             decoration: BoxDecoration(
@@ -278,14 +352,13 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
                                   BorderRadius.circular(5), // 테두리 둥근 정도
                             ),
                             child: CheckboxListTile(
-                             
                               title: Text(
                                   '${subMeal['name']} (${subMeal['grams']}g)',
                                   style: TextStyle(color: Colors.white)),
                               value: meals[index]['checkedMeals'] != null &&
                                   meals[index]['checkedMeals']
                                       .contains(subMeal['name']),
-                              onChanged: (bool? value) async{
+                              onChanged: (bool? value) async {
                                 setState(() {
                                   if (meals[index]['checkedMeals'] == null) {
                                     meals[index]['checkedMeals'] = [];
@@ -298,7 +371,7 @@ class _FoodroutinestartPageState extends State<FoodroutinestartPage> {
                                         .remove(subMeal['name']);
                                   }
                                 });
-                                await _saveData(); 
+                                await _saveData();
                               },
                               activeColor: Colors.cyan,
                               checkColor: Colors.white,
