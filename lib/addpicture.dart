@@ -20,6 +20,8 @@ class _AddPicturePageState extends State<AddPicturePage> {
   String? currentFolder = '';
   List<String> folderList = [];
   List<String> imageList = [];
+  bool _isDeleting = false;
+  List<String> _selectedItems = [];
 
   @override
   void initState() {
@@ -28,22 +30,44 @@ class _AddPicturePageState extends State<AddPicturePage> {
     _fetchFoldersAndImages();
   }
 
+  Future<void> _deleteFolder(String folderPath) async {
+  final ListResult result = await FirebaseStorage.instance.ref(folderPath).listAll();
+
+  // Delete all files in the folder
+  for (var fileRef in result.items) {
+    await fileRef.delete();
+  }
+
+  // Recursively delete all subfolders
+  for (var folderRef in result.prefixes) {
+    await _deleteFolder(folderRef.fullPath);
+  }
+}
+
+  
+
   Future<void> _fetchFoldersAndImages() async {
     await _fetchFolders();
     await _fetchImages();
   }
 
   Future<void> _fetchFolders() async {
-    final ListResult result = await FirebaseStorage.instance.ref('$uid/$currentFolder').listAll();
-    final List<String> folders = result.prefixes.map((ref) => ref.name).toList();
+    final ListResult result =
+        await FirebaseStorage.instance.ref('$uid/$currentFolder').listAll();
+    final List<String> folders =
+        result.prefixes.map((ref) => ref.name).toList();
     setState(() {
       folderList = folders;
     });
   }
 
   Future<void> _fetchImages() async {
-    final ListResult result = await FirebaseStorage.instance.ref('$uid/$currentFolder').listAll();
-    final List<String> images = result.items.where((ref) => !ref.name.contains('.dummy')).map((ref) => ref.fullPath).toList();
+    final ListResult result =
+        await FirebaseStorage.instance.ref('$uid/$currentFolder').listAll();
+    final List<String> images = result.items
+        .where((ref) => !ref.name.contains('.dummy'))
+        .map((ref) => ref.fullPath)
+        .toList();
     setState(() {
       imageList = images;
     });
@@ -64,9 +88,8 @@ class _AddPicturePageState extends State<AddPicturePage> {
   Future<void> _uploadImage() async {
     if (_image == null || uid == null) return;
 
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child('$uid/$currentFolder/${DateTime.now().millisecondsSinceEpoch}.png');
+    final storageRef = FirebaseStorage.instance.ref().child(
+        '$uid/$currentFolder/${DateTime.now().millisecondsSinceEpoch}.png');
     final uploadTask = storageRef.putFile(_image!);
 
     await uploadTask.whenComplete(() async {
@@ -79,7 +102,9 @@ class _AddPicturePageState extends State<AddPicturePage> {
   }
 
   Future<void> _createFolder(String folderName) async {
-    final folderRef = FirebaseStorage.instance.ref().child('$uid/$currentFolder/$folderName/');
+    final folderRef = FirebaseStorage.instance
+        .ref()
+        .child('$uid/$currentFolder/$folderName/');
     await folderRef.child('.dummy').putString('');
     await _fetchFolders();
   }
@@ -127,7 +152,8 @@ class _AddPicturePageState extends State<AddPicturePage> {
   }
 
   void _showImageDialog(String imagePath) async {
-    String downloadURL = await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
+    String downloadURL =
+        await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -137,35 +163,113 @@ class _AddPicturePageState extends State<AddPicturePage> {
       },
     );
   }
+  
+  Future<void> _deleteSelectedItems() async {
+  for (String path in _selectedItems) {
+    try {
+      final ref = FirebaseStorage.instance.ref(path);
+      final ListResult result = await ref.listAll();
 
-  Widget _buildFolderItem(String folderName) {
-    return GestureDetector(
-      onTap: () => _enterFolder(folderName),
-      child: Container(
-        margin: EdgeInsets.all(8.0),
-        padding: EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue),
-          borderRadius: BorderRadius.circular(8.0),
-          color: Colors.blueGrey.shade800,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.folder, color: Colors.white, size: 40.0),
-            SizedBox(height: 8.0),
-            Text(
-              folderName,
-              style: TextStyle(fontSize: 18.0, color: Colors.white),
-              textAlign: TextAlign.center,
+      if (result.items.isEmpty && result.prefixes.isEmpty) {
+        // It's a file, delete it
+        await ref.delete();
+      } else {
+        // It's a folder, delete it recursively
+        await _deleteFolder(path);
+      }
+    } catch (e) {
+      print('Error deleting $path: $e');
+    }
+  }
+  setState(() {
+    _selectedItems.clear();
+    _isDeleting = false;
+  });
+  await _fetchFoldersAndImages();
+}
+
+
+  void _confirmDelete() {
+    showDialog(
+
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          title: const Text('정말 삭제하시겠습니까?', style: TextStyle(color: Colors.white)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('취소', style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteSelectedItems();
+              },
+              child: const Text('확인', style: TextStyle(color: Colors.white)),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
+  Widget _buildFolderItem(String folderName) {
+  final isSelected = _selectedItems.contains('$uid/$currentFolder/$folderName');
+  return GestureDetector(
+    onTap: _isDeleting
+        ? () {
+            setState(() {
+              if (isSelected) {
+                _selectedItems.remove('$uid/$currentFolder/$folderName');
+              } else {
+                _selectedItems.add('$uid/$currentFolder/$folderName');
+              }
+            });
+          }
+        : () => _enterFolder(folderName),
+    child: Stack(
+      children: [
+        Container(
+          margin: EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue),
+            borderRadius: BorderRadius.circular(8.0),
+            color: isSelected
+                ? Colors.blueGrey.shade600
+                : Colors.blueGrey.shade800,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.folder, color: Colors.white, size: 40.0),
+              SizedBox(height: 8.0),
+              Text(
+                folderName,
+                style: TextStyle(fontSize: 18.0, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        if (isSelected)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Icon(Icons.check_circle, color: Colors.green),
+          ),
+      ],
+    ),
+  );
+}
+
+
   Widget _buildImageItem(String imagePath) {
+    final isSelected = _selectedItems.contains(imagePath);
     return FutureBuilder<String>(
       future: FirebaseStorage.instance.ref(imagePath).getDownloadURL(),
       builder: (context, snapshot) {
@@ -176,18 +280,38 @@ class _AddPicturePageState extends State<AddPicturePage> {
           return Center(child: Text('Error loading image'));
         }
         return GestureDetector(
-          onTap: () => _showImageDialog(imagePath),
-          child: Container(
-            margin: EdgeInsets.all(4.0),
-            width: MediaQuery.of(context).size.width / 3 - 12,
-            height: MediaQuery.of(context).size.width / 3 - 12,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-              image: DecorationImage(
-                image: NetworkImage(snapshot.data!),
-                fit: BoxFit.cover,
+          onTap: _isDeleting
+              ? () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedItems.remove(imagePath);
+                    } else {
+                      _selectedItems.add(imagePath);
+                    }
+                  });
+                }
+              : () => _showImageDialog(imagePath),
+          child: Stack(
+            children: [
+              Container(
+                margin: EdgeInsets.all(4.0),
+                width: MediaQuery.of(context).size.width / 3 - 12,
+                height: MediaQuery.of(context).size.width / 3 - 12,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  image: DecorationImage(
+                    image: NetworkImage(snapshot.data!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
+              if (isSelected)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(Icons.check_circle, color: Colors.green),
+                ),
+            ],
           ),
         );
       },
@@ -199,13 +323,23 @@ class _AddPicturePageState extends State<AddPicturePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          currentFolder?.isEmpty ?? true ? 'My picture' : '$currentFolder',
-          style: TextStyle(fontFamily: 'Pacifico', fontSize: 24.0, color: Colors.white),
+          currentFolder?.isEmpty ?? true ? 'My Pictures' : '$currentFolder',
+          style: TextStyle(
+              fontFamily: 'Pacifico', fontSize: 24.0, color: Colors.white),
         ),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.create_new_folder, color: Colors.white),
-            onPressed: _showCreateFolderDialog,
+            icon: Icon(_isDeleting ? Icons.check : Icons.create_new_folder, color: Colors.white),
+            onPressed: _isDeleting ? _confirmDelete : _showCreateFolderDialog,
+          ),
+          IconButton(
+            icon: Icon(_isDeleting ? Icons.cancel : Icons.delete, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isDeleting = !_isDeleting;
+                if (!_isDeleting) _selectedItems.clear();
+              });
+            },
           ),
         ],
         leading: IconButton(
@@ -213,7 +347,8 @@ class _AddPicturePageState extends State<AddPicturePage> {
           onPressed: () {
             if (currentFolder?.isNotEmpty ?? false) {
               setState(() {
-                currentFolder = currentFolder!.substring(0, currentFolder!.lastIndexOf('/'));
+                currentFolder = currentFolder!
+                    .substring(0, currentFolder!.lastIndexOf('/'));
                 _fetchFoldersAndImages();
               });
             } else {
@@ -233,7 +368,7 @@ class _AddPicturePageState extends State<AddPicturePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: _pickImage,
-              child: const Text('Pick Image'),
+              child: const Text('사진 추가'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyan.shade700,
                 foregroundColor: Colors.white,
@@ -248,7 +383,9 @@ class _AddPicturePageState extends State<AddPicturePage> {
               child: GridView.count(
                 crossAxisCount: 3,
                 children: <Widget>[
-                  ...folderList.map((folder) => _buildFolderItem(folder)).toList(),
+                  ...folderList
+                      .map((folder) => _buildFolderItem(folder))
+                      .toList(),
                   ...imageList.map((image) => _buildImageItem(image)).toList(),
                 ],
               ),

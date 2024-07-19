@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:health/explain.dart';
 import 'friendship.dart';
 import 'chart.dart';
 import 'addpicture.dart';
+import 'explain.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -36,22 +38,21 @@ class _SettingPageState extends State<SettingPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Setting',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Pacifico',
-            fontSize: 24.0, // 글자 색상을 흰색으로 설정
+          title: Text(
+            'Setting',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Pacifico',
+              fontSize: 24.0, // 글자 색상을 흰색으로 설정
+            ),
           ),
-        ),
-        backgroundColor: Colors.blueGrey.shade700,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        )
-      ),
+          backgroundColor: Colors.blueGrey.shade700,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          )),
       body: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
@@ -60,8 +61,13 @@ class _SettingPageState extends State<SettingPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ElevatedButton(
-              onPressed: () => _onButtonPressed('설명서'),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ExplainPage()),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 textStyle: TextStyle(fontSize: 18),
@@ -71,10 +77,11 @@ class _SettingPageState extends State<SettingPage>
                 backgroundColor: Colors.blueGrey.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: Text('설명서'),
+              icon: Icon(Icons.info_outline), // 여기에 원하는 아이콘 추가
+              label: Text('설명서'),
             ),
             SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -90,11 +97,12 @@ class _SettingPageState extends State<SettingPage>
                 backgroundColor: Colors.blueGrey.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: Text('친구 관리'),
+              icon: Icon(Icons.group), // 친구 관리에 적합한 아이콘
+              label: Text('친구 관리'),
             ),
             SizedBox(height: 16),
-            ElevatedButton(
-               onPressed: () {
+            ElevatedButton.icon(
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => AddPicturePage()),
@@ -109,10 +117,11 @@ class _SettingPageState extends State<SettingPage>
                 backgroundColor: Colors.blueGrey.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: Text('사진첩'),
+              icon: Icon(Icons.photo_library), // 사진첩에 적합한 아이콘
+              label: Text('사진첩'),
             ),
             SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -128,7 +137,8 @@ class _SettingPageState extends State<SettingPage>
                 backgroundColor: Colors.blueGrey.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: Text('루틴과 몸무게 차트'),
+              icon: Icon(Icons.show_chart), // 차트 아이콘 추가
+              label: Text('루틴과 몸무게 차트'),
             ),
           ],
         ),

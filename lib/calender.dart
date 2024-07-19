@@ -36,11 +36,10 @@ class _CalenderPageState extends State<CalenderPage> {
     } catch (e) {
       print('Error deleting document: $e');
     }
-   setState(() {
-    // 상태 변경 후 UI를 다시 빌드하도록 설정
-  });
-  _fetchRoutineData();
-    
+    setState(() {
+      // 상태 변경 후 UI를 다시 빌드하도록 설정
+    });
+    _fetchRoutineData();
   }
 
   Future<void> _deleteFood(String documentId) async {
@@ -58,9 +57,9 @@ class _CalenderPageState extends State<CalenderPage> {
       print('Error deleting document: $e');
     }
     setState(() {
-    // 상태 변경 후 UI를 다시 빌드하도록 설정
-  });
-  _fetchFoodData();
+      // 상태 변경 후 UI를 다시 빌드하도록 설정
+    });
+    _fetchFoodData();
   }
 
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
@@ -304,50 +303,70 @@ class _CalenderPageState extends State<CalenderPage> {
                 var totalCalories = data.fold<double>(
                     0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
 
-                return ListView.builder(
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                    var item = data[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '오늘 먹은 칼로리: ${item['totalCalories']}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold, // 글자를 두껍게
-                                  fontSize: 15, // 글자 크기를 20으로 설정
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          var item = data[index];
+                          return Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '오늘 먹은 칼로리: ${item['totalCalories']}',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold, // 글자를 두껍게
+                                        fontSize: 15, // 글자 크기를 20으로 설정
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete,
+                                          color: Colors.white),
+                                      onPressed: () {
+                                        _deleteFood(item['documentId']);
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.white),
-                                onPressed: () {
-                                  _deleteFood(item['documentId']);
-                                },
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '탄수화물: ${item['totalCarbs']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '단백질: ${item['totalProtein']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '지방: ${item['totalFat']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
+                                Text(
+                                  '탄수화물: ${item['totalCarbs']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                Text(
+                                  '단백질: ${item['totalProtein']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                Text(
+                                  '지방: ${item['totalFat']}',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                SizedBox(
+                                  height: 200,
+                                  child: PieChart(
+                                    PieChartData(
+                                      sections: showingSections(
+                                          totalCarbs, totalProtein, totalFat),
+                                      sectionsSpace: 0,
+                                      centerSpaceRadius: 40,
+                                      borderData: FlBorderData(show: false),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 );
               },
             ),
@@ -380,8 +399,7 @@ class _CalenderPageState extends State<CalenderPage> {
                     var routine = data[index];
                     return Padding(
                       padding: const EdgeInsets.all(16.0),
-                     
-                       child: Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
