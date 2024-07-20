@@ -13,20 +13,17 @@ class AuthService {
     }
   }
 
-  Future<String?> login(String email, String password) async {
+  Future<UserCredential?> login(String email, String password) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return userCredential.user?.uid;
+      return userCredential;
     } catch (e) {
       print('Error logging in: $e');
       return null;
     }
   }
 
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
 }

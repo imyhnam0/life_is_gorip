@@ -4,6 +4,7 @@ import 'friendship.dart';
 import 'chart.dart';
 import 'addpicture.dart';
 import 'explain.dart';
+import 'recommend.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -139,6 +140,26 @@ class _SettingPageState extends State<SettingPage>
               ),
               icon: Icon(Icons.show_chart), // 차트 아이콘 추가
               label: Text('루틴과 몸무게 차트'),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RecommendPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                textStyle: TextStyle(fontSize: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                backgroundColor: Colors.blueGrey.shade700,
+                foregroundColor: Colors.white,
+              ),
+              icon: Icon(Icons.recommend), // 차트 아이콘 추가
+              label: Text('루틴 추천'),
             ),
           ],
         ),

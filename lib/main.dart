@@ -321,15 +321,7 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
-  Future<void> _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('uid');
-    await AuthService().logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-  }
+
 
   Future<List<String>> _fetchDayAgoData(int daysAgo) async {
     var db = FirebaseFirestore.instance;

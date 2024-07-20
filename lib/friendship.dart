@@ -247,33 +247,35 @@ void moremoreroutine(String friendUid, String routineName, String detail) async 
 }
 
   Future<void> _addFriendByEmail(String name, String email, String password) async {
-    try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+  try {
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      String friendUid = userCredential.user?.uid ?? '';
+    String friendUid = userCredential.user?.uid ?? '';
 
-      if (friendUid.isNotEmpty) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        List<String> storedFriends = prefs.getStringList('friends') ?? [];
-        storedFriends.add('$name|$friendUid');
-        await prefs.setStringList('friends', storedFriends);
+    if (friendUid.isNotEmpty) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String> storedFriends = prefs.getStringList('friends') ?? [];
+      storedFriends.add('$name|$friendUid');
+      await prefs.setStringList('friends', storedFriends);
 
+      // 상태 업데이트를 위한 안전한 호출
+      if (mounted) {
         setState(() {
           friends.add({'name': name, 'uid': friendUid});
         });
-
-        print('Friend Name: $name, Friend UID: $friendUid');
-    
-      } else {
-        print('사용자를 찾을 수 없습니다.');
       }
-    } catch (e) {
-      print('오류 발생: $e');
+
+      print('Friend Name: $name, Friend UID: $friendUid');
+    } else {
+      print('사용자를 찾을 수 없습니다.');
     }
+  } catch (e) {
+    print('문제가 뭐냐: $e');
   }
+}
 
   void _showRoutineNamesDialog(List<String> routineNames, String friendUid) {
   showDialog(

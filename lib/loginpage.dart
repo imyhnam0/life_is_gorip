@@ -5,6 +5,7 @@ import 'firebase_auth_service.dart';
 import 'signuppage.dart';
 import 'main.dart';
 import 'user_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
 
 class LoginPage extends StatefulWidget {
   @override
@@ -38,13 +39,14 @@ class _LoginPageState extends State<LoginPage> {
     return null;
   }
 
-  Future<void> _login() async {
+Future<void> _login() async {
     if (_formKey.currentState?.validate() == true) {
-      String? uid = await AuthService().login(
+      UserCredential? userCredential = await AuthService().login(
         _emailController.text,
         _passwordController.text,
       );
-      if (uid != null) {
+      if (userCredential != null) {
+        String uid = userCredential.user!.uid; // 여기에서 uid를 가져옵니다.
         Provider.of<UserProvider>(context, listen: false).setUid(uid);
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('uid', uid);
@@ -59,7 +61,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-
+  Future<void> clearSharedPreferences() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+  print("SharedPreferences가 초기화되었습니다.");
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,6 +80,14 @@ class _LoginPageState extends State<LoginPage> {
         ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade900,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () async{
+               await clearSharedPreferences();
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
