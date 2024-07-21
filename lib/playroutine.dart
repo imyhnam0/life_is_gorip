@@ -38,26 +38,32 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     myCollectionName();
     totalRoutineReps();
     _loadSavedTimeAndStartTimer();
-    
   }
-  Future<void> _loadSavedTimeAndStartTimer() async {
+  Future<void> _clearCheckedStates() async {
   final prefs = await SharedPreferences.getInstance();
-  final String? savedTime = prefs.getString('savedTime');
-  final DateTime now = DateTime.now();
-
-  if (savedTime != null) {
-    final DateTime savedDateTime = DateFormat('yyyy-MM-dd HH:mm:ss').parse(savedTime);
-    final int elapsedSeconds = now.difference(savedDateTime).inSeconds;
-
-    setState(() {
-      _seconds = elapsedSeconds;
-    });
-  } else {
-    await _saveTitleAndTime();
-  }
-
-  _startTimer(); // 타이머 시작
+  await prefs.clear(); // 모든 SharedPreferences 값 초기화
 }
+
+
+  Future<void> _loadSavedTimeAndStartTimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? savedTime = prefs.getString('savedTime');
+    final DateTime now = DateTime.now();
+
+    if (savedTime != null) {
+      final DateTime savedDateTime =
+          DateFormat('yyyy-MM-dd HH:mm:ss').parse(savedTime);
+      final int elapsedSeconds = now.difference(savedDateTime).inSeconds;
+
+      setState(() {
+        _seconds = elapsedSeconds;
+      });
+    } else {
+      await _saveTitleAndTime();
+    }
+
+    _startTimer(); // 타이머 시작
+  }
 
   @override
   void dispose() {
@@ -65,7 +71,46 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     super.dispose();
   }
 
-  Future<void> _saveTitleAndTime() async {// 현재 시간을 저장
+  Future<void> deleteData(String routineTitle) async {
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      DocumentSnapshot documentSnapshot = await docRef.get();
+      print(_title);
+      print(routineTitle);
+
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
+
+        if (data.containsKey(_title)) {
+          List<dynamic> myRoutineList = data[_title];
+
+          // Find the index of the routine to delete
+          int routineIndex = myRoutineList
+              .indexWhere((routine) => routine.containsKey(routineTitle));
+
+          // Remove the routine if found
+          if (routineIndex != -1) {
+            myRoutineList.removeAt(routineIndex);
+            await docRef.update({_title: myRoutineList});
+          }
+        }
+      }
+
+      await myCollectionName();
+    } catch (e) {
+      print('Error deleting document: $e');
+    }
+  }
+  
+  
+
+  Future<void> _saveTitleAndTime() async {
+    // 현재 시간을 저장
     final prefs = await SharedPreferences.getInstance();
     final String formattedDate =
         DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -493,6 +538,14 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                       size: 28,
                                     ),
                                   Spacer(),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.white),
+                                    onPressed: () async {
+                                      await deleteData(collectionNames[index]);
+                                      await myCollectionName(); // 화면을 다시 불러옵니다.
+                                    },
+                                  ),
                                   ReorderableDragStartListener(
                                     index: index,
                                     child: Container(
@@ -584,6 +637,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                 totalWeight,
                                 _seconds,
                               );
+                              await _clearCheckedStates(); // 체크 값 초기화
                               await _clearTitleAndTime();
                               setState(() {
                                 _seconds = 0; // 초기화
@@ -647,8 +701,9 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                             ),
                           ),
                           TextButton(
-                            onPressed: ()async {
+                            onPressed: () async {
                               await _clearTitleAndTime();
+                              await _clearCheckedStates(); // 체크 값 초기화
                               setState(() {
                                 _seconds = 0; // 초기화
                                 totalRows = 0; // 초기화

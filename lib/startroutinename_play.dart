@@ -22,20 +22,23 @@ class StartRoutineNamePlay extends StatefulWidget {
 class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
   TextEditingController nameController = TextEditingController();
   List<bool> _checkedStates = [];
+
   void _initializeCheckedStates(int count) {
     _checkedStates = List<bool>.filled(count, false);
   }
 
-  void _handleCheckChanged(int index, bool isChecked) {
-    setState(() {
-      _checkedStates[index] = isChecked;
-    });
+void _handleCheckChanged(int index, bool isChecked) {
+  setState(() {
+    _checkedStates[index] = isChecked;
+  });
 
-    if (_checkedStates.every((checked) => checked)) {
-      saveRoutineData();
-      Navigator.of(context).pop(true);
-    }
+  if (_checkedStates.every((checked) => checked)) {
+    saveRoutineData();
+    Navigator.of(context).pop(true);
   }
+
+  _saveCheckedStates();
+}
 
   late String _title = widget.clickroutinename;
   List<ExerciseRow> _rows = [];
@@ -76,11 +79,39 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     });
   }
 
+   Future<void> _saveCheckedStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> checkedStatesStrings =
+        _checkedStates.map((checked) => checked.toString()).toList();
+    await prefs.setStringList(
+        'checkedStates_${widget.currentroutinename}_${widget.clickroutinename}',
+        checkedStatesStrings);
+  }
+
+  Future<void> _loadCheckedStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String>? checkedStatesStrings = prefs.getStringList(
+        'checkedStates_${widget.currentroutinename}_${widget.clickroutinename}');
+
+    if (checkedStatesStrings != null) {
+      setState(() {
+        _checkedStates =
+            checkedStatesStrings.map((checked) => checked == 'true').toList();
+      });
+    }
+  }
+
+
+
   Future<void> _saveEndTimeToPrefs(int remainingTime) async {
     final prefs = await SharedPreferences.getInstance();
     final DateTime now = DateTime.now();
     final DateTime endTime = now.add(Duration(seconds: remainingTime));
     prefs.setString('endTime', endTime.toIso8601String());
+
+     // 현재 시간과 타이머 더한 시간 출력
+  print("현재시간 (Prefs): $now");
+  print("끝나는 시간 (Prefs): $endTime");
   }
 
   Future<void> _loadEndTimeFromPrefs() async {
@@ -139,6 +170,7 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
       _timer = null;
     });
   }
+  
 
   @override
   void dispose() {
@@ -147,50 +179,54 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    uid = Provider.of<UserProvider>(context, listen: false).uid;
+ @override
+void initState() {
+  super.initState();
+  uid = Provider.of<UserProvider>(context, listen: false).uid;
+  _loadCheckedStates().then((_) {
     myCollectionName();
-    _initializeCheckedStates(_counter);
     _loadEndTimeFromPrefs();
-  }
+  });
+}
 
-  Future<void> myCollectionName() async {
-    try {
-      print(widget.currentroutinename);
-      print(_title);
-      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
-          .get();
 
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
+ Future<void> myCollectionName() async {
+  try {
+    print(widget.currentroutinename);
+    print(_title);
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Myroutine')
+        .get();
 
-        if (data.containsKey(widget.currentroutinename)) {
-          List<dynamic> myRoutineList = data[widget.currentroutinename];
+    if (documentSnapshot.exists) {
+      var data = documentSnapshot.data() as Map<String, dynamic>;
 
-          var routineData = myRoutineList.firstWhere(
-            (routine) => routine.containsKey(_title),
-            orElse: () => null,
-          );
+      if (data.containsKey(widget.currentroutinename)) {
+        List<dynamic> myRoutineList = data[widget.currentroutinename];
 
-          if (routineData != null &&
-              routineData[_title].containsKey('exercises')) {
-            List<Map<String, dynamic>> exercisesData =
-                List<Map<String, dynamic>>.from(routineData[_title]['exercises']
-                    .map((exercise) => {
-                          'reps': exercise['reps'],
-                          'weight': exercise['weight'],
-                        })
-                    .toList());
+        var routineData = myRoutineList.firstWhere(
+          (routine) => routine.containsKey(_title),
+          orElse: () => null,
+        );
 
-            setState(() {
+        if (routineData != null &&
+            routineData[_title].containsKey('exercises')) {
+          List<Map<String, dynamic>> exercisesData =
+              List<Map<String, dynamic>>.from(routineData[_title]['exercises']
+                  .map((exercise) => {
+                        'reps': exercise['reps'],
+                        'weight': exercise['weight'],
+                      })
+                  .toList());
+
+          setState(() {
               _counter = exercisesData.length;
-              _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
+              if (_checkedStates.length != _counter) {
+                _checkedStates = List<bool>.filled(_counter, false);
+              }
               _rows = exercisesData.map((exercise) {
                 int currentIndex = exercisesData.indexOf(exercise);
                 return ExerciseRow(
@@ -202,63 +238,19 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
                   onCheckPressed: _startTimer,
                   onCheckChanged: (isChecked) =>
                       _handleCheckChanged(currentIndex, isChecked),
+                  checked: _checkedStates[currentIndex], // 체크 상태 설정
                 );
               }).toList();
             });
-          }
         }
       }
-    } catch (e) {
-      print('Error fetching document data: $e');
     }
+  } catch (e) {
+    print('Error fetching document data: $e');
   }
+}
 
-//   Future<void> myCollectionName() async {
-//   try {
-//     print(widget.currentroutinename);
-//     print(_title);
-//     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-//         .collection('users')
-//         .doc(uid)
-//         .collection('Routine')
-//         .doc('Myroutine')
-//         .collection(widget.currentroutinename)
-//         .doc(_title)
-//         .get();
 
-//     if (documentSnapshot.exists) {
-//       var data = documentSnapshot.data() as Map<String, dynamic>;
-//       if (data.containsKey('exercises')) {
-//         List<Map<String, dynamic>> exercisesData =
-//             List<Map<String, dynamic>>.from(data['exercises']
-//                 .map((exercise) => {
-//                       'reps': exercise['reps'],
-//                       'weight': exercise['weight'],
-//                     })
-//                 .toList());
-
-//         setState(() {
-//           _counter = exercisesData.length;
-//           _checkedStates = List<bool>.filled(_counter, false); // 상태 초기화
-//           _rows = exercisesData.map((exercise) {
-//             int currentIndex = exercisesData.indexOf(exercise);
-//             return ExerciseRow(
-//               weightController:
-//                   TextEditingController(text: exercise['weight'].toString()),
-//               repsController:
-//                   TextEditingController(text: exercise['reps'].toString()),
-//               counter: currentIndex + 1,
-//               onCheckPressed: _startTimer,
-//               onCheckChanged: (isChecked) => _handleCheckChanged(currentIndex, isChecked),
-//             );
-//           }).toList();
-//         });
-//       }
-//     }
-//   } catch (e) {
-//     print('Error fetching document data: $e');
-//   }
-// }
 
   Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -610,6 +602,7 @@ class ExerciseRow extends StatefulWidget {
   final int counter;
   final VoidCallback onCheckPressed;
   final ValueChanged<bool> onCheckChanged;
+  final bool checked; // 추가된 속성
 
   ExerciseRow({
     required this.weightController,
@@ -617,6 +610,8 @@ class ExerciseRow extends StatefulWidget {
     required this.counter,
     required this.onCheckPressed,
     required this.onCheckChanged,
+    this.checked = false, // 기본값을 false로 설정
+
   });
 
   @override
@@ -626,6 +621,13 @@ class ExerciseRow extends StatefulWidget {
 class _ExerciseRowState extends State<ExerciseRow> {
   bool _isChecked = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _isChecked = widget.checked; // 초기 상태 설정
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Padding(

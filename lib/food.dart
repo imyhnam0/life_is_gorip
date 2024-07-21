@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'addmeal.dart';
 
-
 class FoodRoutineCreatePage extends StatefulWidget {
   const FoodRoutineCreatePage({super.key});
 
@@ -16,6 +15,7 @@ class FoodRoutineCreatePage extends StatefulWidget {
 class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
   List<Map<String, dynamic>> meals = [];
   final TextEditingController _titleController = TextEditingController();
+  bool _isTitleValid = true;
 
   Future<void> _saveData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -48,13 +48,12 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
     });
   }
 
- void _removeMeal(int index) {
-  setState(() {
-    meals.removeAt(index);
-    _saveData();
-  });
-}
-
+  void _removeMeal(int index) {
+    setState(() {
+      meals.removeAt(index);
+      _saveData();
+    });
+  }
 
   void _removeSubMeal(int mealIndex, int subMealIndex) {
     setState(() {
@@ -126,8 +125,12 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                       Navigator.pop(context);
                       _navigateAndAddSubMeal(context, mealIndex);
                     },
-                    child: const Text('음식 추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,
-                        fontFamily: 'Oswald',)),
+                    child: const Text('음식 추가',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Oswald',
+                        )),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -160,17 +163,23 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
 
   void _saveTitleAndMeals() {
     String title = _titleController.text;
-    if (title.isNotEmpty) {
-      Map<String, dynamic> data = {
-        'title': title,
-        'meals': meals,
-      };
-      _saveToSharedPreferences(data);
+    if (title.isEmpty) {
       setState(() {
-        _titleController.clear();
-        meals = [];
+        _isTitleValid = false;
       });
+      return;
     }
+
+    Map<String, dynamic> data = {
+      'title': title,
+      'meals': meals,
+    };
+    _saveToSharedPreferences(data);
+    setState(() {
+      _titleController.clear();
+      meals = [];
+      _isTitleValid = true;
+    });
   }
 
   Future<void> _saveToSharedPreferences(Map<String, dynamic> data) async {
@@ -224,17 +233,17 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
           ),
         ),
         backgroundColor: Colors.blueGrey.shade900,
-         leading: IconButton(
-    icon: Icon(
-      Icons.arrow_back,
-      color: Colors.white,
-      size: 28, // 아이콘 크기를 키움
-    ),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-    tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
-  ),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28, // 아이콘 크기를 키움
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          tooltip: '뒤로 가기', // 아이콘에 툴팁 추가
+        ),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -273,7 +282,13 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white),
                 ),
+                errorText: _isTitleValid ? null : '제목을 입력해주십시오', // 경고 메시지 추가
               ),
+              onChanged: (value) {
+                setState(() {
+                  _isTitleValid = value.isNotEmpty;
+                });
+              },
             ),
             const SizedBox(height: 16),
             Row(
@@ -292,7 +307,9 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: _saveAndNavigateToSavePage,
+                  onPressed: _titleController.text.isEmpty
+                      ? null
+                      : _saveAndNavigateToSavePage, // 제목이 없으면 버튼 비활성화
                   child: const Text('루틴 저장',
                       style: TextStyle(
                         color: Colors.white,
@@ -326,23 +343,24 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '총 칼로리: ${totalNutrients['calories']}',
+                              '총 칼로리: ${totalNutrients['calories']!.toStringAsFixed(2)}',
                               style: TextStyle(color: Colors.white),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text('총 탄수화물: ${totalNutrients['carbs']}  ',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 10)),
-                                Text('총 단백질: ${totalNutrients['protein']}  ',
+                                Text(
+                                    '총 탄수화물: ${totalNutrients['carbs']!.toStringAsFixed(2)}  ',
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 10)),
                                 Text(
-                                  '총 지방: ${totalNutrients['fat']}',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10),
-                                ),
+                                    '총 단백질: ${totalNutrients['protein']!.toStringAsFixed(2)}  ',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10)),
+                                Text(
+                                    '총 지방: ${totalNutrients['fat']!.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10)),
                               ],
                             ),
                           ],
@@ -382,7 +400,7 @@ class _FoodRoutineCreatePageState extends State<FoodRoutineCreatePage> {
                           style: TextStyle(color: Colors.white),
                         ),
                         subtitle: Text(
-                          'Calories: ${subMeal['calories']} Carbs: ${subMeal['carbs']} Protein: ${subMeal['protein']} Fat: ${subMeal['fat']}',
+                          'Calories: ${subMeal['calories'].toStringAsFixed(2)} Carbs: ${subMeal['carbs'].toStringAsFixed(2)} Protein: ${subMeal['protein'].toStringAsFixed(2)} Fat: ${subMeal['fat'].toStringAsFixed(2)}',
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         trailing: IconButton(
