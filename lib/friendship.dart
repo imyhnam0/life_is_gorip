@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
 
 class FriendshipPage extends StatefulWidget {
  
@@ -18,10 +20,12 @@ class _FriendshipPageState extends State<FriendshipPage> {
   final TextEditingController _nameController = TextEditingController();
   List<Map<String, String>> friends = [];
   List<String> collectionNames = [];
+  String? Myuid;
 
   @override
   void initState() {
     super.initState();
+    Myuid = Provider.of<UserProvider>(context, listen: false).uid;
     _loadFriends();
   }
   Future<void> _deleteFriend(String friendUid) async {
@@ -36,7 +40,7 @@ class _FriendshipPageState extends State<FriendshipPage> {
 }
 
 
- Future<void> friendroutineName(String friendUid) async {
+ Future<void> friendroutineName(String friendUid,friendName) async {
   try {
     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -53,14 +57,14 @@ class _FriendshipPageState extends State<FriendshipPage> {
         collectionNames = names;
       });
 
-      _showRoutineNamesDialog(names, friendUid);
+      _showRoutineNamesDialog(names, friendUid ,friendName);
     }
   } catch (e) {
     print('Error fetching collection names: $e');
   }
 }
 
-Future<void> friendRoutinedetail(String friendUid, String title) async {
+Future<void> friendRoutinedetail(String friendUid, String title, String friendName) async {
   try {
     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -82,7 +86,7 @@ Future<void> friendRoutinedetail(String friendUid, String title) async {
           collectionNames = names;
         });
 
-        _showRoutineDetailsDialog(names, friendUid, title);
+        _showRoutineDetailsDialog(names, friendUid, title, friendName);
       }
     }
   } catch (e) {
@@ -277,7 +281,7 @@ void moremoreroutine(String friendUid, String routineName, String detail) async 
   }
 }
 
-  void _showRoutineNamesDialog(List<String> routineNames, String friendUid) {
+  void _showRoutineNamesDialog(List<String> routineNames, String friendUid, String friendName) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -310,7 +314,7 @@ void moremoreroutine(String friendUid, String routineName, String detail) async 
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    friendRoutinedetail(friendUid, name);
+                    friendRoutinedetail(friendUid, name,friendName);
                   },
                   child: Text(name),
                   style: ElevatedButton.styleFrom(
@@ -335,7 +339,7 @@ void moremoreroutine(String friendUid, String routineName, String detail) async 
     },
   );
 }
- void _showRoutineDetailsDialog(List<String> routineDetails, String friendUid, String routineName) {
+ void _showRoutineDetailsDialog(List<String> routineDetails, String friendUid, String routineName,String friendName) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -386,11 +390,73 @@ void moremoreroutine(String friendUid, String routineName, String detail) async 
               Navigator.of(context).pop();
             },
           ),
+          TextButton(
+            child: Text('가져오기', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              _fetchAndSaveFriendRoutine(friendUid,friendName, routineName);
+              Navigator.of(context).pop();
+            },
+          ),
         ],
       );
     },
   );
 }
+  Future<void> _fetchAndSaveFriendRoutine(String friendUid, String friendName, String routineName) async {
+    var db = FirebaseFirestore.instance;
+
+
+    try {
+      // 친구의 루틴 데이터 가져오기
+      DocumentSnapshot documentSnapshot = await db
+          .collection('users')
+          .doc(friendUid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
+
+      if (documentSnapshot.exists) {
+        var friendRoutineData = documentSnapshot.data() as Map<String, dynamic>;
+
+        // 해당 루틴이 존재하는지 확인
+        if (friendRoutineData.containsKey(routineName)) {
+          var routineDetails = friendRoutineData[routineName];
+          print('친구 루틴 $routineName 데이터:');
+          print(routineDetails);
+
+          // 친구 이름을 추가한 새로운 루틴 이름 생성
+          String newRoutineName = "$routineName:$friendName";
+
+          // 자신의 Firestore에 저장 (병합)
+          await db.collection('users')
+              .doc(Myuid)
+              .collection('Routine')
+              .doc('Myroutine')
+              .set({
+            newRoutineName: routineDetails  // 가져온 루틴 데이터를 저장
+          }, SetOptions(merge: true));  // 기존 데이터에 병합
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('루틴이 성공적으로 가져와졌습니다!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('루틴을 찾을 수 없습니다.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('친구의 루틴을 찾을 수 없습니다.')),
+        );
+      }
+    } catch (e) {
+      print('Error fetching and saving friend routine: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('루틴 가져오기 중 오류가 발생했습니다.')),
+      );
+    }
+  }
+
 
   void _showExerciseDetailsDialog(List<Map<String, dynamic>> exercisesData) {
   showDialog(
@@ -543,7 +609,7 @@ void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
 
 
 
- void _showFriendOptions(String friendUid) {
+ void _showFriendOptions(String friendUid,friendName) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.blueGrey.shade900,
@@ -567,7 +633,7 @@ void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
             title: Text('친구 루틴', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
             onTap: () {
               Navigator.pop(context);
-              friendroutineName(friendUid);
+              friendroutineName(friendUid,friendName);
             },
           ),
            ListTile(
@@ -657,7 +723,7 @@ void _showFriendRoutineDataDialog(List<Map<String, dynamic>> routineData) {
                             icon: Icon(Icons.more_vert, color: Colors.white),
                             onPressed: () {
                               String friendUid = friends[index]['uid']!;
-                              _showFriendOptions(friendUid);
+                              _showFriendOptions(friendUid,friends[index]['name']!);
                             },
                           ),
                          
