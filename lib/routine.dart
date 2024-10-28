@@ -3,6 +3,7 @@ import 'create_routine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'airoutine.dart';
 
 class RoutinePage extends StatefulWidget {
   const RoutinePage({super.key});
@@ -438,31 +439,62 @@ class _RoutinePageState extends State<RoutinePage>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreateRoutinePage(
-                myroutinename: _title,
-                clickroutinename: "",
-              ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateRoutinePage(
+                    myroutinename: _title,
+                    clickroutinename: "",
+                  ),
+                ),
+              ).then((value) {
+                if (value == true) {
+                  myCollectionName();
+                }
+              });
+            },
+            icon: Icon(
+              Icons.add,
+              color: Colors.white,
             ),
-          ).then((value) {
-            if (value == true) {
-              myCollectionName();
-            }
-          });
-        },
-        icon: Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
-        label: Text(
-          "생성",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.cyan.shade700,
+            label: Text(
+              "수동생성",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.cyan.shade700,
+          ),
+          SizedBox(width: 10), // Add some space between the buttons
+          FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Airoutine(
+                    myroutinename: _title,
+                  ),
+                ),
+              ).then((value) {
+                if (value == true) {
+                  myCollectionName();
+                }
+              });
+            },
+            icon: Icon(
+              Icons.create,
+              color: Colors.white,
+            ),
+            label: Text(
+              "자동생성",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.cyan.shade700,
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

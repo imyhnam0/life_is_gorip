@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_auth_service.dart';
 import 'friendship.dart';
 import 'setting.dart';
+import 'airoutine.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -112,7 +113,6 @@ class _HomepageState extends State<Homepage> {
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
-    _fetchSevenDayAgoData();
     loadMe();
     loadStarRow();
   }
@@ -306,20 +306,6 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  Future<void> _fetchSevenDayAgoData() async {
-    List<String> names = [];
-    for (int i = 7; i >= 1; i--) {
-      List<String> dayNames = await _fetchDayAgoData(i);
-      if (dayNames.isNotEmpty) {
-        for (var name in dayNames) {
-          names.add('$name - $i일 전');
-        }
-      }
-    }
-    setState(() {
-      collectionNames = names;
-    });
-  }
 
 
 
@@ -579,7 +565,7 @@ class _HomepageState extends State<Homepage> {
                     child: filteredCollectionNames.isEmpty
                         ? Center(
                             child: Text(
-                              '루틴 즐겨찾기 항목.',
+                              '루틴 즐겨찾기',
                               style: TextStyle(
                                 fontSize: 18.0,
                                 color: Colors.grey.shade400,
