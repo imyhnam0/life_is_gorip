@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'foodcreate.dart';
 import 'foodroutinestart.dart';
 import 'addmeal.dart';
+import 'foodroutinestart.dart';
 
 class FoodSavePage extends StatefulWidget {
   @override
@@ -563,6 +564,26 @@ class _FoodSavePageState extends State<FoodSavePage> {
           tooltip: '뒤로 가기',
         ),
         actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FoodroutinestartPage()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black, // Background color
+              foregroundColor: Colors.white, // Text color
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text(
+              '진행중',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(
               Icons.add,

@@ -28,6 +28,7 @@ class _FriendshipPageState extends State<FriendshipPage> {
     Myuid = Provider.of<UserProvider>(context, listen: false).uid;
     _loadFriends();
   }
+
   Future<void> _deleteFriend(String friendUid) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String> storedFriends = prefs.getStringList('friends') ?? [];

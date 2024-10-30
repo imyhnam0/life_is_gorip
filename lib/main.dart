@@ -23,6 +23,8 @@ import 'firebase_auth_service.dart';
 import 'friendship.dart';
 import 'setting.dart';
 import 'airoutine.dart';
+import 'memoMainPage.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -776,7 +778,7 @@ class _HomepageState extends State<Homepage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => FoodroutinestartPage()),
+                        builder: (context) => MyMemoPage()),
                   );
                 },
                 child: Row(
@@ -785,7 +787,7 @@ class _HomepageState extends State<Homepage> {
                     Icon(Icons.directions_run, color: Colors.white),
                     SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
                     Text(
-                      '진행중',
+                      '매크로',
                       style: TextStyle(color: Colors.white, fontSize: 15),
                     ),
                   ],
