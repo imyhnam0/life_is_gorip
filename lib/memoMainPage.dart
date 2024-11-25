@@ -124,6 +124,23 @@ class MyMemoState extends State<MyMemoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('메모장'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [  // 검색 기능
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Expanded(

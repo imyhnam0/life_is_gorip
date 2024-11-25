@@ -471,23 +471,23 @@ class _CalenderPageState extends State<CalenderPage> {
                               Map<String, int> data =
                                   routineData[routine['오늘 한 루틴이름']]!;
 
-                              // X축 라벨을 위한 날짜 포맷터
-                              DateFormat dateFormat = DateFormat('MM/dd');
+                              // 날짜별로 정렬
+                              var sortedEntries = data.entries.toList()
+                                ..sort((a, b) =>
+                                    DateTime.parse(a.key).compareTo(DateTime.parse(b.key)));
 
-                              // X축 라벨과 Y축 값을 추출
-                              List<String> xLabels = data.keys
-                                  .map((date) =>
-                                      dateFormat.format(DateTime.parse(date)))
+                              // 정렬된 데이터를 기반으로 X축과 Y축 값을 추출
+                              List<String> xLabels = sortedEntries
+                                  .map((entry) =>
+                                  DateFormat('MM/dd').format(DateTime.parse(entry.key)))
                                   .toList();
-                              List<double> yValues = data.values
-                                  .map((volume) => volume.toDouble())
+                              List<double> yValues = sortedEntries
+                                  .map((entry) => entry.value.toDouble())
                                   .toList();
 
                               // Y축 최소값과 최대값 계산
-                              double minY =
-                                  yValues.reduce((a, b) => a < b ? a : b);
-                              double maxY =
-                                  yValues.reduce((a, b) => a > b ? a : b);
+                              double minY = yValues.reduce((a, b) => a < b ? a : b);
+                              double maxY = yValues.reduce((a, b) => a > b ? a : b);
 
                               // FlSpot 데이터 생성
                               List<FlSpot> spots = [];

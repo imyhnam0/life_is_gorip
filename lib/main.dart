@@ -24,6 +24,7 @@ import 'friendship.dart';
 import 'setting.dart';
 import 'airoutine.dart';
 import 'memoMainPage.dart';
+import 'addpicture.dart';
 
 
 void main() async {
@@ -699,17 +700,15 @@ class _HomepageState extends State<Homepage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const FoodRoutineCreatePage()),
+                            MaterialPageRoute(builder: (context) => AddPicturePage()),
                           );
                         },
                         icon: Icon(
-                          Icons.restaurant,
+                          Icons.photo_library,
                           color: Colors.white,
                         ),
                         label: Text(
-                          "식단추가",
+                          "사진첩",
                           style: TextStyle(
                             color: Colors.white,
                             fontFamily: 'Oswald',
@@ -778,16 +777,16 @@ class _HomepageState extends State<Homepage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => MyMemoPage()),
+                        builder: (context) => RoutineChart()),
                   );
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.directions_run, color: Colors.white),
+                    Icon(Icons.show_chart, color: Colors.white),
                     SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
                     Text(
-                      '매크로',
+                      '차트',
                       style: TextStyle(color: Colors.white, fontSize: 15),
                     ),
                   ],
@@ -797,16 +796,16 @@ class _HomepageState extends State<Homepage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => FoodSavePage()),
+                    MaterialPageRoute(builder: (context) => FriendshipPage()),
                   );
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.lunch_dining, color: Colors.white),
+                    Icon(Icons.group, color: Colors.white),
                     SizedBox(width: 4), // 아이콘과 텍스트 사이의 간격
                     Text(
-                      '식단',
+                      '친구관리',
                       style: TextStyle(color: Colors.white, fontSize: 15),
                     ),
                   ],

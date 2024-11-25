@@ -644,15 +644,18 @@ class _RoutineChartState extends State<RoutineChart> {
   }
 
   Widget _buildChart(String routineName, Map<String, int> data) {
-    DateFormat dateFormat = DateFormat('MM/dd');
-    List<String> xLabels = data.keys
-        .map((date) => dateFormat.format(DateTime.parse(date)))
+    var sortedEntries = data.entries.toList()
+      ..sort((a, b) => DateTime.parse(a.key).compareTo(DateTime.parse(b.key)));
+
+    // 정렬된 데이터를 기반으로 x축과 y축 값을 재생성
+    List<String> xLabels = sortedEntries
+        .map((entry) => DateFormat('MM/dd').format(DateTime.parse(entry.key)))
         .toList();
-    List<double> yValues =
-        data.values.map((volume) => volume.toDouble()).toList();
+    List<double> yValues = sortedEntries.map((entry) => entry.value.toDouble()).toList();
 
     double minY = yValues.reduce((a, b) => a < b ? a : b);
     double maxY = yValues.reduce((a, b) => a > b ? a : b);
+
 
     List<FlSpot> spots = [];
     for (int i = 0; i < data.length; i++) {
