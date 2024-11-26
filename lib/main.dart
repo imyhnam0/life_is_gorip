@@ -25,7 +25,7 @@ import 'setting.dart';
 import 'airoutine.dart';
 import 'memoMainPage.dart';
 import 'addpicture.dart';
-
+import 'friendship(revise).dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -796,7 +796,7 @@ class _HomepageState extends State<Homepage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => FriendshipPage()),
+                    MaterialPageRoute(builder: (context) => InvitePage()),
                   );
                 },
                 child: Row(
