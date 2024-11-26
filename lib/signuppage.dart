@@ -101,7 +101,7 @@ class _SignUpPageState extends State<SignUpPage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.blueGrey.shade700,
         elevation: 5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -111,11 +111,19 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.purpleAccent, Colors.blueAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
           ),
         ),
         child: Center(
@@ -145,19 +153,19 @@ class _SignUpPageState extends State<SignUpPage> {
                   const SizedBox(height: 30),
                   _buildTextField(
                     controller: _nameController,
-                    labelText: 'Name',
+                    labelText: '이름',
                     validator: _validateName,
                   ),
                   const SizedBox(height: 20),
                   _buildTextField(
                     controller: _emailController,
-                    labelText: 'Email',
+                    labelText: '이메일',
                     validator: _validateEmail,
                   ),
                   const SizedBox(height: 20),
                   _buildTextField(
                     controller: _passwordController,
-                    labelText: 'Password',
+                    labelText: '비밀번호',
                     validator: _validatePassword,
                     obscureText: true,
                   ),
@@ -173,7 +181,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       elevation: 8,
                     ),
                     child: const Text(
-                      'Sign Up',
+                      '회원가입',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

@@ -262,11 +262,9 @@ class _InvitePageState extends State<InvitePage> {
         // 해당 루틴이 존재하는지 확인
         if (friendRoutineData.containsKey(routineName)) {
           var routineDetails = friendRoutineData[routineName];
-          print('친구 루틴 $routineName 데이터:');
-          print(routineDetails);
 
           // 친구 이름을 추가한 새로운 루틴 이름 생성
-          String newRoutineName = "$routineName:$friendName";
+          String newRoutineName = "$routineName";
 
           // 자신의 Firestore에 저장 (병합)
           await db.collection('users')
@@ -601,7 +599,7 @@ class _InvitePageState extends State<InvitePage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24,color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: Colors.deepPurpleAccent,
+        backgroundColor: Colors.blueGrey.shade700,
         elevation: 10,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -634,10 +632,18 @@ class _InvitePageState extends State<InvitePage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigoAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
           ),
         ),
         child: StreamBuilder<DocumentSnapshot>(
@@ -701,18 +707,31 @@ class _InvitePageState extends State<InvitePage> {
                             ),
                             Row(
                               children: [
-                                IconButton(
-                                  icon: Icon(Icons.more_vert, color: Colors.white),
-                                  onPressed: () {
-                                    _showFriendOptions(friend['uid']!, friend['name']!); // friendUid와 friendName 전달
-                                  },
 
-                                ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 20, vertical: 10),
-                                    backgroundColor: Colors.redAccent,
+                                    backgroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 5,
+                                  ),
+                                  onPressed: () {
+                                    _showFriendOptions(friend['uid']!, friend['name']!); // friendUid와 friendName 전달
+                                  },
+                                  child: const Text(
+                                    '목록',
+                                    style: TextStyle(fontSize: 14, color: Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    backgroundColor: Colors.grey,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -723,7 +742,7 @@ class _InvitePageState extends State<InvitePage> {
                                   },
                                   child: const Text(
                                     '삭제',
-                                    style: TextStyle(fontSize: 14),
+                                    style: TextStyle(fontSize: 14,color: Colors.red),
                                   ),
                                 ),
                               ],

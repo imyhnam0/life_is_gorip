@@ -26,6 +26,7 @@ import 'airoutine.dart';
 import 'memoMainPage.dart';
 import 'addpicture.dart';
 import 'friendship(revise).dart';
+import 'myinfo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -389,13 +390,13 @@ class _HomepageState extends State<Homepage> {
               children: [
                 IconButton(
                   icon: Icon(
-                    Icons.settings,
+                    Icons.person,
                     color: Colors.white,
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => SettingPage()),
+                      MaterialPageRoute(builder: (context) => MyInfoPage()),
                     );
                   },
                 ),

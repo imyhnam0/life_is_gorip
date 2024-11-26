@@ -63,7 +63,7 @@ class FriendRequestsPage extends StatelessWidget {
             fontSize: 22,
           ),
         ),
-        backgroundColor: Colors.deepPurpleAccent,
+        backgroundColor: Colors.blueGrey.shade700,
         elevation: 5,
         centerTitle: true,
         leading: IconButton(
@@ -75,10 +75,18 @@ class FriendRequestsPage extends StatelessWidget {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigoAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          color: Colors.blueGrey.shade900,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.blueGrey.shade700,
+            width: 2,
           ),
         ),
         child: StreamBuilder<DocumentSnapshot>(

@@ -71,7 +71,7 @@ Future<void> _login() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Login',
+          'Life is gorip',
           style: TextStyle(
             fontFamily: 'Pacifico',
             fontSize: 28.0,
@@ -95,8 +95,10 @@ Future<void> _login() async {
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/cat.jpg'),
-                  fit: BoxFit.cover,
+                  image: AssetImage('assets/onlypain.png'),
+                  fit: BoxFit.fitWidth,
+                  alignment: Alignment.center,
+                  scale: 1.2,
                 ),
               ),
             ),
@@ -113,15 +115,15 @@ Future<void> _login() async {
                       'Only pain No gain!',
                       style: TextStyle(
                         fontFamily: 'Pacifico',
-                        fontSize: 32.0,
-                        color: Colors.white,
+                        fontSize: 40.0,
+                        color: Colors.black,
                       ),
                     ),
                     SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
-                        labelText: 'Email',
+                        labelText: '이메일',
                         labelStyle: TextStyle(color: Colors.blueGrey.shade700),
                         border: OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
@@ -139,7 +141,7 @@ Future<void> _login() async {
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: '비밀번호',
                         labelStyle: TextStyle(color: Colors.blueGrey.shade700),
                         border: OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
@@ -165,7 +167,7 @@ Future<void> _login() async {
                         ),
                       ),
                       child: Text(
-                        'Login',
+                        '로그인',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,
@@ -173,22 +175,41 @@ Future<void> _login() async {
                         ),
                       ),
                     ),
-                    TextButton(
+                    SizedBox(height: 20),
+                    ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => SignUpPage()),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey.shade700,
+                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
                       child: Text(
-                        'Sign Up',
+                        '회원가입',
                         style: TextStyle(
+                          fontSize: 18,
                           color: Colors.white,
                           fontFamily: 'Oswald',
-                          fontSize: 16,
                         ),
                       ),
                     ),
+                    SizedBox(height: 20),
+                    Text(
+                      'made by Yunhyung',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontFamily: 'Oswald',
+                      ),
+                    ),
+
+
                   ],
                 ),
               ),
