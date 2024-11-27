@@ -1,17 +1,12 @@
-# health
+#Life is gorip App
+Life is gorip App is your ultimate fitness companion, designed to track your workouts, monitor progress, and help you achieve your fitness goals.
 
-A new Flutter project.
+The question about yunvote is Feel free to contact me:
 
-## Getting Started
+# Support Information
 
-This project is a starting point for a Flutter application.
+If you have questions or need assistance with the app, please contact us
 
-A few resources to get you started if this is your first Flutter project:
+- **Email**: [123imyhnam123@gmail.com](mailto:123imyhnam123@gmail.com)
+- **Phone**: +82-10-5955-9775
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# my_summer
