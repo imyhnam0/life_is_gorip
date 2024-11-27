@@ -416,6 +416,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         FloatingActionButton.extended(
+                          heroTag: null,
                           onPressed: () async {
                             SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
@@ -440,6 +441,7 @@ class _FoodSavePageState extends State<FoodSavePage> {
                         ),
                         const SizedBox(width: 16), // 버튼 사이의 간격
                         FloatingActionButton.extended(
+                          heroTag: null,
                           onPressed: () {
                             _addMeal(routineIndex, setModalState);
                           },

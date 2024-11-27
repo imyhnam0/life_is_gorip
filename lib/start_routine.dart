@@ -377,6 +377,7 @@ Future<void> loadSavedCollectionNames() async {
               width: 170.0,
               height: 56.0,
               child: FloatingActionButton.extended(
+                heroTag: null,
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -407,6 +408,7 @@ Future<void> loadSavedCollectionNames() async {
               width: 170.0,
               height: 56.0,
               child: FloatingActionButton.extended(
+                heroTag: null,
                 onPressed: () {
                   Navigator.push(
                     context,

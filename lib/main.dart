@@ -669,6 +669,7 @@ class _HomepageState extends State<Homepage> {
                       width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
+                        heroTag: 'routine',
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -698,6 +699,7 @@ class _HomepageState extends State<Homepage> {
                       width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
+                        heroTag: 'picture',
                         onPressed: () {
                           Navigator.push(
                             context,

@@ -530,6 +530,7 @@ void initState() {
                                 width: 140,
                                 height: 60,
                                 child: FloatingActionButton.extended(
+                                  heroTag: null,
                                   onPressed: _addTextFields,
                                   icon: Icon(
                                     Icons.add,
@@ -548,6 +549,7 @@ void initState() {
                                 width: 140,
                                 height: 60,
                                 child: FloatingActionButton.extended(
+                                  heroTag: null,
                                   onPressed: _deleteLastRow,
                                   icon: Icon(
                                     Icons.remove,

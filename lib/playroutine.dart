@@ -609,6 +609,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                 MainAxisAlignment.spaceEvenly, // 버튼들을 가운데 정렬하고 균등하게 배치
             children: [
               FloatingActionButton.extended(
+                heroTag: 'finishRoutine',
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -676,6 +677,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                 backgroundColor: Colors.cyan.shade700,
               ),
               FloatingActionButton.extended(
+                heroTag: 'endRoutine',
                 onPressed: () {
                   showDialog(
                     context: context,

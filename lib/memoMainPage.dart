@@ -203,6 +203,7 @@ class MyMemoState extends State<MyMemoPage> {
       ),
       // 플로팅 액션 버튼
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addMemo',
         onPressed: () => addItemEvent(context), // 버튼을 누를 경우 메모 추가 UI 표시
         tooltip: 'Add Item', // 플로팅 액션 버튼 설명
         child: const Icon(Icons.add), // + 모양 아이콘

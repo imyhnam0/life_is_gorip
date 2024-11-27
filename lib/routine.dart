@@ -49,43 +49,41 @@ class _RoutinePageState extends State<RoutinePage>
     _controller.dispose();
     super.dispose();
   }
+
   Future<void> _updateRoutineTitle(String newTitle) async {
-  try {
-    DocumentReference docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine');
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
 
-    DocumentSnapshot documentSnapshot = await docRef.get();
+      DocumentSnapshot documentSnapshot = await docRef.get();
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-      if (data.containsKey(_title)) {
-        List<dynamic> myRoutineList = data[_title];
+        if (data.containsKey(_title)) {
+          List<dynamic> myRoutineList = data[_title];
 
-        // Remove the old title
-        await docRef.update({_title: FieldValue.delete()});
+          // Remove the old title
+          await docRef.update({_title: FieldValue.delete()});
 
-        // Add the new title with the same list
-        data.remove(_title);
-        data[newTitle] = myRoutineList;
+          // Add the new title with the same list
+          data.remove(_title);
+          data[newTitle] = myRoutineList;
 
-        await docRef.set(data, SetOptions(merge: true));
+          await docRef.set(data, SetOptions(merge: true));
+        }
       }
+
+      setState(() {
+        _title = newTitle;
+      });
+    } catch (e) {
+      print('Error updating document: $e');
     }
-
-    setState(() {
-      _title = newTitle;
-    });
-
-   
-  } catch (e) {
-    print('Error updating document: $e');
   }
-}
-
 
   Future<void> deleteData(String routineTitle) async {
     try {
@@ -233,7 +231,7 @@ class _RoutinePageState extends State<RoutinePage>
                 ),
                 onPressed: () {
                   _updateRoutineTitle(nameController.text);
-              Navigator.of(context).pop();
+                  Navigator.of(context).pop();
                 },
               ),
             ],
@@ -247,10 +245,13 @@ class _RoutinePageState extends State<RoutinePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _title,
-          style: TextStyle(
-            color: Colors.white,
+        title: Hero(
+          tag: 'routine',
+          child: Text(
+            _title,
+            style: TextStyle(
+              color: Colors.white,
+            ),
           ),
         ),
         centerTitle: true,
@@ -443,6 +444,7 @@ class _RoutinePageState extends State<RoutinePage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FloatingActionButton.extended(
+            heroTag: null,
             onPressed: () {
               Navigator.push(
                 context,
@@ -470,6 +472,7 @@ class _RoutinePageState extends State<RoutinePage>
           ),
           SizedBox(width: 10), // Add some space between the buttons
           FloatingActionButton.extended(
+            heroTag: null,
             onPressed: () {
               Navigator.push(
                 context,
@@ -480,6 +483,7 @@ class _RoutinePageState extends State<RoutinePage>
                 ),
               ).then((value) {
                 if (value == true) {
+                  print("루틴 저장 완료");
                   myCollectionName();
                 }
               });
