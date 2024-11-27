@@ -1,4 +1,4 @@
-#Life is gorip App
+# Life is gorip App
 Life is gorip App is your ultimate fitness companion, designed to track your workouts, monitor progress, and help you achieve your fitness goals.
 
 The question about yunvote is Feel free to contact me:
