@@ -42,26 +42,26 @@ class _CalenderPageState extends State<CalenderPage> {
     _fetchRoutineData();
   }
 
-  Future<void> _deleteFood(String documentId) async {
-    var db = FirebaseFirestore.instance;
-    try {
-      await db
-          .collection('users')
-          .doc(uid)
-          .collection('Calender')
-          .doc('food')
-          .collection('todayfood')
-          .doc(documentId)
-          .delete();
-    } catch (e) {
-      print('Error deleting document: $e');
-    }
-    setState(() {
-      // 상태 변경 후 UI를 다시 빌드하도록 설정
-    });
-    _fetchFoodData();
-  }
-
+  // Future<void> _deleteFood(String documentId) async {
+  //   var db = FirebaseFirestore.instance;
+  //   try {
+  //     await db
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Calender')
+  //         .doc('food')
+  //         .collection('todayfood')
+  //         .doc(documentId)
+  //         .delete();
+  //   } catch (e) {
+  //     print('Error deleting document: $e');
+  //   }
+  //   setState(() {
+  //     // 상태 변경 후 UI를 다시 빌드하도록 설정
+  //   });
+  //   _fetchFoodData();
+  // }
+  //
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
       String routineName) async {
     var db = FirebaseFirestore.instance;
@@ -97,30 +97,30 @@ class _CalenderPageState extends State<CalenderPage> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchFoodData() async {
-    var db = FirebaseFirestore.instance;
-    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-    try {
-      QuerySnapshot snapshot = await db
-          .collection('users')
-          .doc(uid)
-          .collection('Calender')
-          .doc('food')
-          .collection('todayfood')
-          .where('date', isEqualTo: todayDate)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        data['documentId'] = doc.id; // 문서 ID를 포함시킴
-        return data;
-      }).toList();
-    } catch (e) {
-      print('Error fetching documents: $e');
-      return [];
-    }
-  }
+  // Future<List<Map<String, dynamic>>> _fetchFoodData() async {
+  //   var db = FirebaseFirestore.instance;
+  //   String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+  //
+  //   try {
+  //     QuerySnapshot snapshot = await db
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Calender')
+  //         .doc('food')
+  //         .collection('todayfood')
+  //         .where('date', isEqualTo: todayDate)
+  //         .get();
+  //
+  //     return snapshot.docs.map((doc) {
+  //       var data = doc.data() as Map<String, dynamic>;
+  //       data['documentId'] = doc.id; // 문서 ID를 포함시킴
+  //       return data;
+  //     }).toList();
+  //   } catch (e) {
+  //     print('Error fetching documents: $e');
+  //     return [];
+  //   }
+  // }
 
   Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -138,57 +138,124 @@ class _CalenderPageState extends State<CalenderPage> {
         var data = doc.data() as Map<String, dynamic>;
         data['documentId'] = doc.id; // 문서 ID를 포함시킴
         if (data['날짜'] == todayDate) {
+          // 운동 종목과 횟수 데이터를 포함시키기
+          if (data.containsKey('운동 목록')) {
+            data['운동 목록'] = List<Map<String, dynamic>>.from(data['운동 목록']);
+          } else {
+            data['운동 목록'] = [];
+          }
           matchedDocuments.add(data);
         }
       }
+
       return matchedDocuments;
+
+
     } catch (e) {
       print('Error fetching documents: $e');
     }
     return [];
   }
+  Future<Map<String, List<Map<String, int>>>> fetchRoutineDetails(
+      String routineName) async {
+    var db = FirebaseFirestore.instance;
 
-  List<PieChartSectionData> showingSections(
-      double carbs, double protein, double fat) {
-    final total = carbs + protein + fat;
-    if (total == 0) return [];
+    try {
+      DocumentSnapshot snapshot = await db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
 
-    return [
-      PieChartSectionData(
-        color: Colors.blue,
-        value: (carbs / total) * 100,
-        title: '${(carbs / total * 100).toStringAsFixed(1)}%',
-        radius: 50,
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      PieChartSectionData(
-        color: Colors.red,
-        value: (protein / total) * 100,
-        title: '${(protein / total * 100).toStringAsFixed(1)}%',
-        radius: 50,
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      PieChartSectionData(
-        color: Colors.green,
-        value: (fat / total) * 100,
-        title: '${(fat / total * 100).toStringAsFixed(1)}%',
-        radius: 50,
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    ];
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
+        print('Firestore data: ${snapshot.data()}');
+
+        // 루틴 이름 (예: "등")에 해당하는 데이터 찾기
+        if (data.containsKey(routineName)) {
+          List<dynamic> routineList = data[routineName];
+
+          Map<String, List<Map<String, int>>> groupedExercises = {};
+
+          for (var routine in routineList) {
+            // 운동 이름 (예: "렛풀다운", "티바") 추출
+            String exerciseName = routine.keys.first;
+            var exerciseData = routine[exerciseName] as Map<String, dynamic>;
+            List<dynamic> exercises = exerciseData['exercises'];
+
+            // 운동 데이터 (reps, weight) 처리
+            for (var exercise in exercises) {
+              int reps = exercise['reps'] is int
+                  ? exercise['reps']
+                  : int.tryParse(exercise['reps'].toString()) ?? 0;
+              int weight = exercise['weight'] is int
+                  ? exercise['weight']
+                  : int.tryParse(exercise['weight'].toString()) ?? 0;
+
+              if (!groupedExercises.containsKey(exerciseName)) {
+                groupedExercises[exerciseName] = [];
+              }
+              groupedExercises[exerciseName]!
+                  .add({'횟수': reps, '무게': weight});
+            }
+          }
+
+          return groupedExercises;
+        }
+      }
+
+      // 루틴 이름이 없거나 데이터가 비어있는 경우
+      return {};
+    } catch (e) {
+      print('Error fetching routine details: $e');
+      return {};
+    }
   }
+
+
+
+  // List<PieChartSectionData> showingSections(
+  //     double carbs, double protein, double fat) {
+  //   final total = carbs + protein + fat;
+  //   if (total == 0) return [];
+  //
+  //   return [
+  //     PieChartSectionData(
+  //       color: Colors.blue,
+  //       value: (carbs / total) * 100,
+  //       title: '${(carbs / total * 100).toStringAsFixed(1)}%',
+  //       radius: 50,
+  //       titleStyle: const TextStyle(
+  //         fontSize: 16,
+  //         fontWeight: FontWeight.bold,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //     PieChartSectionData(
+  //       color: Colors.red,
+  //       value: (protein / total) * 100,
+  //       title: '${(protein / total * 100).toStringAsFixed(1)}%',
+  //       radius: 50,
+  //       titleStyle: const TextStyle(
+  //         fontSize: 16,
+  //         fontWeight: FontWeight.bold,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //     PieChartSectionData(
+  //       color: Colors.green,
+  //       value: (fat / total) * 100,
+  //       title: '${(fat / total * 100).toStringAsFixed(1)}%',
+  //       radius: 50,
+  //       titleStyle: const TextStyle(
+  //         fontSize: 16,
+  //         fontWeight: FontWeight.bold,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   ];
+  // }
 
   void _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -275,102 +342,102 @@ class _CalenderPageState extends State<CalenderPage> {
               ),
             ),
           ),
-          Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _fetchFoodData(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('오류 발생: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                      child: Text(
-                    '데이터가 없습니다.',
-                    style: TextStyle(color: Colors.white),
-                  ));
-                }
-
-                var data = snapshot.data!;
-                var totalCarbs = data.fold<double>(
-                    0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
-                var totalProtein = data.fold<double>(
-                    0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
-                var totalFat = data.fold<double>(
-                    0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
-                var totalCalories = data.fold<double>(
-                    0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
-
-                return Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: data.length,
-                        itemBuilder: (context, index) {
-                          var item = data[index];
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '오늘 먹은 칼로리: ${item['totalCalories']}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold, // 글자를 두껍게
-                                        fontSize: 15, // 글자 크기를 20으로 설정
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete,
-                                          color: Colors.white),
-                                      onPressed: () {
-                                        _deleteFood(item['documentId']);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  '탄수화물: ${item['totalCarbs']}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                Text(
-                                  '단백질: ${item['totalProtein']}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                Text(
-                                  '지방: ${item['totalFat']}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                SizedBox(
-                                  height: 200,
-                                  child: PieChart(
-                                    PieChartData(
-                                      sections: showingSections(
-                                          totalCarbs, totalProtein, totalFat),
-                                      sectionsSpace: 0,
-                                      centerSpaceRadius: 40,
-                                      borderData: FlBorderData(show: false),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+          // Expanded(
+          //   child: FutureBuilder<List<Map<String, dynamic>>>(
+          //     future: _fetchFoodData(),
+          //     builder: (context, snapshot) {
+          //       if (snapshot.connectionState == ConnectionState.waiting) {
+          //         return Center(child: CircularProgressIndicator());
+          //       }
+          //       if (snapshot.hasError) {
+          //         return Center(child: Text('오류 발생: ${snapshot.error}'));
+          //       }
+          //       if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          //         return Center(
+          //             child: Text(
+          //           '데이터가 없습니다.',
+          //           style: TextStyle(color: Colors.white),
+          //         ));
+          //       }
+          //
+          //       var data = snapshot.data!;
+          //       var totalCarbs = data.fold<double>(
+          //           0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
+          //       var totalProtein = data.fold<double>(
+          //           0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
+          //       var totalFat = data.fold<double>(
+          //           0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
+          //       var totalCalories = data.fold<double>(
+          //           0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
+          //
+          //       return Column(
+          //         children: [
+          //           Expanded(
+          //             child: ListView.builder(
+          //               itemCount: data.length,
+          //               itemBuilder: (context, index) {
+          //                 var item = data[index];
+          //                 return Padding(
+          //                   padding: const EdgeInsets.all(16.0),
+          //                   child: Column(
+          //                     crossAxisAlignment: CrossAxisAlignment.start,
+          //                     children: [
+          //                       Row(
+          //                         mainAxisAlignment:
+          //                             MainAxisAlignment.spaceBetween,
+          //                         children: [
+          //                           Text(
+          //                             '오늘 먹은 칼로리: ${item['totalCalories']}',
+          //                             style: TextStyle(
+          //                               color: Colors.white,
+          //                               fontWeight: FontWeight.bold, // 글자를 두껍게
+          //                               fontSize: 15, // 글자 크기를 20으로 설정
+          //                             ),
+          //                           ),
+          //                           IconButton(
+          //                             icon: Icon(Icons.delete,
+          //                                 color: Colors.white),
+          //                             onPressed: () {
+          //                               _deleteFood(item['documentId']);
+          //                             },
+          //                           ),
+          //                         ],
+          //                       ),
+          //                       Text(
+          //                         '탄수화물: ${item['totalCarbs']}',
+          //                         style: TextStyle(color: Colors.white),
+          //                       ),
+          //                       Text(
+          //                         '단백질: ${item['totalProtein']}',
+          //                         style: TextStyle(color: Colors.white),
+          //                       ),
+          //                       Text(
+          //                         '지방: ${item['totalFat']}',
+          //                         style: TextStyle(color: Colors.white),
+          //                       ),
+          //                       SizedBox(
+          //                         height: 200,
+          //                         child: PieChart(
+          //                           PieChartData(
+          //                             sections: showingSections(
+          //                                 totalCarbs, totalProtein, totalFat),
+          //                             sectionsSpace: 0,
+          //                             centerSpaceRadius: 40,
+          //                             borderData: FlBorderData(show: false),
+          //                           ),
+          //                         ),
+          //                       ),
+          //                     ],
+          //                   ),
+          //                 );
+          //               },
+          //             ),
+          //           ),
+          //         ],
+          //       );
+          //     },
+          //   ),
+          // ),
           Divider(
             color: Colors.grey,
             thickness: 1,
@@ -434,6 +501,9 @@ class _CalenderPageState extends State<CalenderPage> {
                             style: TextStyle(color: Colors.white),
                           ),
                           SizedBox(height: 16),
+
+
+
                           FutureBuilder<Map<String, Map<String, int>>>(
                             future:
                                 _fetchRoutineChartData(routine['오늘 한 루틴이름']),
@@ -572,6 +642,55 @@ class _CalenderPageState extends State<CalenderPage> {
                               );
                             },
                           ),
+                          SizedBox(height: 16),
+
+                          FutureBuilder<Map<String, List<Map<String, int>>>>(
+                            future: fetchRoutineDetails(routine['오늘 한 루틴이름']),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              if (snapshot.hasError) {
+                                return Center(child: Text('오류 발생: ${snapshot.error}'));
+                              }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Center(child: Text('데이터가 없습니다.'));
+                              }
+
+                              var groupedExercises = snapshot.data!;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: groupedExercises.entries.map((entry) {
+                                  String exerciseName = entry.key;
+                                  List<Map<String, int>> details = entry.value;
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '$exerciseName',
+                                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                        ...details.map((detail) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                                            child: Text(
+                                              ' 무게: ${detail['무게']}kg, 횟수: ${detail['횟수']}',
+                                              style: TextStyle(color: Colors.white, fontSize: 14),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          )
+
                         ],
                       ),
                     );

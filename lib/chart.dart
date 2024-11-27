@@ -414,234 +414,228 @@ class _RoutineChartState extends State<RoutineChart> {
         Map<String, double> fatData = data['fat']!;
 
         List<String> dates = weightData.keys.toList();
-        double minY = [weightData.values, muscleData.values, fatData.values]
-            .expand((e) => e)
-            .reduce((a, b) => a < b ? a : b);
-        double maxY = [weightData.values, muscleData.values, fatData.values]
-            .expand((e) => e)
-            .reduce((a, b) => a > b ? a : b);
+        double minYWeight = weightData.values.reduce((a, b) => a < b ? a : b);
+        double maxYWeight = weightData.values.reduce((a, b) => a > b ? a : b);
+        double minYMuscle = muscleData.values.reduce((a, b) => a < b ? a : b);
+        double maxYMuscle = muscleData.values.reduce((a, b) => a > b ? a : b);
+        double minYFat = fatData.values.reduce((a, b) => a < b ? a : b);
+        double maxYFat = fatData.values.reduce((a, b) => a > b ? a : b);
 
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '몸무게 변화 추세',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(
-                height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(show: false),
-                    titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            if (value.toInt() < dates.length) {
-                              return Column(
-                                children: [
-                                  Text(
-                                    DateFormat('MM/dd').format(
-                                        DateTime.parse(dates[value.toInt()])),
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ],
-                              );
-                            }
-                            return Text('');
-                          },
-                          interval: 1,
-                          reservedSize: 22,
-                        ),
+        return ListView(
+          padding: EdgeInsets.all(16.0),
+          children: [
+            // 화면 상단의 데이터 테이블
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '날짜',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              '${value.toInt()}',
-                              style: TextStyle(color: Colors.white),
-                            );
-                          },
-                          interval: 0.01,
-                          reservedSize: 28,
-                        ),
-                      ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                    ),
-                    borderData: FlBorderData(
-                      show: true,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.white, width: 1),
-                        left: BorderSide(color: Colors.white, width: 1),
-                        right: BorderSide.none,
-                        top: BorderSide.none,
-                      ),
-                    ),
-                    minX: 0,
-                    maxX: (dates.length - 1).toDouble(),
-                    minY: minY,
-                    maxY: maxY,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: weightData.entries
-                            .map((e) => FlSpot(
-                                dates.indexOf(e.key).toDouble(), e.value))
-                            .toList(),
-                        isCurved: true,
-                        barWidth: 5,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(show: true),
-                        belowBarData: BarAreaData(show: false),
-                        color: Colors.red,
-                      ),
-                      LineChartBarData(
-                        spots: muscleData.entries
-                            .map((e) => FlSpot(
-                                dates.indexOf(e.key).toDouble(), e.value))
-                            .toList(),
-                        isCurved: true,
-                        barWidth: 5,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(show: true),
-                        belowBarData: BarAreaData(show: false),
-                        color: Colors.green,
-                      ),
-                      LineChartBarData(
-                        spots: fatData.entries
-                            .map((e) => FlSpot(
-                                dates.indexOf(e.key).toDouble(), e.value))
-                            .toList(),
-                        isCurved: true,
-                        barWidth: 5,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(show: true),
-                        belowBarData: BarAreaData(show: false),
-                        color: Colors.blue,
-                      ),
+                      ...dates.map((date) => Text(
+                        DateFormat('MM/dd').format(DateTime.parse(date)),
+                        style: TextStyle(color: Colors.white),
+                      )),
                     ],
                   ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Text(
-                    '몸무게',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Icon(Icons.circle, color: Colors.red),
                   SizedBox(width: 20),
-                  Text(
-                    '골격근량',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '몸무게',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      ...dates.map((date) => Text(
+                        weightData[date].toString(),
+                        style: TextStyle(color: Colors.white),
+                      )),
+                    ],
                   ),
-                  Icon(Icons.circle, color: Colors.green),
                   SizedBox(width: 20),
-                  Text(
-                    '체지방량',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '골격근량',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      ...dates.map((date) => Text(
+                        muscleData[date].toString(),
+                        style: TextStyle(color: Colors.white),
+                      )),
+                    ],
                   ),
-                  Icon(Icons.circle, color: Colors.blue),
+                  SizedBox(width: 20),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '체지방량',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      ...dates.map((date) => Text(
+                        fatData[date].toString(),
+                        style: TextStyle(color: Colors.white),
+                      )),
+                    ],
+                  ),
                 ],
               ),
-              SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '날짜',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        ...dates.map((date) => Text(
-                              DateFormat('MM/dd').format(DateTime.parse(date)),
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      ],
-                    ),
-                    SizedBox(width: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '몸무게',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        ...dates.map((date) => Text(
-                              weightData[date].toString(),
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      ],
-                    ),
-                    SizedBox(width: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '골격근량',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        ...dates.map((date) => Text(
-                              muscleData[date].toString(),
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      ],
-                    ),
-                    SizedBox(width: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '체지방량',
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        ...dates.map((date) => Text(
-                              fatData[date].toString(),
-                              style: TextStyle(color: Colors.white),
-                            )),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+            SizedBox(height: 20),
+            // 몸무게 변화 차트
+            _buildSingleChart(
+              title: "몸무게 변화 추세",
+              data: weightData,
+              dates: dates,
+              minY: minYWeight,
+              maxY: maxYWeight,
+              color: Colors.cyan,
+            ),
+            SizedBox(height: 20),
+            // 골격근량 변화 차트
+            _buildSingleChart(
+              title: "골격근량 변화 추세",
+              data: muscleData,
+              dates: dates,
+              minY: minYMuscle,
+              maxY: maxYMuscle,
+              color: Colors.cyan,
+            ),
+            SizedBox(height: 20),
+            // 체지방량 변화 차트
+            _buildSingleChart(
+              title: "체지방량 변화 추세",
+              data: fatData,
+              dates: dates,
+              minY: minYFat,
+              maxY: maxYFat,
+              color: Colors.cyan,
+            ),
+          ],
         );
       },
     );
   }
+
+  Widget _buildSingleChart({
+    required String title,
+    required Map<String, double> data,
+    required List<String> dates,
+    required double minY,
+    required double maxY,
+    required Color color,
+  }) {
+    var sortedEntries = data.entries.toList()
+      ..sort((a, b) => DateTime.parse(a.key).compareTo(DateTime.parse(b.key)));
+
+    // x축 및 y축 값 생성
+    List<FlSpot> spots = sortedEntries
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.value))
+        .toList();
+
+    // Y축 범위 조정 (0.1 추가로 범위를 약간 확장)
+    minY = minY - 0.1;
+    maxY = maxY + 0.1;
+
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: false),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < dates.length) {
+                        return Text(
+                          DateFormat('MM/dd')
+                              .format(DateTime.parse(dates[value.toInt()])),
+                          style: TextStyle(color: Colors.white),
+                        );
+                      }
+                      return Text('');
+                    },
+                    interval: 1,
+                    reservedSize: 22,
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: false,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        '${value.toInt()}',
+                        style: TextStyle(color: Colors.white),
+                      );
+                    },
+                    interval: (maxY - minY) / 5,
+                    reservedSize: 28,
+                  ),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border(
+                  bottom: BorderSide(color: Colors.white, width: 1),
+                  left: BorderSide(color: Colors.white, width: 1),
+                  right: BorderSide.none,
+                  top: BorderSide.none,
+                ),
+              ),
+              minX: 0,
+              maxX: (dates.length - 1).toDouble(),
+              minY: minY,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: false,
+                  barWidth: 5,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(show: false),
+                  color: color,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
 
   Widget _buildChart(String routineName, Map<String, int> data) {
     var sortedEntries = data.entries.toList()
@@ -754,6 +748,42 @@ class _RoutineChartState extends State<RoutineChart> {
                 ],
               ),
             ),
+          ),
+          SizedBox(height: 40),
+          Text(
+            '날짜별 볼륨량',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          ListView.builder(
+            shrinkWrap: true, // Scroll에 영향을 주지 않도록 설정
+            physics: NeverScrollableScrollPhysics(), // 부모 스크롤에 따라 이동
+            itemCount: sortedEntries.length,
+            itemBuilder: (context, index) {
+              var entry = sortedEntries[index];
+              String date = DateFormat('MM/dd').format(DateTime.parse(entry.key));
+              int volume = entry.value;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      date,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    Text(
+                      '$volume',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           SizedBox(height: 40),
         ],
