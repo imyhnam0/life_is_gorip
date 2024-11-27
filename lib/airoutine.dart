@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 
 class Airoutine extends StatefulWidget {
   final String myroutinename;
@@ -20,10 +22,13 @@ class _AiroutineState extends State<Airoutine> {
   TextEditingController _controller = TextEditingController();
   Map<String, List<Map<String, String>>> routineData = {}; // 여러 운동 종목을 저장할 데이터
   String? uid;
+  bool _showPopup = true;
+  late VideoPlayerController _videoController;
 
   @override
   void dispose() {
     _controller.dispose();
+    _videoController.dispose();
     super.dispose();
   }
 
@@ -31,6 +36,106 @@ class _AiroutineState extends State<Airoutine> {
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
+    _initializeVideo();
+    _checkPopupPreference();
+  }
+
+  Future<void> _initializeVideo() async {
+    _videoController =
+        VideoPlayerController.asset('assets/videos/aiRoutine.mp4');
+
+    try {
+      await _videoController.initialize();
+      setState(() {});
+    } catch (e) {
+      print('동영상 초기화 중 오류 발생: $e');
+    }
+  }
+
+  Future<void> _checkPopupPreference() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showPopup = prefs.getBool('showPopup') ?? true;
+    });
+
+    if (_showPopup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showVideoPopup();
+      });
+    }
+  }
+
+  Future<void> _setPopupPreference(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('showPopup', value);
+  }
+
+  void _showVideoPopup() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '자동 생성 안내',
+            style:
+                TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+          ),
+          backgroundColor: Colors.grey.shade900,
+          // 바탕화면 색상 설정
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15), // 모서리를 둥글게 설정
+            side: BorderSide(color: Colors.blueGrey, width: 2), // 테두리 색상과 두께 설정
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AspectRatio(
+                aspectRatio: _videoController.value.isInitialized
+                    ? _videoController.value.aspectRatio
+                    : 16 / 9,
+                child: _videoController.value.isInitialized
+                    ? VideoPlayer(_videoController)
+                    : Center(child: CircularProgressIndicator()),
+              ),
+              SizedBox(height: 16),
+            ],
+          ),
+          actions: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red),
+                // Border color for '취소' button
+                borderRadius:
+                    BorderRadius.circular(8), // Optional: Rounded corners
+              ),
+              child: TextButton(
+                child: Text('더 이상 보지 않기', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  _setPopupPreference(false);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red),
+                // Border color for '취소' button
+                borderRadius:
+                    BorderRadius.circular(8), // Optional: Rounded corners
+              ),
+              child: TextButton(
+                child: Text('닫기', style: TextStyle(color: Colors.green)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    _videoController.setPlaybackSpeed(2);
+    _videoController.play(); // 팝업 표시 시 자동 재생
   }
 
   // Firestore에 루틴 데이터를 저장하는 함수
@@ -106,21 +211,26 @@ class _AiroutineState extends State<Airoutine> {
       line = line.trim(); //각 줄의 공복 제거
 
       // 만약 "kg"가 포함된 경우 무게와 반복 횟수로 인식
-      if (RegExp(r'\d+kg \d+').hasMatch(line)) { // 숫자 1개 이상과 kg로 이루어진 패턴
-        if (currentExercise != null) { // 현재 처리중인 운동이 있는 경우
+      if (RegExp(r'\d+kg \d+').hasMatch(line)) {
+        // 숫자 1개 이상과 kg로 이루어진 패턴
+        if (currentExercise != null) {
+          // 현재 처리중인 운동이 있는 경우
           List<String> parts = line.split(' '); // 공백을 기준으로 나눈후 parts에 저장
-          for(int i =0;i<parts.length;i++) {
+          for (int i = 0; i < parts.length; i++) {
             print(parts[i]);
             print("dd");
           }
 
           // 반복적으로 kg과 reps를 처리
           for (int i = 0; i < parts.length; i++) {
-            if (parts[i].contains('kg')) { // 'kg' 포함 여부 확인
+            if (parts[i].contains('kg')) {
+              // 'kg' 포함 여부 확인
               String weight = parts[i].replaceAll('kg', ''); // 중량 추출
 
               // 'kg' 이후의 반복 횟수 전부 추가
-              for (int j = i + 1; j < parts.length && !parts[j].contains('kg'); j++) {
+              for (int j = i + 1;
+                  j < parts.length && !parts[j].contains('kg');
+                  j++) {
                 String reps = parts[j]; // 반복 횟수 추출
 
                 // currentExercise에 데이터 추가
@@ -135,7 +245,6 @@ class _AiroutineState extends State<Airoutine> {
               }
             }
           }
-
         }
       }
 
@@ -250,6 +359,25 @@ class _AiroutineState extends State<Airoutine> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue),
+              // Border color for '취소' button
+              borderRadius:
+                  BorderRadius.circular(8), // Optional: Rounded corners
+            ),
+            child: TextButton(
+              child: Text(
+                '설명서',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                _showVideoPopup(); // 설명서 버튼을 누르면 비디오 팝업 호출
+              },
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
