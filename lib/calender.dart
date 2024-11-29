@@ -566,75 +566,99 @@ class _CalenderPageState extends State<CalenderPage> {
                               }
 
                               return SizedBox(
-                                height: 200,
+                                height: 250, // 높이를 살짝 늘림
                                 child: LineChart(
                                   LineChartData(
-                                    gridData: FlGridData(show: false),
+                                    backgroundColor: Colors.transparent,
+                                    gridData: FlGridData(
+                                      show: true,
+                                      getDrawingHorizontalLine: (value) => FlLine(
+                                        color: Colors.grey.shade800, // 수평선 색상
+                                        strokeWidth: 0.5,
+                                      ),
+                                      getDrawingVerticalLine: (value) => FlLine(
+                                        color: Colors.grey.shade800, // 수직선 색상
+                                        strokeWidth: 0.5,
+                                      ),
+                                    ),
                                     titlesData: FlTitlesData(
                                       bottomTitles: AxisTitles(
                                         sideTitles: SideTitles(
                                           showTitles: true,
                                           getTitlesWidget: (value, meta) {
-                                            if (value.toInt() <
-                                                xLabels.length) {
+                                            if (value.toInt() < xLabels.length) {
                                               return Text(
                                                 xLabels[value.toInt()],
-                                                style: TextStyle(
-                                                    color: Colors.white),
+                                                style: TextStyle(color: Colors.white, fontSize: 12),
                                               );
                                             }
                                             return Text('');
                                           },
                                           interval: 1,
-                                          reservedSize: 22,
+                                          reservedSize: 28, // 여백 추가
                                         ),
                                       ),
                                       leftTitles: AxisTitles(
                                         sideTitles: SideTitles(
-                                          showTitles: false,
+                                          showTitles: false ,
                                           getTitlesWidget: (value, meta) {
                                             return Text(
                                               '${value.toInt()}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
+                                              style: TextStyle(color: Colors.white70, fontSize: 12),
                                             );
                                           },
-                                          interval: 1,
-                                          reservedSize: 28,
+                                          interval: (maxY - minY) / 5, // Y축 레이블 간격
+                                          reservedSize: 32,
                                         ),
                                       ),
                                       rightTitles: AxisTitles(
-                                        sideTitles:
-                                            SideTitles(showTitles: false),
+                                        sideTitles: SideTitles(showTitles: false),
                                       ),
                                       topTitles: AxisTitles(
-                                        sideTitles:
-                                            SideTitles(showTitles: false),
+                                        sideTitles: SideTitles(showTitles: false),
                                       ),
                                     ),
                                     borderData: FlBorderData(
                                       show: true,
                                       border: Border(
-                                        bottom: BorderSide(
-                                            color: Colors.white, width: 1),
-                                        left: BorderSide(
-                                            color: Colors.white, width: 1),
+                                        bottom: BorderSide(color: Colors.white54, width: 1),
+                                        left: BorderSide(color: Colors.white54, width: 1),
                                         right: BorderSide.none,
                                         top: BorderSide.none,
                                       ),
                                     ),
                                     minX: 0,
-                                    maxX: (data.length - 1).toDouble(),
+                                    maxX: (yValues.length - 1).toDouble(),
                                     minY: minY,
                                     maxY: maxY,
                                     lineBarsData: [
                                       LineChartBarData(
                                         spots: spots,
-                                        isCurved: true,
-                                        barWidth: 5,
+                                        isCurved: true, // 부드러운 곡선
+                                        barWidth: 4, // 선 굵기
                                         isStrokeCapRound: true,
-                                        dotData: FlDotData(show: true),
-                                        belowBarData: BarAreaData(show: false),
+                                        gradient: LinearGradient(
+                                          colors: [Colors.cyan, Colors.blueAccent], // 선 그래디언트
+                                        ),
+                                        belowBarData: BarAreaData(
+                                          show: true,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.cyan.withOpacity(0.3),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                        dotData: FlDotData(
+                                          show: true,
+                                          getDotPainter: (spot, percent, barData, index) {
+                                            return FlDotCirclePainter(
+                                              radius: 4, // 점 크기
+                                              color: Colors.cyan,
+
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ],
                                   ),

@@ -556,16 +556,26 @@ class _RoutineChartState extends State<RoutineChart> {
         Text(
           title,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
         SizedBox(
-          height: 200,
+          height: 250, // 차트 높이를 살짝 증가
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: false),
+              gridData: FlGridData(
+                show: true,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: Colors.blueGrey.shade700.withOpacity(0.5), // 수평선 색상
+                  strokeWidth: 0.5,
+                ),
+                getDrawingVerticalLine: (value) => FlLine(
+                  color: Colors.blueGrey.shade700.withOpacity(0.5), // 수직선 색상
+                  strokeWidth: 0.5,
+                ),
+              ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -573,32 +583,32 @@ class _RoutineChartState extends State<RoutineChart> {
                     getTitlesWidget: (value, meta) {
                       if (value.toInt() < dates.length) {
                         return Text(
-                          DateFormat('MM/dd')
-                              .format(DateTime.parse(dates[value.toInt()])),
-                          style: TextStyle(color: Colors.white),
+                          DateFormat('MM/dd').format(
+                              DateTime.parse(dates[value.toInt()])),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         );
                       }
                       return Text('');
                     },
                     interval: 1,
-                    reservedSize: 22,
+                    reservedSize: 30, // 축 레이블 공간 확장
                   ),
                 ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: false,
+                    showTitles: false, // Y축 레이블 표시
                     getTitlesWidget: (value, meta) {
                       return Text(
-                        '${value.toInt()}',
-                        style: TextStyle(color: Colors.white),
+                        '${value.toInt()}kg',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       );
                     },
-                    interval: (maxY - minY) / 5,
-                    reservedSize: 28,
+                    interval: (maxY - minY) / 5, // Y축 간격
+                    reservedSize: 40,
                   ),
                 ),
                 rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: true),
+                  sideTitles: SideTitles(showTitles: false),
                 ),
                 topTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
@@ -606,12 +616,7 @@ class _RoutineChartState extends State<RoutineChart> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border(
-                  bottom: BorderSide(color: Colors.white, width: 1),
-                  left: BorderSide(color: Colors.white, width: 1),
-                  right: BorderSide.none,
-                  top: BorderSide.none,
-                ),
+                border: Border.all(color: Colors.white10, width: 1),
               ),
               minX: 0,
               maxX: (dates.length - 1).toDouble(),
@@ -620,12 +625,35 @@ class _RoutineChartState extends State<RoutineChart> {
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,
-                  isCurved: false,
-                  barWidth: 5,
+                  isCurved: true, // 선을 부드럽게 처리
+                  barWidth: 3.5, // 선 두께
                   isStrokeCapRound: true,
-                  dotData: FlDotData(show: true),
-                  belowBarData: BarAreaData(show: false),
-                  color: color,
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  dotData: FlDotData(
+                    show: true, // 점 표시
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 3, // 점 크기
+                        color: color,
+                        strokeWidth: 2,
+                        strokeColor: Colors.white,
+                      );
+                    },
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey,
+                      Colors.cyanAccent,
+                    ], // 선의 그래디언트
+                  ),
                 ),
               ],
             ),
