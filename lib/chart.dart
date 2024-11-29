@@ -598,7 +598,7 @@ class _RoutineChartState extends State<RoutineChart> {
                   ),
                 ),
                 rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
+                  sideTitles: SideTitles(showTitles: true),
                 ),
                 topTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
@@ -636,20 +636,18 @@ class _RoutineChartState extends State<RoutineChart> {
   }
 
 
-
   Widget _buildChart(String routineName, Map<String, int> data) {
     var sortedEntries = data.entries.toList()
       ..sort((a, b) => DateTime.parse(a.key).compareTo(DateTime.parse(b.key)));
 
-    // 정렬된 데이터를 기반으로 x축과 y축 값을 재생성
     List<String> xLabels = sortedEntries
         .map((entry) => DateFormat('MM/dd').format(DateTime.parse(entry.key)))
         .toList();
-    List<double> yValues = sortedEntries.map((entry) => entry.value.toDouble()).toList();
+    List<double> yValues =
+    sortedEntries.map((entry) => entry.value.toDouble()).toList();
 
     double minY = yValues.reduce((a, b) => a < b ? a : b);
     double maxY = yValues.reduce((a, b) => a > b ? a : b);
-
 
     List<FlSpot> spots = [];
     for (int i = 0; i < data.length; i++) {
@@ -658,134 +656,165 @@ class _RoutineChartState extends State<RoutineChart> {
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: Card(
+        elevation: 10,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        color: Colors.blueGrey.shade800,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Text(
+                    routineName,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.grey),
+                    onPressed: () {
+                      _deleteRoutineData(routineName);
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 200, child: _buildLineChart(spots, xLabels, minY, maxY)),
+              SizedBox(height: 20),
               Text(
-                routineName,
+                '날짜별 볼륨량',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              SizedBox(width: 20),
-              IconButton(
-                  icon: Icon(Icons.delete, color: Colors.white),// 예시 아이콘, 원하는 아이콘으로 변경 가능
-                color: Colors.white,
-                onPressed: () {
-                _deleteRoutineData(routineName);
-              },
+              Divider(color: Colors.white54),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: sortedEntries.length,
+                itemBuilder: (context, index) {
+                  var entry = sortedEntries[index];
+                  String date = DateFormat('MM/dd').format(DateTime.parse(entry.key));
+                  int volume = entry.value;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          date,
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                        Text(
+                          '$volume',
+                          style: TextStyle(color: Colors.lightBlue, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() < xLabels.length) {
-                          return Text(
-                            xLabels[value.toInt()],
-                            style: TextStyle(color: Colors.white),
-                          );
-                        }
-                        return Text('');
-                      },
-                      interval: 1,
-                      reservedSize: 22,
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          '${value.toInt()}',
-                          style: TextStyle(color: Colors.white),
-                        );
-                      },
-                      interval: 1,
-                      reservedSize: 28,
-                    ),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white, width: 1),
-                    left: BorderSide(color: Colors.white, width: 1),
-                    right: BorderSide.none,
-                    top: BorderSide.none,
-                  ),
-                ),
-                minX: 0,
-                maxX: (data.length - 1).toDouble(),
-                minY: minY,
-                maxY: maxY,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    barWidth: 5,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(show: true),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineChart(
+      List<FlSpot> spots, List<String> xLabels, double minY, double maxY) {
+    return LineChart(
+      LineChartData(
+        backgroundColor: Colors.transparent,
+        gridData: FlGridData(
+          show: true,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.blueGrey.shade500,
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color: Colors.blueGrey.shade500, // 수직선 색상 조정
+            strokeWidth: 1,
+          ),
+
+        ),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() < xLabels.length) {
+                  return Text(
+                    xLabels[value.toInt()],
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  );
+                }
+                return Text('');
+              },
+              interval: 1,
+              reservedSize: 22,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '${value.toInt()}',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                );
+              },
+              interval: 1,
+              reservedSize: 28,
+            ),
+          ),
+          rightTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false, // 오른쪽 숫자 제거
+            ),
+          ),
+          topTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false, // 상단 숫자 제거
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.white10, width: 1),
+        ),
+        minX: 0,
+        maxX: (spots.length - 1).toDouble(),
+        minY: minY,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            gradient: LinearGradient(colors: [Colors.blue, Colors.cyan]),
+            barWidth: 3,
+            isStrokeCapRound: true,
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [Colors.blue.withOpacity(0.3), Colors.transparent],
               ),
             ),
-          ),
-          SizedBox(height: 40),
-          Text(
-            '날짜별 볼륨량',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            dotData: FlDotData(
+              show: true,
+
             ),
           ),
-          ListView.builder(
-            shrinkWrap: true, // Scroll에 영향을 주지 않도록 설정
-            physics: NeverScrollableScrollPhysics(), // 부모 스크롤에 따라 이동
-            itemCount: sortedEntries.length,
-            itemBuilder: (context, index) {
-              var entry = sortedEntries[index];
-              String date = DateFormat('MM/dd').format(DateTime.parse(entry.key));
-              int volume = entry.value;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      date,
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    Text(
-                      '$volume',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          SizedBox(height: 40),
         ],
       ),
     );

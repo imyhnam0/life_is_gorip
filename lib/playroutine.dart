@@ -67,7 +67,10 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    if (_timer.isActive) {
+      _timer.cancel();
+    }
+    _saveTitleAndTime(); // 마지막 시간을 저장
     super.dispose();
   }
 
@@ -125,10 +128,13 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
       setState(() {
         _seconds++;
       });
+
+      // 매초마다 SharedPreferences에 시간 저장
+      await _saveTitleAndTime();
     });
   }
 

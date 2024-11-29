@@ -59,7 +59,10 @@ class _AiroutineState extends State<Airoutine> {
     });
 
     if (_showPopup) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async{
+        if (!_videoController.value.isInitialized) {
+          await _initializeVideo();
+        }
         _showVideoPopup();
       });
     }
@@ -70,7 +73,15 @@ class _AiroutineState extends State<Airoutine> {
     prefs.setBool('showPopup', value);
   }
 
-  void _showVideoPopup() {
+  void _showVideoPopup() async{
+    if (!_videoController.value.isInitialized) {
+      try {
+        await _videoController.initialize();
+        setState(() {}); // UI 갱신
+      } catch (e) {
+        print('동영상 초기화 중 오류 발생: $e');
+      }
+    }
     showDialog(
       context: context,
       builder: (BuildContext context) {

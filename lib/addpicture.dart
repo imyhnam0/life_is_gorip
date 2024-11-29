@@ -115,19 +115,59 @@ class _AddPicturePageState extends State<AddPicturePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('폴더 추가'),
-          content: TextField(
-            onChanged: (value) {
-              folderName = value;
-            },
-            decoration: const InputDecoration(hintText: "폴더 이름 "),
+          title: const Text(
+            '폴더 추가',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+            ),
+          ),
+          backgroundColor: Colors.grey.shade900, // 배경 색상 변경
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // 둥근 모서리 설정
+          ),
+          content: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: TextField(
+              onChanged: (value) {
+                folderName = value;
+              },
+              style: const TextStyle(color: Colors.black), // 텍스트 색상
+              decoration: InputDecoration(
+                hintText: "폴더 이름",
+                hintStyle: TextStyle(color: Colors.grey.shade400),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.blueGrey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.blue),
+                ),
+              ),
+            ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('취소'),
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -136,7 +176,10 @@ class _AddPicturePageState extends State<AddPicturePage> {
                   await _createFolder(folderName);
                 }
               },
-              child: const Text('확인'),
+              child: const Text(
+                '확인',
+                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );

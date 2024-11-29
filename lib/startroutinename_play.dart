@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StartRoutineNamePlay extends StatefulWidget {
   final String clickroutinename;
   final String currentroutinename;
+
   const StartRoutineNamePlay(
       {Key? key,
       required this.clickroutinename,
@@ -27,18 +28,18 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
     _checkedStates = List<bool>.filled(count, false);
   }
 
-void _handleCheckChanged(int index, bool isChecked) {
-  setState(() {
-    _checkedStates[index] = isChecked;
-  });
+  void _handleCheckChanged(int index, bool isChecked) {
+    setState(() {
+      _checkedStates[index] = isChecked;
+    });
 
-  if (_checkedStates.every((checked) => checked)) {
-    saveRoutineData();
-    Navigator.of(context).pop(true);
+    if (_checkedStates.every((checked) => checked)) {
+      saveRoutineData();
+      Navigator.of(context).pop(true);
+    }
+
+    _saveCheckedStates();
   }
-
-  _saveCheckedStates();
-}
 
   late String _title = widget.clickroutinename;
   List<ExerciseRow> _rows = [];
@@ -51,17 +52,22 @@ void _handleCheckChanged(int index, bool isChecked) {
   String? uid;
   bool _isCountdownActive = false;
 
-  void _startTimer() {
+  void _startTimer() async {
     if (_timer != null) {
       _timer!.cancel();
     }
+
     setState(() {
       _remainingTime = _minutes * 60 + _seconds;
       _isCountdownActive = false;
     });
 
-    _saveEndTimeToPrefs(_remainingTime);
+    // 종료 시간 계산 및 저장
+    final DateTime endTime =
+        DateTime.now().add(Duration(seconds: _remainingTime));
+    await _saveEndTimeToPrefs(endTime);
 
+    // 타이머 시작
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingTime > 0) {
         setState(() {
@@ -79,7 +85,7 @@ void _handleCheckChanged(int index, bool isChecked) {
     });
   }
 
-   Future<void> _saveCheckedStates() async {
+  Future<void> _saveCheckedStates() async {
     final prefs = await SharedPreferences.getInstance();
     final List<String> checkedStatesStrings =
         _checkedStates.map((checked) => checked.toString()).toList();
@@ -101,22 +107,17 @@ void _handleCheckChanged(int index, bool isChecked) {
     }
   }
 
-
-
-  Future<void> _saveEndTimeToPrefs(int remainingTime) async {
+  Future<void> _saveEndTimeToPrefs(DateTime endTime) async {
     final prefs = await SharedPreferences.getInstance();
-    final DateTime now = DateTime.now();
-    final DateTime endTime = now.add(Duration(seconds: remainingTime));
-    prefs.setString('endTime', endTime.toIso8601String());
-
-     // 현재 시간과 타이머 더한 시간 출력
-  print("현재시간 (Prefs): $now");
-  print("끝나는 시간 (Prefs): $endTime");
+    prefs.setString(
+        'endTime_${widget.currentroutinename}_${widget.clickroutinename}',
+        endTime.toIso8601String());
   }
 
   Future<void> _loadEndTimeFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? endTimeString = prefs.getString('endTime');
+    final String? endTimeString = prefs.getString(
+        'endTime_${widget.currentroutinename}_${widget.clickroutinename}');
 
     if (endTimeString != null) {
       final DateTime endTime = DateTime.parse(endTimeString);
@@ -170,7 +171,6 @@ void _handleCheckChanged(int index, bool isChecked) {
       _timer = null;
     });
   }
-  
 
   @override
   void dispose() {
@@ -179,50 +179,49 @@ void _handleCheckChanged(int index, bool isChecked) {
     super.dispose();
   }
 
- @override
-void initState() {
-  super.initState();
-  uid = Provider.of<UserProvider>(context, listen: false).uid;
-  _loadCheckedStates().then((_) {
-    myCollectionName();
-    _loadEndTimeFromPrefs();
-  });
-}
+  @override
+  void initState() {
+    super.initState();
+    uid = Provider.of<UserProvider>(context, listen: false).uid;
+    _loadCheckedStates().then((_) {
+      myCollectionName();
+      _loadEndTimeFromPrefs(); // 종료 시간 로드
+    });
+  }
 
+  Future<void> myCollectionName() async {
+    try {
+      print(widget.currentroutinename);
+      print(_title);
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine')
+          .get();
 
- Future<void> myCollectionName() async {
-  try {
-    print(widget.currentroutinename);
-    print(_title);
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine')
-        .get();
+      if (documentSnapshot.exists) {
+        var data = documentSnapshot.data() as Map<String, dynamic>;
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
+        if (data.containsKey(widget.currentroutinename)) {
+          List<dynamic> myRoutineList = data[widget.currentroutinename];
 
-      if (data.containsKey(widget.currentroutinename)) {
-        List<dynamic> myRoutineList = data[widget.currentroutinename];
+          var routineData = myRoutineList.firstWhere(
+            (routine) => routine.containsKey(_title),
+            orElse: () => null,
+          );
 
-        var routineData = myRoutineList.firstWhere(
-          (routine) => routine.containsKey(_title),
-          orElse: () => null,
-        );
+          if (routineData != null &&
+              routineData[_title].containsKey('exercises')) {
+            List<Map<String, dynamic>> exercisesData =
+                List<Map<String, dynamic>>.from(routineData[_title]['exercises']
+                    .map((exercise) => {
+                          'reps': exercise['reps'],
+                          'weight': exercise['weight'],
+                        })
+                    .toList());
 
-        if (routineData != null &&
-            routineData[_title].containsKey('exercises')) {
-          List<Map<String, dynamic>> exercisesData =
-              List<Map<String, dynamic>>.from(routineData[_title]['exercises']
-                  .map((exercise) => {
-                        'reps': exercise['reps'],
-                        'weight': exercise['weight'],
-                      })
-                  .toList());
-
-          setState(() {
+            setState(() {
               _counter = exercisesData.length;
               if (_checkedStates.length != _counter) {
                 _checkedStates = List<bool>.filled(_counter, false);
@@ -242,15 +241,13 @@ void initState() {
                 );
               }).toList();
             });
+          }
         }
       }
+    } catch (e) {
+      print('Error fetching document data: $e');
     }
-  } catch (e) {
-    print('Error fetching document data: $e');
   }
-}
-
-
 
   Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -343,7 +340,6 @@ void initState() {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus(); // 화면을 클릭하면 키보드 숨기기
-      
       },
       child: Scaffold(
         backgroundColor: Colors.blueGrey.shade800,
@@ -575,7 +571,7 @@ void initState() {
               Positioned.fill(
                 child: GestureDetector(
                   onTap: () {
-                     _cancelTimer();
+                    _cancelTimer();
                   },
                   child: Container(
                     color: Colors.black54,
@@ -613,7 +609,6 @@ class ExerciseRow extends StatefulWidget {
     required this.onCheckPressed,
     required this.onCheckChanged,
     this.checked = false, // 기본값을 false로 설정
-
   });
 
   @override
@@ -629,7 +624,6 @@ class _ExerciseRowState extends State<ExerciseRow> {
     _isChecked = widget.checked; // 초기 상태 설정
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Padding(

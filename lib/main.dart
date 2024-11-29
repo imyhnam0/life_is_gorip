@@ -292,7 +292,7 @@ class _HomepageState extends State<Homepage> {
                 ),
               ),
               child: Text(
-                'Save',
+                '저장',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -301,6 +301,25 @@ class _HomepageState extends State<Homepage> {
               onPressed: () {
                 saveMe(weightController.text, muscleMassController.text,
                     bodyFatController.text);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blueGrey.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text(
+                '취소',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
