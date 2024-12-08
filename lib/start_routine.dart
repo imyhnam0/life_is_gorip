@@ -5,6 +5,8 @@ import 'playroutine.dart';
 import 'create_routine.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 class StartRoutinePage extends StatefulWidget {
   final String clickroutinename;
@@ -27,6 +29,58 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     loadSavedCollectionNames(); // 저장된 순서를 불러오기
     myCollectionName();
+  }
+
+  Future<void> saveUserLocationAndState(String uid) async {
+    try {
+      print("1");
+
+      // 위치 권한 확인 및 요청
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('위치 서비스가 비활성화되었습니다. 활성화 후 다시 시도해주세요.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('위치 권한이 거부되었습니다.');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('위치 권한이 영구적으로 거부되었습니다.');
+      }
+
+      print("2");
+      print("서비스 활성화 여부: $serviceEnabled");
+      print("권한 상태: $permission");
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      print("위도: ${position.latitude}");
+      print("경도: ${position.longitude}");
+
+      print("3");
+
+      // Firestore에 위치와 상태 업데이트
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'isExercising': true,
+        'location': {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'timestamp': FieldValue.serverTimestamp(),
+        },
+      });
+
+      print("운동 상태 및 위치 정보가 저장되었습니다.");
+    } catch (e) {
+      print("위치 정보를 저장하는 중 오류 발생: $e");
+    }
   }
 
   Future<void> deleteData(String routineTitle) async {
@@ -409,7 +463,13 @@ Future<void> loadSavedCollectionNames() async {
               height: 56.0,
               child: FloatingActionButton.extended(
                 heroTag: null,
-                onPressed: () {
+                onPressed: () async {
+                  try {
+                    await saveUserLocationAndState(uid!); // 현재 위치 저장
+                    print("운동 상태와 위치 저장 완료!");
+                  } catch (e) {
+                    print("위치 저장 중 오류: $e");
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(

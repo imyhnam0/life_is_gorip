@@ -81,12 +81,7 @@ Future<void> _login() async {
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade900,
         actions: [
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () async{
-               await clearSharedPreferences();
-            },
-          ),
+
         ],
       ),
       body: Stack(
@@ -95,7 +90,7 @@ Future<void> _login() async {
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/onlypain.png'),
+                  image: AssetImage('assets/cat.png'),
                   fit: BoxFit.fitWidth,
                   alignment: Alignment.center,
                   scale: 1.2,
@@ -116,7 +111,7 @@ Future<void> _login() async {
                       style: TextStyle(
                         fontFamily: 'Pacifico',
                         fontSize: 40.0,
-                        color: Colors.black,
+                        color: Colors.white,
                       ),
                     ),
                     SizedBox(height: 20),

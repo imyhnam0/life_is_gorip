@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'friendrequest.dart';
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'map.dart';
 
 class InvitePage extends StatefulWidget {
   const InvitePage({super.key});
@@ -25,9 +25,8 @@ class _InvitePageState extends State<InvitePage> {
     Myuid = Provider.of<UserProvider>(context, listen: false).uid;
   }
 
-
   //친구 루틴 이름
-  Future<void> friendroutineName(String friendUid,friendName) async {
+  Future<void> friendroutineName(String friendUid, friendName) async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -40,17 +39,17 @@ class _InvitePageState extends State<InvitePage> {
         var data = documentSnapshot.data() as Map<String, dynamic>;
         List<String> names = data.keys.toList();
 
-          collectionNames = names;
+        collectionNames = names;
 
-        _showRoutineNamesDialog(names, friendUid ,friendName);
+        _showRoutineNamesDialog(names, friendUid, friendName);
       }
     } catch (e) {
       print('Error fetching collection names: $e');
     }
   }
 
-
-  Future<void> friendRoutinedetail(String friendUid, String title, String friendName) async {
+  Future<void> friendRoutinedetail(
+      String friendUid, String title, String friendName) async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -80,7 +79,8 @@ class _InvitePageState extends State<InvitePage> {
     }
   }
 
-  void moremoreroutine(String friendUid, String routineName, String detail) async {
+  void moremoreroutine(
+      String friendUid, String routineName, String detail) async {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -104,11 +104,14 @@ class _InvitePageState extends State<InvitePage> {
           }
 
           if (routineDetail != null && routineDetail.containsKey('exercises')) {
-            List<Map<String, dynamic>> exercisesData = List<Map<String, dynamic>>.from(
-              routineDetail['exercises'].map((exercise) => {
-                'reps': exercise['reps'],
-                'weight': exercise['weight'],
-              }).toList(),
+            List<Map<String, dynamic>> exercisesData =
+                List<Map<String, dynamic>>.from(
+              routineDetail['exercises']
+                  .map((exercise) => {
+                        'reps': exercise['reps'],
+                        'weight': exercise['weight'],
+                      })
+                  .toList(),
             );
 
             setState(() {
@@ -122,7 +125,8 @@ class _InvitePageState extends State<InvitePage> {
     }
   }
 
-  void _showRoutineNamesDialog(List<String> routineNames, String friendUid, String friendName) {
+  void _showRoutineNamesDialog(
+      List<String> routineNames, String friendUid, String friendName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -136,7 +140,6 @@ class _InvitePageState extends State<InvitePage> {
                   Navigator.of(context).pop();
                 },
               ),
-
               Expanded(
                 child: Text(
                   'Routine Names',
@@ -144,7 +147,6 @@ class _InvitePageState extends State<InvitePage> {
                   textAlign: TextAlign.center, // Text를 Expanded 내에서 중앙 정렬
                 ),
               ),
-
             ],
           ),
           backgroundColor: Colors.blueGrey.shade900,
@@ -155,7 +157,7 @@ class _InvitePageState extends State<InvitePage> {
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ElevatedButton(
                     onPressed: () {
-                      friendRoutinedetail(friendUid, name,friendName);
+                      friendRoutinedetail(friendUid, name, friendName);
                     },
                     child: Text(name),
                     style: ElevatedButton.styleFrom(
@@ -180,7 +182,9 @@ class _InvitePageState extends State<InvitePage> {
       },
     );
   }
-  void _showRoutineDetailsDialog(List<String> routineDetails, String friendUid, String routineName,String friendName) {
+
+  void _showRoutineDetailsDialog(List<String> routineDetails, String friendUid,
+      String routineName, String friendName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -234,7 +238,7 @@ class _InvitePageState extends State<InvitePage> {
             TextButton(
               child: Text('가져오기', style: TextStyle(color: Colors.white)),
               onPressed: () {
-                _fetchAndSaveFriendRoutine(friendUid,friendName, routineName);
+                _fetchAndSaveFriendRoutine(friendUid, friendName, routineName);
                 Navigator.of(context).pop();
               },
             ),
@@ -243,9 +247,10 @@ class _InvitePageState extends State<InvitePage> {
       },
     );
   }
-  Future<void> _fetchAndSaveFriendRoutine(String friendUid, String friendName, String routineName) async {
-    var db = FirebaseFirestore.instance;
 
+  Future<void> _fetchAndSaveFriendRoutine(
+      String friendUid, String friendName, String routineName) async {
+    var db = FirebaseFirestore.instance;
 
     try {
       // 친구의 루틴 데이터 가져오기
@@ -267,13 +272,14 @@ class _InvitePageState extends State<InvitePage> {
           String newRoutineName = "$routineName";
 
           // 자신의 Firestore에 저장 (병합)
-          await db.collection('users')
+          await db
+              .collection('users')
               .doc(Myuid)
               .collection('Routine')
               .doc('Myroutine')
               .set({
-            newRoutineName: routineDetails  // 가져온 루틴 데이터를 저장
-          }, SetOptions(merge: true));  // 기존 데이터에 병합
+            newRoutineName: routineDetails // 가져온 루틴 데이터를 저장
+          }, SetOptions(merge: true)); // 기존 데이터에 병합
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('루틴이 성공적으로 가져와졌습니다!')),
@@ -296,7 +302,6 @@ class _InvitePageState extends State<InvitePage> {
     }
   }
 
-
   void _showExerciseDetailsDialog(List<Map<String, dynamic>> exercisesData) {
     showDialog(
       context: context,
@@ -316,7 +321,8 @@ class _InvitePageState extends State<InvitePage> {
                   'Exercise details',
                   style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
                   textAlign: TextAlign.center, // Text를 Expanded 내에서 중앙 정렬
-                ),),
+                ),
+              ),
             ],
           ),
           backgroundColor: Colors.blueGrey.shade900,
@@ -324,8 +330,10 @@ class _InvitePageState extends State<InvitePage> {
             child: ListBody(
               children: exercisesData.map((exercise) {
                 return ListTile(
-                  title: Text('Weight: ${exercise['weight']}', style: TextStyle(color: Colors.white)),
-                  subtitle: Text('Reps: ${exercise['reps']}', style: TextStyle(color: Colors.white70)),
+                  title: Text('Weight: ${exercise['weight']}',
+                      style: TextStyle(color: Colors.white)),
+                  subtitle: Text('Reps: ${exercise['reps']}',
+                      style: TextStyle(color: Colors.white70)),
                 );
               }).toList(),
             ),
@@ -342,6 +350,7 @@ class _InvitePageState extends State<InvitePage> {
       },
     );
   }
+
   void _showFriendCalendar(String friendUid) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -399,7 +408,8 @@ class _InvitePageState extends State<InvitePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Friend Routine Data', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+          title: Text('Friend Routine Data',
+              style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
           backgroundColor: Colors.blueGrey.shade900,
           content: SingleChildScrollView(
             child: ListBody(
@@ -411,19 +421,23 @@ class _InvitePageState extends State<InvitePage> {
                     children: [
                       Text(
                         '루틴 이름: ${routine['오늘 한 루틴이름']}',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'Oswald'),
                       ),
                       Text(
                         '총 세트수: ${routine['오늘 총 세트수']}',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'Oswald'),
                       ),
                       Text(
                         '총 볼륨: ${routine['오늘 총 볼륨']}',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'Oswald'),
                       ),
                       Text(
                         '총 시간: ${routine['오늘 총 시간']}',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Oswald'),
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'Oswald'),
                       ),
                     ],
                   ),
@@ -444,11 +458,7 @@ class _InvitePageState extends State<InvitePage> {
     );
   }
 
-
-
-
-
-  void _showFriendOptions(String friendUid,friendName) {
+  void _showFriendOptions(String friendUid, friendName) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.blueGrey.shade900,
@@ -460,7 +470,8 @@ class _InvitePageState extends State<InvitePage> {
           children: <Widget>[
             ListTile(
               leading: Icon(Icons.schedule, color: Colors.white),
-              title: Text('친구 일정', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+              title: Text('친구 일정',
+                  style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
               onTap: () {
                 Navigator.pop(context);
                 _showFriendCalendar(friendUid);
@@ -469,20 +480,18 @@ class _InvitePageState extends State<InvitePage> {
             ),
             ListTile(
               leading: Icon(Icons.fitness_center, color: Colors.white),
-              title: Text('친구 루틴', style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+              title: Text('친구 루틴',
+                  style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
               onTap: () {
                 Navigator.pop(context);
-                friendroutineName(friendUid,friendName);
+                friendroutineName(friendUid, friendName);
               },
             ),
-
-
           ],
         );
       },
     );
   }
-
 
   // 친구 삭제 함수
   Future<void> removeFriend(Map<String, String> friend) async {
@@ -516,9 +525,6 @@ class _InvitePageState extends State<InvitePage> {
     }
   }
 
-
-
-
   // 친구 추가 요청 함수
   Future<void> sendFriendRequest(String friendEmail) async {
     try {
@@ -539,24 +545,24 @@ class _InvitePageState extends State<InvitePage> {
 
         // 친구 요청 및 친구 목록 확인
         final friendRequests = friendDoc['friendRequests'] != null &&
-            friendDoc['friendRequests'] is List
+                friendDoc['friendRequests'] is List
             ? (friendDoc['friendRequests'] as List)
-            .map((request) =>
-        Map<String, String>.from(request as Map<String, dynamic>))
-            .toList()
+                .map((request) =>
+                    Map<String, String>.from(request as Map<String, dynamic>))
+                .toList()
             : [];
 
         final friendList = friendDoc['friends'] != null &&
-            friendDoc['friends'] is List
+                friendDoc['friends'] is List
             ? (friendDoc['friends'] as List)
-            .map((friend) =>
-        Map<String, String>.from(friend as Map<String, dynamic>))
-            .toList()
+                .map((friend) =>
+                    Map<String, String>.from(friend as Map<String, dynamic>))
+                .toList()
             : [];
 
         // 중복 확인: 친구 요청 목록에 존재하는지
         final alreadyRequested =
-        friendRequests.any((request) => request['uid'] == Myuid);
+            friendRequests.any((request) => request['uid'] == Myuid);
 
         // 중복 확인: 친구 목록에 존재하는지
         final alreadyFriend = friendList.contains(Myuid);
@@ -596,7 +602,8 @@ class _InvitePageState extends State<InvitePage> {
       appBar: AppBar(
         title: const Text(
           '친구 목록',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24,color: Colors.white),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey.shade700,
@@ -662,7 +669,7 @@ class _InvitePageState extends State<InvitePage> {
                 snapshot.data!['friends'] is List) {
               friends = (snapshot.data!['friends'] as List)
                   .map((friend) =>
-              Map<String, String>.from(friend as Map<String, dynamic>))
+                      Map<String, String>.from(friend as Map<String, dynamic>))
                   .toList();
             }
 
@@ -670,89 +677,165 @@ class _InvitePageState extends State<InvitePage> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: friends.length,
-                    itemBuilder: (context, index) {
-                      final friend = friends[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: const Offset(2, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              friend['name']!,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black, // 텍스트 색상 조정
-                                shadows: [
-                                  Shadow(
-                                    blurRadius: 3,
-                                    color: Colors.black38,
-                                    offset: Offset(1, 1),
+                      itemCount: friends.length,
+                      itemBuilder: (context, index) {
+                        final friend = friends[index];
+                        return StreamBuilder<DocumentSnapshot>(
+                          stream: _firestore
+                              .collection('users')
+                              .doc(friend['uid'])
+                              .snapshots(),
+                          builder: (context, friendSnapshot) {
+                            if (!friendSnapshot.hasData) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 8,
+                                      offset: const Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            final friendData = friendSnapshot.data!.data()
+                                as Map<String, dynamic>?;
+
+                            // 친구의 isExercising 상태 확인
+                            final isExercising =
+                                friendData?['isExercising'] ?? false;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 8,
+                                    offset: const Offset(2, 2),
                                   ),
                                 ],
                               ),
-                            ),
-                            Row(
-                              children: [
-
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    backgroundColor: Colors.black,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    friend['name']!,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black, // 텍스트 색상 조정
+                                      shadows: [
+                                        Shadow(
+                                          blurRadius: 3,
+                                          color: Colors.black38,
+                                          offset: Offset(1, 1),
+                                        ),
+                                      ],
                                     ),
-                                    elevation: 5,
                                   ),
-                                  onPressed: () {
-                                    _showFriendOptions(friend['uid']!, friend['name']!); // friendUid와 friendName 전달
-                                  },
-                                  child: const Text(
-                                    '목록',
-                                    style: TextStyle(fontSize: 14, color: Colors.white),
+                                  Row(
+                                    children: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                          backgroundColor: isExercising
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          elevation: 5,
+                                        ),
+                                        onPressed: isExercising
+                                            ? () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        MapPage(
+                                                            friendUid:
+                                                                friend['uid']!),
+                                                  ),
+                                                );
+                                              }
+                                            : null, // 쉬는 중이면 비활성화
+                                        child: Text(
+                                          isExercising ? '운동 중' : '쉬는 중',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                          backgroundColor: Colors.black,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          elevation: 5,
+                                        ),
+                                        onPressed: () {
+                                          _showFriendOptions(
+                                              friend['uid']!,
+                                              friend[
+                                                  'name']!); // friendUid와 friendName 전달
+                                        },
+                                        child: const Text(
+                                          '목록',
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.white),
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                          backgroundColor: Colors.grey,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          elevation: 5,
+                                        ),
+                                        onPressed: () async {
+                                          await removeFriend(friend);
+                                        },
+                                        child: const Text(
+                                          '삭제',
+                                          style: TextStyle(
+                                              fontSize: 14, color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                SizedBox(width: 10),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    backgroundColor: Colors.grey,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    elevation: 5,
-                                  ),
-                                  onPressed: () async {
-                                    await removeFriend(friend);
-                                  },
-                                  child: const Text(
-                                    '삭제',
-                                    style: TextStyle(fontSize: 14,color: Colors.red),
-                                  ),
-                                ),
-                              ],
-
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -774,7 +857,8 @@ class _InvitePageState extends State<InvitePage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            backgroundColor: Colors.deepPurpleAccent.withOpacity(0.9),
+                            backgroundColor:
+                                Colors.deepPurpleAccent.withOpacity(0.9),
                             title: const Text(
                               '친구 추가',
                               style: TextStyle(
@@ -801,11 +885,13 @@ class _InvitePageState extends State<InvitePage> {
                                 fillColor: Colors.white.withOpacity(0.2),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.white70),
+                                  borderSide:
+                                      const BorderSide(color: Colors.white70),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.white),
+                                  borderSide:
+                                      const BorderSide(color: Colors.white),
                                 ),
                               ),
                               style: const TextStyle(
@@ -829,7 +915,8 @@ class _InvitePageState extends State<InvitePage> {
                               ),
                               ElevatedButton(
                                 onPressed: () async {
-                                  final friendEmail = _friendEmailController.text.trim();
+                                  final friendEmail =
+                                      _friendEmailController.text.trim();
                                   if (friendEmail.isNotEmpty) {
                                     await sendFriendRequest(friendEmail);
                                     Navigator.pop(context);
@@ -837,7 +924,8 @@ class _InvitePageState extends State<InvitePage> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.indigoAccent,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -854,14 +942,13 @@ class _InvitePageState extends State<InvitePage> {
                               ),
                             ],
                           );
-
                         },
                       );
                     },
                     child: const Text(
                       '친구 추가',
                       style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),

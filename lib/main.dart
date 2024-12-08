@@ -1,38 +1,43 @@
-import 'package:health/food.dart';
+
 import 'saveroutine.dart';
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
 import 'routine.dart';
-import 'create_routine.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'calender.dart';
 import 'package:intl/intl.dart';
-import 'bookmark.dart';
 import 'start_routine.dart';
 import 'chart.dart';
-import 'foodsave.dart';
-import 'foodroutinestart.dart';
 import 'loginpage.dart';
 import 'user_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'firebase_auth_service.dart';
-import 'friendship.dart';
-import 'setting.dart';
-import 'airoutine.dart';
-import 'memoMainPage.dart';
 import 'addpicture.dart';
 import 'friendship(revise).dart';
 import 'myinfo.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  try {
+    // Firebase 초기화
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Naver Map SDK 초기화
+    await NaverMapSdk.instance.initialize(
+      clientId: '1ealcqxets', // 네이버 클라우드에서 발급받은 Client ID
+      onAuthFailed: (error) {
+        print("네이버 맵 인증 실패: $error");
+      },
+    );
+  } catch (e) {
+    print("앱 초기화 중 오류 발생: $e");
+  }
   runApp(
     MultiProvider(
       providers: [
@@ -68,22 +73,32 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? uid = prefs.getString('uid');
+    //원래 shared로 했었는데 그냥 firebase로 바꿈 기능이 있다고 하네
+    // FirebaseAuth에서 현재 로그인 상태 확인
 
-    if (uid != null) {
-      Provider.of<UserProvider>(context, listen: false).setUid(uid);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Homepage()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
-      );
-    }
+    // Firebase Authentication의 상태를 기반으로 로그인 여부 확인
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (!mounted) return; // context 유효성 확인
+
+      if (user != null) {
+        // Firebase에서 사용자 인증 성공
+        Provider.of<UserProvider>(context, listen: false).setUid(user.uid);
+
+        // 홈 화면으로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Homepage()),
+        );
+      } else {
+        // 인증된 사용자가 없는 경우 로그인 화면으로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      }
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -330,61 +345,6 @@ class _HomepageState extends State<Homepage> {
   }
 
 
-
-
-  Future<List<String>> _fetchDayAgoData(int daysAgo) async {
-    var db = FirebaseFirestore.instance;
-    String targetDate = DateFormat('yyyy-MM-dd')
-        .format(DateTime.now().subtract(Duration(days: daysAgo)));
-
-    try {
-      QuerySnapshot snapshot = await db
-          .collection('users')
-          .doc(uid)
-          .collection('Calender')
-          .doc('health')
-          .collection('routines')
-          .where('날짜', isEqualTo: targetDate)
-          .get();
-
-      List<String> routineNames =
-          snapshot.docs.map((doc) => doc['오늘 한 루틴이름'] as String).toList();
-
-      return routineNames;
-    } catch (e) {
-      print('오류 발생: $e');
-      return [];
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
-    var db = FirebaseFirestore.instance;
-    String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-    try {
-      QuerySnapshot snapshot = await db
-          .collection('users')
-          .doc(uid)
-          .collection('Calender')
-          .doc('health')
-          .collection('routines')
-          .get();
-
-      List<Map<String, dynamic>> matchedDocuments = [];
-
-      for (var doc in snapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        if (data['날짜'] == todayDate) {
-          matchedDocuments.add(data);
-        }
-      }
-
-      return matchedDocuments;
-    } catch (e) {
-      print('Error fetching documents: $e');
-    }
-    return [];
-  }
 
   @override
   Widget build(BuildContext context) {

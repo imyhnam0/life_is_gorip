@@ -313,10 +313,10 @@ class _CalenderPageState extends State<CalenderPage> {
             child: ElevatedButton(
               onPressed: () => _selectDate(context),
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(
+                backgroundColor: WidgetStateProperty.all<Color>(
                   Colors.blueGrey.shade700,
                 ),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
                   ),
@@ -607,7 +607,7 @@ class _CalenderPageState extends State<CalenderPage> {
                                               style: TextStyle(color: Colors.white70, fontSize: 12),
                                             );
                                           },
-                                          interval: (maxY - minY) / 5, // Y축 레이블 간격
+                                          interval: 1,
                                           reservedSize: 32,
                                         ),
                                       ),

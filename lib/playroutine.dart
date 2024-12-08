@@ -37,7 +37,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
     totalRoutineReps();
-    _loadSavedTimeAndStartTimer();
+    _startTimer();
   }
   Future<void> _clearCheckedStates() async {
   final prefs = await SharedPreferences.getInstance();
@@ -45,25 +45,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 }
 
 
-  Future<void> _loadSavedTimeAndStartTimer() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? savedTime = prefs.getString('savedTime');
-    final DateTime now = DateTime.now();
-
-    if (savedTime != null) {
-      final DateTime savedDateTime =
-          DateFormat('yyyy-MM-dd HH:mm:ss').parse(savedTime);
-      final int elapsedSeconds = now.difference(savedDateTime).inSeconds;
-
-      setState(() {
-        _seconds = elapsedSeconds;
-      });
-    } else {
-      await _saveTitleAndTime();
-    }
-
-    _startTimer(); // 타이머 시작
-  }
 
   @override
   void dispose() {
@@ -143,6 +124,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     final int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
+
+
 
   Future<void> saveRoutine(
       String title, int result, int sumweight, int timerSeconds) async {
@@ -320,7 +303,64 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
             size: 28,
           ),
           onPressed: () {
-            Navigator.pop(context);
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  backgroundColor: Colors.blueGrey.shade800,
+                  title: const Text(
+                    '진짜 종료하시겠습니까?',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  content: const Text(
+                    '운동을 종료하면 모든 진행 상황이 저장되지 않습니다. 계속하시겠습니까?',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        '아니요',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final FirebaseFirestore firestore = FirebaseFirestore.instance;
+                        try {
+                          // Firestore에서 해당 사용자의 문서를 업데이트합니다.
+                          await firestore.collection('users').doc(uid).update({
+                            'isExercising': false, // isExercising 필드를 true로 설정
+                          });
+
+                          print('isExercising updated to true');
+                        } catch (e) {
+                          print('Error updating isExercising: $e');
+                        }
+                        await _clearTitleAndTime();
+                        await _clearCheckedStates(); // 체크 값 초기화
+                        setState(() {
+                          _seconds = 0; // 초기화
+                          totalRows = 0; // 초기화
+                          totalWeight = 0; // 초기화
+                        });
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                              builder: (context) => const Homepage()),
+                              (route) => false,
+                        );
+                      },
+                      child: const Text(
+                        '예',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
           },
           tooltip: '뒤로 가기',
         ),
@@ -638,6 +678,17 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                           ),
                           TextButton(
                             onPressed: () async {
+                              final FirebaseFirestore firestore = FirebaseFirestore.instance;
+                              try {
+                                // Firestore에서 해당 사용자의 문서를 업데이트합니다.
+                                await firestore.collection('users').doc(uid).update({
+                                  'isExercising': false, // isExercising 필드를 true로 설정
+                                });
+
+                                print('isExercising updated to true');
+                              } catch (e) {
+                                print('Error updating isExercising: $e');
+                              }
                               await saveRoutine(
                                 _title,
                                 totalRows,
@@ -710,6 +761,17 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                           ),
                           TextButton(
                             onPressed: () async {
+                              final FirebaseFirestore firestore = FirebaseFirestore.instance;
+                              try {
+                                // Firestore에서 해당 사용자의 문서를 업데이트합니다.
+                                await firestore.collection('users').doc(uid).update({
+                                  'isExercising': false, // isExercising 필드를 true로 설정
+                                });
+
+                                print('isExercising updated to true');
+                              } catch (e) {
+                                print('Error updating isExercising: $e');
+                              }
                               await _clearTitleAndTime();
                               await _clearCheckedStates(); // 체크 값 초기화
                               setState(() {

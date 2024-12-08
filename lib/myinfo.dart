@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'loginpage.dart';
 
 class MyInfoPage extends StatefulWidget {
@@ -52,9 +51,8 @@ class _MyInfoPageState extends State<MyInfoPage> {
         // Firebase Authentication에서 계정 삭제
         await currentUser.delete();
 
-        // SharedPreferences에서 UID 삭제
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.remove('uid');
+
+
 
         // 로그아웃 후 로그인 페이지로 이동
 
@@ -130,15 +128,25 @@ class _MyInfoPageState extends State<MyInfoPage> {
             ),
             const SizedBox(height: 40),
 
-            // 로그아웃 버튼 추가
             ElevatedButton(
               onPressed: () async {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
+                try {
+                  // Firebase Authentication 로그아웃
+                  await FirebaseAuth.instance.signOut();
+
+
+
+                  // 로그인 페이지로 이동
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                } catch (e) {
+                  print("로그아웃 실패: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("로그아웃 중 오류가 발생했습니다.")),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepPurple,
@@ -153,6 +161,7 @@ class _MyInfoPageState extends State<MyInfoPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
+
             const SizedBox(height: 40),
 
 
