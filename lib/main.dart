@@ -136,6 +136,32 @@ class _HomepageState extends State<Homepage> {
     loadStarRow();
   }
 
+  Future<void> deleteBookmark(String name) async {
+    try {
+      DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection("Routine")
+          .doc('Bookmark')
+          .get();
+
+      if (bookmarkDoc.exists) {
+        List<String> names = List<String>.from(bookmarkDoc['names']);
+        if (names.contains(name)) {
+          names.remove(name);
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection("Routine")
+              .doc('Bookmark')
+              .update({'names': names});
+        }
+      }
+    } catch (e) {
+      print('Error removing name: $e');
+    }
+  }
+
   void loadStarRow() async {
     try {
       DocumentReference bookmarkDocRef = FirebaseFirestore.instance
@@ -543,6 +569,7 @@ class _HomepageState extends State<Homepage> {
                       border: Border.all(
                         color: Colors.blueGrey.shade700,
                         width: 2,
+
                       ),
                     ),
                     child: filteredCollectionNames.isEmpty
@@ -612,6 +639,19 @@ class _HomepageState extends State<Homepage> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.delete,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () async {
+                                              String nameToDelete = filteredCollectionNames[index];
+                                              await deleteBookmark(nameToDelete); // Firestore에서 삭제
+                                              setState(() {
+                                                filteredCollectionNames.removeAt(index); // UI 갱신
+                                              });
+                                            },
+                                          ),
                                           ReorderableDragStartListener(
                                             index: index,
                                             child: const Icon(
@@ -644,7 +684,7 @@ class _HomepageState extends State<Homepage> {
                   Align(
                     alignment: Alignment.bottomRight,
                     child: Container(
-                      margin: EdgeInsets.only(right: 40.0, bottom: 20.0),
+                      margin: EdgeInsets.only(right: 50.0, bottom: 20.0),
                       width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
