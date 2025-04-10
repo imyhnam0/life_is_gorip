@@ -159,10 +159,40 @@ Future<void> myCollectionName() async {
   }
 }
 
-Future<void> saveCollectionNames(List<String> names) async {
-  final prefs = await SharedPreferences.getInstance();
-  prefs.setStringList('$_title-collectionNames', names);
-}
+  Future<void> saveCollectionNames(List<String> names) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('$_title-collectionNames', names);
+
+    // 👉 Firestore에도 저장
+    try {
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      DocumentSnapshot snapshot = await docRef.get();
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        if (data.containsKey(_title)) {
+          List<dynamic> originalList = data[_title];
+
+          // 새로 저장할 리스트를 순서에 맞게 재정렬
+          List<dynamic> reorderedList = [];
+          for (String name in names) {
+            final item = originalList.firstWhere((element) => element.containsKey(name));
+            reorderedList.add(item);
+          }
+
+          // Firestore에 업데이트
+          await docRef.update({_title: reorderedList});
+        }
+      }
+    } catch (e) {
+      print('Firestore에 순서를 저장하는 중 오류 발생: $e');
+    }
+  }
+
 
 Future<void> loadSavedCollectionNames() async {
   final prefs = await SharedPreferences.getInstance();

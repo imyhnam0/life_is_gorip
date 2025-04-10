@@ -559,6 +559,24 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                   } else {
                                     setState(() {
                                       completionStatus[index] = true;
+                                      // ✅ 완료된 루틴은 하단으로 보내기 위해 정렬
+                                      List<Map<String, dynamic>> zipped = [];
+                                      for (int i = 0; i < collectionNames.length; i++) {
+                                        zipped.add({
+                                          'name': collectionNames[i],
+                                          'done': completionStatus[i],
+                                        });
+                                      }
+
+                                      // 완료된 루틴은 밑으로 정렬
+                                      zipped.sort((a, b) {
+                                        if (a['done'] == b['done']) return 0;
+                                        return a['done'] ? 1 : -1; // done == true 면 뒤로 보냄
+                                      });
+
+                                      // 다시 나눠 담기
+                                      collectionNames = zipped.map((e) => e['name'] as String).toList();
+                                      completionStatus = zipped.map((e) => e['done'] as bool).toList();
                                     });
                                     totalRoutineReps();
                                   }
