@@ -30,6 +30,12 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   List<bool> completionStatus = [];
   int totalWeight = 0; // 총 무게 상태 변수 추가
   int totalRows = 0; // 총 행 수 상태 변수 추가
+  String? _entryTime;
+
+  void _setEntryTime() {
+    final now = DateTime.now();
+    _entryTime = DateFormat('HH:mm').format(now);
+  }
 
   @override
   void initState() {
@@ -37,7 +43,8 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
     totalRoutineReps();
-    _startTimer();
+    _setEntryTime();
+
   }
   Future<void> _clearCheckedStates() async {
   final prefs = await SharedPreferences.getInstance();
@@ -108,16 +115,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
     await prefs.remove('savedTime');
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-      setState(() {
-        _seconds++;
-      });
 
-      // 매초마다 SharedPreferences에 시간 저장
-      await _saveTitleAndTime();
-    });
-  }
 
   String _formatTime(int seconds) {
     final int minutes = seconds ~/ 60;
@@ -426,13 +424,14 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                         Icon(Icons.timer,
                             color: Colors.cyan.shade300, size: 30),
                         const SizedBox(width: 8),
+
                         Text(
-                          'Exercise time: ',
+                          _entryTime != null ? '운동 시작 시간 : $_entryTime' : '',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Oswald',
-                            color: Colors.cyan.shade300,
+                            color: Colors.cyan,
                             shadows: [
                               Shadow(
                                 offset: Offset(2.0, 2.0),
@@ -440,15 +439,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                 color: Colors.black.withOpacity(0.5),
                               ),
                             ],
-                          ),
-                        ),
-                        Text(
-                          _formatTime(_seconds),
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Oswald',
-                            color: Colors.cyan,
                           ),
                         ),
                       ],
@@ -603,13 +593,51 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                                     ),
                                   Spacer(),
                                   IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.white),
+                                    icon: const Icon(Icons.delete, color: Colors.white),
                                     onPressed: () async {
-                                      await deleteData(collectionNames[index]);
-                                      await myCollectionName(); // 화면을 다시 불러옵니다.
+                                      // 삭제 확인 다이얼로그 띄우기
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            backgroundColor: Colors.blueGrey.shade800,
+                                            title: const Text(
+                                              '진짜 삭제하시겠습니까?',
+                                              style: TextStyle(color: Colors.white),
+                                            ),
+                                            content: const Text(
+                                              '이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?',
+                                              style: TextStyle(color: Colors.white),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                                },
+                                                child: const Text(
+                                                  '아니요',
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  // "예"를 누르면 삭제 함수 실행
+                                                  await deleteData(collectionNames[index]);
+                                                  await myCollectionName(); // 화면을 다시 불러옵니다.
+                                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                                },
+                                                child: const Text(
+                                                  '예',
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
                                     },
                                   ),
+
                                   ReorderableDragStartListener(
                                     index: index,
                                     child: Container(

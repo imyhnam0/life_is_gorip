@@ -420,17 +420,57 @@ Future<void> loadSavedCollectionNames() async {
                                 fontSize: 18.0, color: Colors.white),
                             ),
                             Spacer(),
-                            
+
                             IconButton(
-                              icon: Icon(
+                              icon: const Icon(
                                 Icons.delete,
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                deleteData(name);
+                                // 삭제 확인 다이얼로그 띄우기
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      backgroundColor: Colors.blueGrey.shade800,
+                                      title: const Text(
+                                        '진짜 삭제하시겠습니까?',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      content: const Text(
+                                        '이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(); // 다이얼로그 닫기
+                                          },
+                                          child: const Text(
+                                            '아니요',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            // "예"를 누르면 삭제 함수 실행
+                                            await deleteData(name); // 여기서 'name'을 사용하여 삭제
+                                            await myCollectionName(); // 화면을 갱신합니다.
+                                            Navigator.of(context).pop(); // 다이얼로그 닫기
+                                          },
+                                          child: const Text(
+                                            '예',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
                               },
                             ),
-                          
+
+
                             ReorderableDragStartListener(
                               index: collectionNames.indexOf(name),
                               child: Container(
