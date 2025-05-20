@@ -584,7 +584,7 @@ class _CalenderPageState extends State<CalenderPage> {
                                     titlesData: FlTitlesData(
                                       bottomTitles: AxisTitles(
                                         sideTitles: SideTitles(
-                                          showTitles: true,
+                                          showTitles: false,
                                           getTitlesWidget: (value, meta) {
                                             if (value.toInt() < xLabels.length) {
                                               return Text(

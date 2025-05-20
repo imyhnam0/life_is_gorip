@@ -24,8 +24,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   List<Map<String, dynamic>> exercisesData = [];
   int result = 0;
   int sumweight = 0;
-  int _seconds = 0;
-  late Timer _timer;
   String? uid;
   List<bool> completionStatus = [];
   int totalWeight = 0; // 총 무게 상태 변수 추가
@@ -54,13 +52,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
 
   @override
-  void dispose() {
-    if (_timer.isActive) {
-      _timer.cancel();
-    }
-    _saveTitleAndTime(); // 마지막 시간을 저장
-    super.dispose();
-  }
+
 
   Future<void> deleteData(String routineTitle) async {
     try {
@@ -126,7 +118,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
 
   Future<void> saveRoutine(
-      String title, int result, int sumweight, int timerSeconds) async {
+      String title, int result, int sumweight,List<Map<String, dynamic>> exerciseLogs,String endTime, ) async {
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     final db = FirebaseFirestore.instance;
@@ -138,13 +130,16 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
       // 새로운 문서 ID 생성
       final routineDocRef = healthDocRef.collection('routines').doc();
+      print('🔥 저장될 문서 ID: ${routineDocRef.id}');
 
       batch.set(routineDocRef, {
         '오늘 한 루틴이름': title,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
-        '오늘 총 시간': _formatTime(timerSeconds),
         '날짜': formattedDate,
+        '운동 시작 시간': _entryTime,
+        '운동 종료 시간': endTime,
+        '운동 목록': exerciseLogs,
       });
 
       await batch.commit(); // Batch 쓰기 커밋
@@ -340,7 +335,6 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                         await _clearTitleAndTime();
                         await _clearCheckedStates(); // 체크 값 초기화
                         setState(() {
-                          _seconds = 0; // 초기화
                           totalRows = 0; // 초기화
                           totalWeight = 0; // 초기화
                         });
@@ -735,16 +729,53 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                               } catch (e) {
                                 print('Error updating isExercising: $e');
                               }
+                              final now = DateTime.now();
+                              String endTime = DateFormat('HH:mm').format(now);
+
+                              List<Map<String, dynamic>> exerciseLogs = [];
+
+                              DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(uid)
+                                  .collection('Routine')
+                                  .doc('Myroutine')
+                                  .get();
+
+                              if (documentSnapshot.exists) {
+                                var data = documentSnapshot.data() as Map<String, dynamic>;
+
+                                if (data.containsKey(_title)) {
+                                  List<dynamic> myRoutineList = data[_title];
+
+                                  for (var routine in myRoutineList) {
+                                    if (routine is Map<String, dynamic>) {
+                                      routine.forEach((exerciseName, exerciseData) {
+                                        if (exerciseData.containsKey('exercises')) {
+                                          List<Map<String, dynamic>> sets =
+                                          List<Map<String, dynamic>>.from(exerciseData['exercises']);
+
+                                          exerciseLogs.add({
+                                            '운동 이름': exerciseName,
+                                            '세트': sets, // 세트 전체 저장
+                                          });
+                                        }
+                                      });
+                                    }
+                                  }
+                                }
+                              }
+
                               await saveRoutine(
                                 _title,
                                 totalRows,
                                 totalWeight,
-                                _seconds,
+                                exerciseLogs,
+                                endTime,
                               );
                               await _clearCheckedStates(); // 체크 값 초기화
                               await _clearTitleAndTime();
                               setState(() {
-                                _seconds = 0; // 초기화
+
                                 totalRows = 0; // 초기화
                                 totalWeight = 0; // 초기화
                               });
@@ -821,7 +852,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                               await _clearTitleAndTime();
                               await _clearCheckedStates(); // 체크 값 초기화
                               setState(() {
-                                _seconds = 0; // 초기화
+
                                 totalRows = 0; // 초기화
                                 totalWeight = 0; // 초기화
                               });

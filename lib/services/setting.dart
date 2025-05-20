@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:health/explain.dart';
-import 'friendship.dart';
-import 'chart.dart';
-import 'addpicture.dart';
+import 'friendship/friendship.dart';
+import 'chart/chart.dart';
+import 'picture/addpicture.dart';
 import 'explain.dart';
-import 'recommend.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
