@@ -433,10 +433,8 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                     ),
                                     TextButton(
                                       onPressed: () async{
-                                        await deleteCollection(
-                                            collectionNames[index]);
+                                        await deleteCollection(collectionNames[index]);
                                         await saveRoutineOrder(collectionNames);
-
                                         Navigator.of(context).pop();
                                       },
                                       child: Text(

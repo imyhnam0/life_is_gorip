@@ -36,32 +36,11 @@ class _CalenderPageState extends State<CalenderPage> {
     } catch (e) {
       print('Error deleting document: $e');
     }
+    //화면에 반양하는 로직
     setState(() {
-      // 상태 변경 후 UI를 다시 빌드하도록 설정
     });
-    _fetchRoutineData();
   }
 
-  // Future<void> _deleteFood(String documentId) async {
-  //   var db = FirebaseFirestore.instance;
-  //   try {
-  //     await db
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection('Calender')
-  //         .doc('food')
-  //         .collection('todayfood')
-  //         .doc(documentId)
-  //         .delete();
-  //   } catch (e) {
-  //     print('Error deleting document: $e');
-  //   }
-  //   setState(() {
-  //     // 상태 변경 후 UI를 다시 빌드하도록 설정
-  //   });
-  //   _fetchFoodData();
-  // }
-  //
   Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
       String routineName) async {
     var db = FirebaseFirestore.instance;
@@ -97,31 +76,6 @@ class _CalenderPageState extends State<CalenderPage> {
     }
   }
 
-  // Future<List<Map<String, dynamic>>> _fetchFoodData() async {
-  //   var db = FirebaseFirestore.instance;
-  //   String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-  //
-  //   try {
-  //     QuerySnapshot snapshot = await db
-  //         .collection('users')
-  //         .doc(uid)
-  //         .collection('Calender')
-  //         .doc('food')
-  //         .collection('todayfood')
-  //         .where('date', isEqualTo: todayDate)
-  //         .get();
-  //
-  //     return snapshot.docs.map((doc) {
-  //       var data = doc.data() as Map<String, dynamic>;
-  //       data['documentId'] = doc.id; // 문서 ID를 포함시킴
-  //       return data;
-  //     }).toList();
-  //   } catch (e) {
-  //     print('Error fetching documents: $e');
-  //     return [];
-  //   }
-  // }
-
   Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
     String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
@@ -156,6 +110,7 @@ class _CalenderPageState extends State<CalenderPage> {
     }
     return [];
   }
+
   Future<Map<String, List<Map<String, int>>>> fetchRoutineDetails(
       String routineName) async {
     var db = FirebaseFirestore.instance;
@@ -212,50 +167,6 @@ class _CalenderPageState extends State<CalenderPage> {
       return {};
     }
   }
-
-
-
-  // List<PieChartSectionData> showingSections(
-  //     double carbs, double protein, double fat) {
-  //   final total = carbs + protein + fat;
-  //   if (total == 0) return [];
-  //
-  //   return [
-  //     PieChartSectionData(
-  //       color: Colors.blue,
-  //       value: (carbs / total) * 100,
-  //       title: '${(carbs / total * 100).toStringAsFixed(1)}%',
-  //       radius: 50,
-  //       titleStyle: const TextStyle(
-  //         fontSize: 16,
-  //         fontWeight: FontWeight.bold,
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //     PieChartSectionData(
-  //       color: Colors.red,
-  //       value: (protein / total) * 100,
-  //       title: '${(protein / total * 100).toStringAsFixed(1)}%',
-  //       radius: 50,
-  //       titleStyle: const TextStyle(
-  //         fontSize: 16,
-  //         fontWeight: FontWeight.bold,
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //     PieChartSectionData(
-  //       color: Colors.green,
-  //       value: (fat / total) * 100,
-  //       title: '${(fat / total * 100).toStringAsFixed(1)}%',
-  //       radius: 50,
-  //       titleStyle: const TextStyle(
-  //         fontSize: 16,
-  //         fontWeight: FontWeight.bold,
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //   ];
-  // }
 
   void _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -342,102 +253,6 @@ class _CalenderPageState extends State<CalenderPage> {
               ),
             ),
           ),
-          // Expanded(
-          //   child: FutureBuilder<List<Map<String, dynamic>>>(
-          //     future: _fetchFoodData(),
-          //     builder: (context, snapshot) {
-          //       if (snapshot.connectionState == ConnectionState.waiting) {
-          //         return Center(child: CircularProgressIndicator());
-          //       }
-          //       if (snapshot.hasError) {
-          //         return Center(child: Text('오류 발생: ${snapshot.error}'));
-          //       }
-          //       if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          //         return Center(
-          //             child: Text(
-          //           '데이터가 없습니다.',
-          //           style: TextStyle(color: Colors.white),
-          //         ));
-          //       }
-          //
-          //       var data = snapshot.data!;
-          //       var totalCarbs = data.fold<double>(
-          //           0.0, (sum, item) => sum + (item['totalCarbs'] ?? 0.0));
-          //       var totalProtein = data.fold<double>(
-          //           0.0, (sum, item) => sum + (item['totalProtein'] ?? 0.0));
-          //       var totalFat = data.fold<double>(
-          //           0.0, (sum, item) => sum + (item['totalFat'] ?? 0.0));
-          //       var totalCalories = data.fold<double>(
-          //           0.0, (sum, item) => sum + (item['totalCalories'] ?? 0.0));
-          //
-          //       return Column(
-          //         children: [
-          //           Expanded(
-          //             child: ListView.builder(
-          //               itemCount: data.length,
-          //               itemBuilder: (context, index) {
-          //                 var item = data[index];
-          //                 return Padding(
-          //                   padding: const EdgeInsets.all(16.0),
-          //                   child: Column(
-          //                     crossAxisAlignment: CrossAxisAlignment.start,
-          //                     children: [
-          //                       Row(
-          //                         mainAxisAlignment:
-          //                             MainAxisAlignment.spaceBetween,
-          //                         children: [
-          //                           Text(
-          //                             '오늘 먹은 칼로리: ${item['totalCalories']}',
-          //                             style: TextStyle(
-          //                               color: Colors.white,
-          //                               fontWeight: FontWeight.bold, // 글자를 두껍게
-          //                               fontSize: 15, // 글자 크기를 20으로 설정
-          //                             ),
-          //                           ),
-          //                           IconButton(
-          //                             icon: Icon(Icons.delete,
-          //                                 color: Colors.white),
-          //                             onPressed: () {
-          //                               _deleteFood(item['documentId']);
-          //                             },
-          //                           ),
-          //                         ],
-          //                       ),
-          //                       Text(
-          //                         '탄수화물: ${item['totalCarbs']}',
-          //                         style: TextStyle(color: Colors.white),
-          //                       ),
-          //                       Text(
-          //                         '단백질: ${item['totalProtein']}',
-          //                         style: TextStyle(color: Colors.white),
-          //                       ),
-          //                       Text(
-          //                         '지방: ${item['totalFat']}',
-          //                         style: TextStyle(color: Colors.white),
-          //                       ),
-          //                       SizedBox(
-          //                         height: 200,
-          //                         child: PieChart(
-          //                           PieChartData(
-          //                             sections: showingSections(
-          //                                 totalCarbs, totalProtein, totalFat),
-          //                             sectionsSpace: 0,
-          //                             centerSpaceRadius: 40,
-          //                             borderData: FlBorderData(show: false),
-          //                           ),
-          //                         ),
-          //                       ),
-          //                     ],
-          //                   ),
-          //                 );
-          //               },
-          //             ),
-          //           ),
-          //         ],
-          //       );
-          //     },
-          //   ),
-          // ),
           Divider(
             color: Colors.grey,
             thickness: 1,

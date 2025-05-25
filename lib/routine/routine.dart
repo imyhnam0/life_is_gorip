@@ -122,31 +122,61 @@ class _RoutinePageState extends State<RoutinePage>
     }
   }
 
-  Future<void> deleteAllData(String collectionPath) async {
+  Future<void> deleteAllData(String title) async {
+    final firestore = FirebaseFirestore.instance;
+
     try {
-      DocumentReference docRef = FirebaseFirestore.instance
+      // 1. Myroutine 문서에서 삭제
+      DocumentReference myroutineRef = firestore
           .collection('users')
           .doc(uid)
           .collection('Routine')
           .doc('Myroutine');
 
-      DocumentSnapshot documentSnapshot = await docRef.get();
-
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
-
-        if (data.containsKey(_title)) {
-          // Remove the entire collection (_title)
-          data.remove(_title);
-          await docRef.set(data);
+      DocumentSnapshot myroutineSnap = await myroutineRef.get();
+      if (myroutineSnap.exists) {
+        Map<String, dynamic> data = myroutineSnap.data() as Map<String, dynamic>;
+        if (data.containsKey(title)) {
+          data.remove(title);
+          await myroutineRef.set(data);
         }
       }
 
+      // 2. RoutineOrder 문서에서 삭제
+      DocumentReference orderRef = firestore
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('RoutineOrder');
+
+      DocumentSnapshot orderSnap = await orderRef.get();
+      if (orderSnap.exists) {
+        List<String> titles = List<String>.from(orderSnap['titles']);
+        titles.remove(title);
+        await orderRef.update({'titles': titles});
+      }
+
+      // 3. Routinename 문서에서 삭제
+      DocumentReference nameRef = firestore
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Routinename');
+
+      DocumentSnapshot nameSnap = await nameRef.get();
+      if (nameSnap.exists) {
+        List<String> names = List<String>.from(nameSnap['names']);
+        names.removeWhere((name) => name.startsWith('$title-'));
+        await nameRef.update({'names': names});
+      }
+
+      // 로컬 상태 업데이트
       await myCollectionName();
     } catch (e) {
-      print('Error deleting collection: $e');
+      print('❌ deleteAllData 오류: $e');
     }
   }
+
 
   Future<void> myCollectionName() async {
     try {
@@ -309,36 +339,63 @@ class _RoutinePageState extends State<RoutinePage>
                   Icons.save,
                   color: Colors.white,
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('저장하시겠습니까?',
-                            style: TextStyle(color: Colors.white)),
-                        backgroundColor: Colors.cyan.shade900,
-                        actions: <Widget>[
-                          TextButton(
-                            child: Text('아니오',
+                  onPressed: () async {
+                    if (collectionNames.isEmpty) {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('아무 값이 없습니다. 생성을 안할겁니까?',
                                 style: TextStyle(color: Colors.white)),
-                            onPressed: () {
-                              Navigator.of(context).pop(); // 팝업 닫기
-                            },
-                          ),
-                          TextButton(
-                            child: Text('예',
-                                style: TextStyle(color: Colors.white)),
-                            onPressed: () {
-                              // saveRoutineName();
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pop(true); // 확인 팝업 닫기
-                            },
-                          ),
-                        ],
+                            backgroundColor: Colors.cyan.shade900,
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('아니오', style: TextStyle(color: Colors.white)),
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                },
+                              ),
+                              TextButton(
+                                child: Text('예', style: TextStyle(color: Colors.white)),
+                                onPressed: () async {
+                                  await deleteAllData(_title);
+                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                  Navigator.of(context).pop(); // RoutinePage 닫기
+                                },
+                              ),
+                            ],
+                          );
+                        },
                       );
-                    },
-                  );
-                },
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('저장하시겠습니까?',
+                                style: TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.cyan.shade900,
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text('아니오', style: TextStyle(color: Colors.white)),
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                },
+                              ),
+                              TextButton(
+                                child: Text('예', style: TextStyle(color: Colors.white)),
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                                  Navigator.of(context).pop(true); // 이전 페이지로 값 전달
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    }
+                  }
+
               ),
             ],
           ),

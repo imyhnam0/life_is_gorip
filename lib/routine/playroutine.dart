@@ -91,8 +91,37 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
       print('Error deleting document: $e');
     }
   }
-  
-  
+
+  Future<void> saveSubroutineOrder(List<String> orderedNames) async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        if (data.containsKey(_title)) {
+          List<dynamic> originalList = data[_title];
+          List<dynamic> reorderedList = [];
+
+          for (String name in orderedNames) {
+            final item = originalList.firstWhere((element) => element.containsKey(name));
+            reorderedList.add(item);
+          }
+
+          await docRef.update({_title: reorderedList});
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error saving subroutine order: $e');
+    }
+  }
+
+
+
 
 
 
@@ -113,7 +142,12 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
 
 
   Future<void> saveRoutine(
-      String title, int result, int sumweight,List<Map<String, dynamic>> exerciseLogs,String endTime, ) async {
+      String title,
+      int result,
+      int sumweight,
+      List<Map<String, dynamic>> exerciseLogs,
+      String endTime,
+      ) async {
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     final db = FirebaseFirestore.instance;
@@ -124,13 +158,31 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           db.collection('users').doc(uid).collection('Calender').doc('health');
 
       // 새로운 문서 ID 생성
-      final routineDocRef = healthDocRef
-          .collection('routines')
-          .doc('${formattedDate}_$title');
-      print('🔥 저장될 문서 ID: ${routineDocRef.id}');
+      final routineDocRef = healthDocRef.collection('routines').doc('${formattedDate}_$title');
+      // 🔍 "등-3" 형식의 값에서 title == "등" 인 항목 찾기
+      final routinenameDoc = await db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Routinename')
+          .get();
+
+      List<dynamic> names = routinenameDoc.data()?['names'] ?? [];
+      int indexToSave = -1;
+
+      for (var name in names) {
+        if (name is String && name.startsWith('$title-')) {
+          final parts = name.split('-');
+          if (parts.length == 2) {
+            indexToSave = int.tryParse(parts[1]) ?? -1;
+            break;
+          }
+        }
+      }
 
       batch.set(routineDocRef, {
         '오늘 한 루틴이름': title,
+        '루틴 인덱스': indexToSave,
         '오늘 총 세트수': result,
         '오늘 총 볼륨': sumweight,
         '날짜': formattedDate,
@@ -648,7 +700,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                       ),
                     ),
                 ],
-                onReorder: (int oldIndex, int newIndex) {
+                onReorder: (int oldIndex, int newIndex) async {
                   setState(() {
                     // Make the list mutable
                     List<String> mutableCollectionNames =
@@ -668,6 +720,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
                     collectionNames = mutableCollectionNames;
                     completionStatus = mutableCompletionStatus;
                   });
+                  await saveSubroutineOrder(collectionNames);
                 },
                 proxyDecorator:
                     (Widget child, int index, Animation<double> animation) {
