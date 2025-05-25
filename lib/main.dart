@@ -1,21 +1,20 @@
 
-import 'saveroutine.dart';
+import 'routine/saveroutine.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'routine.dart';
+import 'routine/routine.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'services/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'calender.dart';
+import 'calender/calender.dart';
 import 'package:intl/intl.dart';
-import 'start_routine.dart';
-import 'chart.dart';
-import 'loginpage.dart';
-import 'user_provider.dart';
+import 'routine/start_routine.dart';
+import 'chart/chart.dart';
+import 'login&signup/loginpage.dart';
+import 'services/user_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'addpicture.dart';
-import 'friendship(revise).dart';
-import 'myinfo.dart';
+import 'friendship/friendship.dart';
+import 'mypage/myinfo.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -136,6 +135,7 @@ class _HomepageState extends State<Homepage> {
     loadStarRow();
   }
 
+  //즐겨찾기에서 삭제하는 함수
   Future<void> deleteBookmark(String name) async {
     try {
       DocumentSnapshot bookmarkDoc = await FirebaseFirestore.instance
@@ -161,7 +161,7 @@ class _HomepageState extends State<Homepage> {
       print('Error removing name: $e');
     }
   }
-
+  //UpdateStarRow 함수로 firestore에 순서를 바꾸고 그거를 UI에 반영하는 함수
   void loadStarRow() async {
     try {
       DocumentReference bookmarkDocRef = FirebaseFirestore.instance
@@ -183,7 +183,7 @@ class _HomepageState extends State<Homepage> {
       print('Error fetching names from Firestore: $e');
     }
   }
-
+//updateFirestoreOrder 함수는 Firestore에 저장된 순서를 업데이트하는 함수
   Future<void> updateFirestoreOrder(List<String> updatedCollectionNames) async {
     try {
       DocumentReference bookmarkDocRef = FirebaseFirestore.instance
@@ -682,9 +682,8 @@ class _HomepageState extends State<Homepage> {
                           ),
                   ),
                   Align(
-                    alignment: Alignment.bottomRight,
+                    alignment: Alignment.bottomCenter,
                     child: Container(
-                      margin: EdgeInsets.only(right: 50.0, bottom: 20.0),
                       width: 140,
                       height: 60,
                       child: FloatingActionButton.extended(
@@ -711,35 +710,35 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Container(
-                      margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
-                      width: 140,
-                      height: 60,
-                      child: FloatingActionButton.extended(
-                        heroTag: 'picture',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => AddPicturePage()),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.photo_library,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          "사진첩",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Oswald',
-                          ),
-                        ),
-                        backgroundColor: Colors.cyan.shade700,
-                      ),
-                    ),
-                  ),
+                  // Align(
+                  //   alignment: Alignment.bottomLeft,
+                  //   child: Container(
+                  //     margin: EdgeInsets.only(left: 40.0, bottom: 20.0),
+                  //     width: 140,
+                  //     height: 60,
+                  //     child: FloatingActionButton.extended(
+                  //       heroTag: 'picture',
+                  //       onPressed: () {
+                  //         Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => AddPicturePage()),
+                  //         );
+                  //       },
+                  //       icon: Icon(
+                  //         Icons.photo_library,
+                  //         color: Colors.white,
+                  //       ),
+                  //       label: Text(
+                  //         "사진첩",
+                  //         style: TextStyle(
+                  //           color: Colors.white,
+                  //           fontFamily: 'Oswald',
+                  //         ),
+                  //       ),
+                  //       backgroundColor: Colors.cyan.shade700,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

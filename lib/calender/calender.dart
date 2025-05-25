@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class CalenderPage extends StatefulWidget {
@@ -170,7 +170,7 @@ class _CalenderPageState extends State<CalenderPage> {
 
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
-        print('Firestore data: ${snapshot.data()}');
+        //print('Firestore data: ${snapshot.data()}');
 
         // 루틴 이름 (예: "등")에 해당하는 데이터 찾기
         if (data.containsKey(routineName)) {
@@ -497,7 +497,11 @@ class _CalenderPageState extends State<CalenderPage> {
                             style: TextStyle(color: Colors.white),
                           ),
                           Text(
-                            '오늘 총 운동 시간: ${routine['오늘 총 시간']}',
+                            '운동 시작 시간: ${routine['운동 시작 시간']}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            '운동 종료 시간: ${routine['운동 종료 시간']}',
                             style: TextStyle(color: Colors.white),
                           ),
                           SizedBox(height: 16),

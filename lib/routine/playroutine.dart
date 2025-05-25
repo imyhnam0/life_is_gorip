@@ -1,10 +1,12 @@
+//운동시작을 눌렀을때 나오는 페이지 운동시작 시간이 상단에 떠있음
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'startroutinename_play.dart';
 import 'package:intl/intl.dart';
-import 'main.dart';
-import 'user_provider.dart';
+import '../main.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'create_routine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,14 +94,7 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
   
   
 
-  Future<void> _saveTitleAndTime() async {
-    // 현재 시간을 저장
-    final prefs = await SharedPreferences.getInstance();
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-    await prefs.setString('title', _title);
-    await prefs.setString('savedTime', formattedDate);
-  }
+
 
   Future<void> _clearTitleAndTime() async {
     final prefs = await SharedPreferences.getInstance();
@@ -129,7 +124,9 @@ class _PlayMyRoutinePageState extends State<PlayMyRoutinePage> {
           db.collection('users').doc(uid).collection('Calender').doc('health');
 
       // 새로운 문서 ID 생성
-      final routineDocRef = healthDocRef.collection('routines').doc();
+      final routineDocRef = healthDocRef
+          .collection('routines')
+          .doc('${formattedDate}_$title');
       print('🔥 저장될 문서 ID: ${routineDocRef.id}');
 
       batch.set(routineDocRef, {

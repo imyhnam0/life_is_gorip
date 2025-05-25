@@ -1,10 +1,12 @@
+//저장된 루틴을 보여주는 페이지
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'start_routine.dart';
 import 'routine.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class SaveRoutinePage extends StatefulWidget {
   const SaveRoutinePage({super.key});
@@ -24,10 +26,39 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     loadStarRow();
-    loadSavedCollectionNames(); // 저장된 순서를 불러오기
+    loadRoutineOrder();
     myCollectionName();
   }
 
+  //루틴 이름 순서 불러오는 함수
+  Future<void> loadRoutineOrder() async {
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('RoutineOrder'); // 루틴 순서 저장용 문서
+
+    final snapshot = await docRef.get();
+    if (snapshot.exists) {
+      List<String> ordered = List<String>.from(snapshot['titles']);
+      setState(() {
+        collectionNames = ordered;
+      });
+    }
+  }
+
+  //루틴 이름 순서 저장 함수
+  Future<void> saveRoutineOrder(List<String> orderedTitles) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('RoutineOrder'); // 루틴 순서 저장용 문서
+
+    await docRef.set({'titles': orderedTitles}, SetOptions(merge: true));
+  }
+
+  //즐겨찾기랑 루틴 삭제 함수
   Future<void> deleteCollection(String documentId) async {
     var db = FirebaseFirestore.instance;
     // Remove documentId from Bookmark collection
@@ -91,44 +122,16 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
       if (documentSnapshot.exists) {
         var data = documentSnapshot.data() as Map<String, dynamic>;
-        List<String> names = [];
-        data.forEach((key, value) {
-          names.add(key);
+        List<String> names = data.keys.toList(); // 루틴 이름만 추출
+
+        setState(() {
+          collectionNames = names;
         });
 
-        final prefs = await SharedPreferences.getInstance();
-        List<String>? savedNames = prefs.getStringList('collectionNames');
-
-        if (savedNames != null &&
-            savedNames.length == names.length &&
-            savedNames.every((element) => names.contains(element))) {
-          setState(() {
-            collectionNames = savedNames;
-          });
-        } else {
-          setState(() {
-            collectionNames = names;
-          });
-          saveCollectionNames(names);
-        }
+        await saveRoutineOrder(names); // Firestore 순서 문서도 동기화
       }
     } catch (e) {
       print('Error fetching collection names: $e');
-    }
-  }
-
-  Future<void> saveCollectionNames(List<String> names) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('collectionNames', names);
-  }
-
-  Future<void> loadSavedCollectionNames() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? savedNames = prefs.getStringList('collectionNames');
-    if (savedNames != null) {
-      setState(() {
-        collectionNames = savedNames;
-      });
     }
   }
 
@@ -216,9 +219,12 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "루틴 모음",
+          "My Routine",
           style: TextStyle(
             color: Colors.white,
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Pacifico',
           ),
         ),
         centerTitle: true,
@@ -286,15 +292,16 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
         ),
         child: ReorderableListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          onReorder: (int oldIndex, int newIndex) {
+          onReorder: (int oldIndex, int newIndex) async{
             setState(() {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
               }
               final String item = collectionNames.removeAt(oldIndex);
               collectionNames.insert(newIndex, item);
-              saveCollectionNames(collectionNames); // 순서가 바뀔 때마다 저장
+
             });
+            await saveRoutineOrder(collectionNames); // 변경된 순서 저장
           },
           proxyDecorator:
               (Widget child, int index, Animation<double> animation) {
@@ -349,11 +356,16 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                               onAdd: addStarRow,
                               onRemove: removeStarRow,
                             ),
-                            Text(
-                              collectionNames[index],
-                              style: TextStyle(
-                                fontSize: 18.0,
-                                color: Colors.white,
+                            Expanded(
+                              child: AutoSizeText(
+                                collectionNames[index],
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                minFontSize: 10,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Spacer(),

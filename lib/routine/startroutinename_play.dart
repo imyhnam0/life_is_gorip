@@ -1,8 +1,9 @@
+//운동을 시작했을때 그 안에 운동 종목들을 눌러서 안에 무게 횟수등을 기입하는 페이지
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

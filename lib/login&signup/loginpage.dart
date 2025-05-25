@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'firebase_auth_service.dart';
+import '../services/firebase_auth_service.dart';
 import 'signuppage.dart';
-import 'main.dart';
-import 'user_provider.dart';
+import '../main.dart';
+import '../services/user_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 
 class LoginPage extends StatefulWidget {
@@ -61,11 +61,13 @@ Future<void> _login() async {
       }
     }
   }
-  Future<void> clearSharedPreferences() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.clear();
-  print("SharedPreferences가 초기화되었습니다.");
-}
+
+//   Future<void> clearSharedPreferences() async {
+//   SharedPreferences prefs = await SharedPreferences.getInstance();
+//   await prefs.clear();
+//   print("SharedPreferences가 초기화되었습니다.");
+// }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

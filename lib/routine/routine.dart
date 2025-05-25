@@ -1,9 +1,10 @@
+//루틴 이름 생성 -> 세로운 루틴 생성
+
 import 'package:flutter/material.dart';
 import 'create_routine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
-import 'airoutine.dart';
 
 class RoutinePage extends StatefulWidget {
   const RoutinePage({super.key});
@@ -465,39 +466,12 @@ class _RoutinePageState extends State<RoutinePage>
               color: Colors.white,
             ),
             label: Text(
-              "수동생성",
+              "루틴 생성",
               style: TextStyle(color: Colors.white),
             ),
             backgroundColor: Colors.cyan.shade700,
-          ),
-          SizedBox(width: 10), // Add some space between the buttons
-          FloatingActionButton.extended(
-            heroTag: null,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => Airoutine(
-                    myroutinename: _title,
-                  ),
-                ),
-              ).then((value) {
-                if (value == true) {
-                  print("루틴 저장 완료");
-                  myCollectionName();
-                }
-              });
-            },
-            icon: Icon(
-              Icons.create,
-              color: Colors.white,
-            ),
-            label: Text(
-              "자동생성",
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.cyan.shade700,
-          ),
+          ), // Add some space between the buttons
+
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

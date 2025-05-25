@@ -1,7 +1,9 @@
+//만든 루틴 안에 운동 종목을 추가하는 페이지
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class CreateRoutinePage extends StatefulWidget {
@@ -94,7 +96,6 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
 
           // 기존 루틴 삭제
           myRoutineList.removeAt(routineIndex);
-
           // 새로운 이름으로 루틴 추가
           myRoutineList.add({newTitle: routineData});
 
@@ -111,6 +112,63 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
       print('Error updating routine title: $e');
     }
   }
+
+  Future<void> saveRoutineName() async {
+    final db = FirebaseFirestore.instance;
+
+    try {
+      final docRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Routinename');
+
+      final snapshot = await docRef.get();
+
+      List<String> names = [];
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        names = List<String>.from(data['names'] ?? []);
+      }
+
+      // 🔍 widget.myroutinename과 -기준 앞부분이 같은 게 있는지 확인
+      final hasSameBase = names.any((name) {
+        final parts = name.split('-');
+        return parts.length > 1 && parts.first == widget.myroutinename;
+      });
+
+      if (hasSameBase) {
+        print('같은 루틴 이름이 이미 존재하므로 저장하지 않음');
+        return;
+      }
+
+      // 전체 루틴 이름 중 가장 큰 인덱스를 찾기
+      int nextIndex = 1;
+      final regExp = RegExp(r'-(\d+)$');
+      for (final key in names) {
+        final match = regExp.firstMatch(key);
+        if (match != null) {
+          final number = int.tryParse(match.group(1) ?? '');
+          if (number != null && number >= nextIndex) {
+            nextIndex = number + 1;
+          }
+        }
+      }
+
+      // 새 루틴 키 생성
+      final newKey = '${widget.myroutinename}-$nextIndex';
+
+      names.add(newKey);
+      await docRef.set({'names': names}, SetOptions(merge: true));
+      print('$newKey 루틴 저장 완료');
+    } catch (e) {
+      print('Error saving routine: $e');
+    }
+  }
+
+
+
 
   Future<void> saveRoutineData() async {
     var db = FirebaseFirestore.instance;
@@ -162,6 +220,28 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
             ]
           });
         }
+        //await saveRoutineName();
+
+        final orderRef = db
+            .collection('users')
+            .doc(uid)
+            .collection('Routine')
+            .doc('RoutineOrder');
+
+        final orderSnap = await orderRef.get();
+        List<String> orderTitles = [];
+
+        if (orderSnap.exists) {
+          orderTitles = List<String>.from(orderSnap['titles'] ?? []);
+        }
+
+        if (!orderTitles.contains(widget.myroutinename)) {
+          orderTitles.add(widget.myroutinename);
+          await orderRef.set({'titles': orderTitles}, SetOptions(merge: true));
+          print('Order 문서에 루틴 순서 추가됨');
+        } else {
+          print('Order 문서에 이미 존재하는 루틴입니다');
+        }
       } catch (e) {
         print('Error adding document: $e');
       }
@@ -169,6 +249,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
   }
 
   void _showNameInputDialog(BuildContext context) {
+    nameController.text = _title;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -178,7 +260,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
           child: AlertDialog(
             backgroundColor: Colors.cyan.shade900,
             title: Text(
-              '운동 종목 생성',
+              '이름 수정',
               style: TextStyle(color: Colors.white),
             ),
             content: Form(
@@ -209,8 +291,8 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
+                  nameController.clear();
                   Navigator.of(context).pop();
-                  Navigator.of(context).pop(); // 대화상자 닫기
                 },
               ),
               TextButton(
@@ -417,7 +499,6 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
                   ),
                   onPressed: () {
                     lastname = _title;
-
                     _showNameInputDialog(context);
                   },
                 ),

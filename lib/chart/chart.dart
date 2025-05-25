@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class RoutineChart extends StatefulWidget {
@@ -62,6 +62,8 @@ class _RoutineChartState extends State<RoutineChart> {
 
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
+        // print('👉 문서: ${doc.id}');
+        // print('👉 data.keys: ${data.keys}');
         String routineName = data['오늘 한 루틴이름'];
         int volume = data['오늘 총 볼륨'] ?? 0;
         String formattedDate = data['날짜'];
@@ -384,6 +386,9 @@ class _RoutineChartState extends State<RoutineChart> {
         Map<String, Map<String, int>> routineData = snapshot.data!;
 
         if (selectname != null && routineData.containsKey(selectname)) {
+          print('🔥 selectname: $selectname');
+          print('🔥 routineData keys: ${routineData.keys}');
+
           return _buildChart(selectname!, routineData[selectname]!);
         } else {
           return ListView(
@@ -779,7 +784,7 @@ class _RoutineChartState extends State<RoutineChart> {
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
-              showTitles: true,
+              showTitles: false,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() < xLabels.length) {
                   return Text(

@@ -1,9 +1,11 @@
+//만든 루틴 안에 들어와서 시작 버튼을 누르면 운동을 시작하게 하는 페이지
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'playroutine.dart';
 import 'create_routine.dart';
-import 'user_provider.dart';
+import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 
