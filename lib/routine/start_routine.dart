@@ -29,14 +29,12 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
-    loadSavedCollectionNames(); // 저장된 순서를 불러오기
     myCollectionName();
   }
 
+  //운동 시작할떄 현재 위치를 저장하는 함수
   Future<void> saveUserLocationAndState(String uid) async {
     try {
-      print("1");
-
       // 위치 권한 확인 및 요청
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -50,25 +48,13 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
           throw Exception('위치 권한이 거부되었습니다.');
         }
       }
-
       if (permission == LocationPermission.deniedForever) {
         throw Exception('위치 권한이 영구적으로 거부되었습니다.');
       }
-
-      print("2");
-      print("서비스 활성화 여부: $serviceEnabled");
-      print("권한 상태: $permission");
-
       // 현재 위치 가져오기
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
-      print("위도: ${position.latitude}");
-      print("경도: ${position.longitude}");
-
-      print("3");
-
       // Firestore에 위치와 상태 업데이트
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'isExercising': true,
@@ -94,7 +80,6 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
         .doc('Myroutine');
 
     DocumentSnapshot documentSnapshot = await docRef.get();
-    print(_title);
     print(routineTitle);
 
     if (documentSnapshot.exists) {
@@ -119,53 +104,38 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
     print('Error deleting document: $e');
   }
 }
-Future<void> myCollectionName() async {
-  try {
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('Routine')
-        .doc('Myroutine')
-        .get();
+  Future<void> myCollectionName() async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
 
-    if (documentSnapshot.exists) {
-      var data = documentSnapshot.data() as Map<String, dynamic>;
-      if (data.containsKey(_title)) {
-        List<dynamic> myRoutineList = data[_title];
-        List<String> names = [];
-        for (var routine in myRoutineList) {
-          routine.forEach((key, value) {
-            names.add(key);
-          });
-        }
+      final docSnap = await docRef.get();
 
-        final prefs = await SharedPreferences.getInstance();
-        List<String>? savedNames = prefs.getStringList('$_title-collectionNames');
+      if (docSnap.exists) {
+        final data = docSnap.data() as Map<String, dynamic>;
+        if (data.containsKey(_title)) {
+          final List<dynamic> myRoutineList = data[_title];
 
-        if (savedNames != null &&
-            savedNames.length == names.length &&
-            savedNames.every((element) => names.contains(element))) {
-          setState(() {
-            collectionNames = savedNames;
-          });
-        } else {
+          // 각 루틴 항목의 key를 가져오기
+          List<String> names = myRoutineList
+              .map((routine) => routine.keys.first as String)
+              .toList();
+
           setState(() {
             collectionNames = names;
           });
-          saveCollectionNames(names);
         }
       }
+    } catch (e) {
+      print('Error fetching collection names: $e');
     }
-  } catch (e) {
-    print('Error fetching collection names: $e');
   }
-}
+
 
   Future<void> saveCollectionNames(List<String> names) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('$_title-collectionNames', names);
-
-    // 👉 Firestore에도 저장
     try {
       DocumentReference docRef = FirebaseFirestore.instance
           .collection('users')
@@ -178,14 +148,12 @@ Future<void> myCollectionName() async {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         if (data.containsKey(_title)) {
           List<dynamic> originalList = data[_title];
-
           // 새로 저장할 리스트를 순서에 맞게 재정렬
           List<dynamic> reorderedList = [];
           for (String name in names) {
             final item = originalList.firstWhere((element) => element.containsKey(name));
             reorderedList.add(item);
           }
-
           // Firestore에 업데이트
           await docRef.update({_title: reorderedList});
         }
@@ -194,19 +162,6 @@ Future<void> myCollectionName() async {
       print('Firestore에 순서를 저장하는 중 오류 발생: $e');
     }
   }
-
-
-Future<void> loadSavedCollectionNames() async {
-  final prefs = await SharedPreferences.getInstance();
-  List<String>? savedNames = prefs.getStringList('$_title-collectionNames');
-  if (savedNames != null) {
-    setState(() {
-      collectionNames = savedNames;
-    });
-  }
-}
-
-
 
   Future<void> _updateRoutineTitle(String newTitle) async {
   try {
@@ -224,16 +179,74 @@ Future<void> loadSavedCollectionNames() async {
       if (data.containsKey(_title)) {
         List<dynamic> myRoutineList = data[_title];
 
-        // Remove the old title
         await docRef.update({_title: FieldValue.delete()});
-
-        // Add the new title with the same list
         data.remove(_title);
         data[newTitle] = myRoutineList;
 
         await docRef.set(data, SetOptions(merge: true));
       }
     }
+    final oldPrefix = _title;
+    final newPrefix = newTitle;
+    final nameRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Routinename');
+
+    final nameSnap = await nameRef.get();
+    if (nameSnap.exists) {
+      List<String> names = List<String>.from(nameSnap['names']);
+      bool hasSamePrefix =
+      names.any((name) => name.startsWith('$oldPrefix-'));
+
+      if (hasSamePrefix) {
+        // 접두사 일치하는 항목들만 변경
+        List<String> updatedNames = names.map((name) {
+          if (name.startsWith('$oldPrefix-')) {
+            return name.replaceFirst(oldPrefix, newPrefix);
+          } else {
+            return name;
+          }
+        }).toList();
+
+        await nameRef.update({'names': updatedNames});
+      }
+    }
+    // 1. Bookmark 문서 업데이트
+    final bookmarkRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Bookmark');
+
+    final bookmarkSnap = await bookmarkRef.get();
+    if (bookmarkSnap.exists) {
+      List<String> names = List<String>.from(bookmarkSnap['names']);
+      int index = names.indexOf(oldPrefix);
+      if (index != -1) {
+        names[index] = newPrefix;
+        await bookmarkRef.update({'names': names});
+      }
+    }
+
+// 2. RoutineOrder 문서 업데이트
+    final orderRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('RoutineOrder');
+
+    final orderSnap = await orderRef.get();
+    if (orderSnap.exists) {
+      List<String> titles = List<String>.from(orderSnap['titles']);
+      int index = titles.indexOf(oldPrefix);
+      if (index != -1) {
+        titles[index] = newPrefix;
+        await orderRef.update({'titles': titles});
+      }
+    }
+
 
     setState(() {
       _title = newTitle;
@@ -248,18 +261,25 @@ Future<void> loadSavedCollectionNames() async {
 
 
   void _showNameInputDialog(BuildContext context) {
+    nameController.text = _title;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.cyan.shade900,
           title: const Text(
-            '이름 수정',
-            style: TextStyle(color: Colors.white),
+            'NAME',
+
+            style: TextStyle(color: Colors.white
+            , fontSize: 24.0, fontWeight: FontWeight.bold,
+
+            ),
+
           ),
           content: TextField(
             controller: nameController,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.black),
             decoration: InputDecoration(
               hintText: "이름을 입력하세요",
               hintStyle: const TextStyle(color: Colors.grey),
@@ -267,9 +287,9 @@ Future<void> loadSavedCollectionNames() async {
                 borderSide: BorderSide(color: Colors.white),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white),
+                borderSide: BorderSide(color: Colors.black),
               ),
-              fillColor: Colors.blueGrey.shade700,
+              fillColor: Colors.white,
               filled: true,
             ),
           ),

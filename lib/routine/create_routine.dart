@@ -220,7 +220,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
             ]
           });
         }
-        //await saveRoutineName();
+        await saveRoutineName();
 
         final orderRef = db
             .collection('users')

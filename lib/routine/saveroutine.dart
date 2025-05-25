@@ -109,6 +109,25 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
     } catch (e) {
       print('Error deleting collection: $e');
     }
+    // Routinename에서도 삭제
+    try {
+      DocumentReference nameRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Routinename');
+
+      DocumentSnapshot nameSnap = await nameRef.get();
+
+      if (nameSnap.exists) {
+        List<String> names = List<String>.from(nameSnap['names']);
+        names.removeWhere((name) => name.startsWith('$documentId-'));
+        await nameRef.update({'names': names});
+      }
+    } catch (e) {
+      print('Error deleting from Routinename: $e');
+    }
+
   }
 
   Future<void> myCollectionName() async {
@@ -128,7 +147,6 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           collectionNames = names;
         });
 
-        await saveRoutineOrder(names); // Firestore 순서 문서도 동기화
       }
     } catch (e) {
       print('Error fetching collection names: $e');
@@ -414,9 +432,11 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
                                       ),
                                     ),
                                     TextButton(
-                                      onPressed: () {
-                                        deleteCollection(
+                                      onPressed: () async{
+                                        await deleteCollection(
                                             collectionNames[index]);
+                                        await saveRoutineOrder(collectionNames);
+
                                         Navigator.of(context).pop();
                                       },
                                       child: Text(
