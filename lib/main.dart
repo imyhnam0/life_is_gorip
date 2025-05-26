@@ -663,18 +663,20 @@ class _HomepageState extends State<Homepage> {
                                         ],
                                       ),
                                       onTap: () {
-                                        Navigator.push(
+                                        Navigator.push<bool>(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                StartRoutinePage(
-                                              clickroutinename:
-                                                  filteredCollectionNames[
-                                                      index],
+                                            builder: (context) => StartRoutinePage(
+                                              clickroutinename: filteredCollectionNames[index],
                                             ),
                                           ),
-                                        );
+                                        ).then((value) {
+                                          if (value == true) {
+                                            loadStarRow(); // 변경된 이름 리스트 다시 불러오기
+                                          }
+                                        });
                                       },
+
                                     ),
                                   ),
                                 ),

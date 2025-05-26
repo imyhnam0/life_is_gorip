@@ -478,7 +478,13 @@ class _CreateRoutinePageState extends State<CreateRoutinePage>
               size: 28,
             ),
             onPressed: () {
-              Navigator.of(context).pop(false);
+              if (_rows.isEmpty) {
+                Navigator.of(context).pop(false);
+              } else {
+                saveRoutineData().then((_) {
+                  Navigator.of(context).pop(true);
+                });
+              }
             },
             tooltip: '뒤로 가기',
           ),

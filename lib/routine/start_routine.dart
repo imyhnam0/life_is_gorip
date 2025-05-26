@@ -340,7 +340,8 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
             color: Colors.white,
           ),
           onPressed: () {
-     Navigator.pop(context, true);
+            Navigator.pop(context, true); // 성공적으로 이름 변경 후
+
           },
         ),
         actions: [
@@ -426,9 +427,6 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                           ).then((value) {
                             if (value == true) {
                               myCollectionName();
-                            }
-                            if (value == false) {
-                              deleteData(name);
                             }
                           }
                           );

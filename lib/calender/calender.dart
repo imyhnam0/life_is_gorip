@@ -14,14 +14,16 @@ class CalenderPage extends StatefulWidget {
 
 class _CalenderPageState extends State<CalenderPage> {
   String? uid;
+  DateTime selectedDate = DateTime.now();
+  late Future<List<String>> _routineNamesFuture;
 
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
+    _routineNamesFuture = fetchRoutineNames();
   }
 
-  DateTime selectedDate = DateTime.now();
-
+  // 루틴 삭제 함수
   Future<void> _deleteRoutine(String documentId) async {
     var db = FirebaseFirestore.instance;
     try {
@@ -37,45 +39,27 @@ class _CalenderPageState extends State<CalenderPage> {
       print('Error deleting document: $e');
     }
     //화면에 반양하는 로직
-    setState(() {
-    });
+    setState(() {});
   }
 
-  Future<Map<String, Map<String, int>>> _fetchRoutineChartData(
-      String routineName) async {
-    var db = FirebaseFirestore.instance;
-    Map<String, Map<String, int>> routineData = {};
+  // 루틴 이름을 가져오는 함수
+  Future<List<String>> fetchRoutineNames() async {
+    final uid = Provider.of<UserProvider>(context, listen: false).uid;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Routinename')
+        .get();
 
-    try {
-      QuerySnapshot snapshot = await db
-          .collection('users')
-          .doc(uid)
-          .collection('Calender')
-          .doc('health')
-          .collection('routines')
-          .get();
-
-      for (var doc in snapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        if (data['오늘 한 루틴이름'] == routineName) {
-          String formattedDate = data['날짜'];
-          int volume = data['오늘 총 볼륨'] ?? 0;
-
-          if (routineData.containsKey(routineName)) {
-            routineData[routineName]![formattedDate] = volume;
-          } else {
-            routineData[routineName] = {formattedDate: volume};
-          }
-        }
-      }
-
-      return routineData;
-    } catch (e) {
-      print('Error fetching documents: $e');
-      return {};
+    if (doc.exists && doc.data() != null && doc.data()!['names'] != null) {
+      return List<String>.from(doc.data()!['names']);
+    } else {
+      return [];
     }
   }
 
+  //오늘 날짜에 해당하는 운동 루틴 데이터를 가져오는 함수
   Future<List<Map<String, dynamic>>> _fetchRoutineData() async {
     var db = FirebaseFirestore.instance;
     String todayDate = DateFormat('yyyy-MM-dd').format(selectedDate);
@@ -103,71 +87,61 @@ class _CalenderPageState extends State<CalenderPage> {
       }
 
       return matchedDocuments;
-
-
     } catch (e) {
       print('Error fetching documents: $e');
     }
     return [];
   }
 
-  Future<Map<String, List<Map<String, int>>>> fetchRoutineDetails(
-      String routineName) async {
+  //전체 날짜의 루틴 데이터를 가져오는 함수
+  Future<List<Map<String, dynamic>>> _fetchAllRoutineData() async {
     var db = FirebaseFirestore.instance;
-
     try {
-      DocumentSnapshot snapshot = await db
+      QuerySnapshot snapshot = await db
           .collection('users')
           .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine')
+          .collection('Calender')
+          .doc('health')
+          .collection('routines')
           .get();
 
-      if (snapshot.exists) {
-        var data = snapshot.data() as Map<String, dynamic>;
-        //print('Firestore data: ${snapshot.data()}');
-
-        // 루틴 이름 (예: "등")에 해당하는 데이터 찾기
-        if (data.containsKey(routineName)) {
-          List<dynamic> routineList = data[routineName];
-
-          Map<String, List<Map<String, int>>> groupedExercises = {};
-
-          for (var routine in routineList) {
-            // 운동 이름 (예: "렛풀다운", "티바") 추출
-            String exerciseName = routine.keys.first;
-            var exerciseData = routine[exerciseName] as Map<String, dynamic>;
-            List<dynamic> exercises = exerciseData['exercises'];
-
-            // 운동 데이터 (reps, weight) 처리
-            for (var exercise in exercises) {
-              int reps = exercise['reps'] is int
-                  ? exercise['reps']
-                  : int.tryParse(exercise['reps'].toString()) ?? 0;
-              int weight = exercise['weight'] is int
-                  ? exercise['weight']
-                  : int.tryParse(exercise['weight'].toString()) ?? 0;
-
-              if (!groupedExercises.containsKey(exerciseName)) {
-                groupedExercises[exerciseName] = [];
-              }
-              groupedExercises[exerciseName]!
-                  .add({'횟수': reps, '무게': weight});
-            }
-          }
-
-          return groupedExercises;
-        }
+      List<Map<String, dynamic>> allDocs = [];
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        data['documentId'] = doc.id;
+        allDocs.add(data);
       }
-
-      // 루틴 이름이 없거나 데이터가 비어있는 경우
-      return {};
+      return allDocs;
     } catch (e) {
-      print('Error fetching routine details: $e');
-      return {};
+      print('Error fetching all routine data: $e');
+      return [];
     }
   }
 
+  //치트 데이터 생성
+  Future<Map<int, Map<String, int>>> _buildChartData() async {
+    final allData =
+        await _fetchAllRoutineData(); // 오늘 날짜만 아님, 모든 날짜를 기준으로 해야 정확
+
+    Map<int, Map<String, int>> chartData = {};
+
+    for (var doc in allData) {
+      if (doc.containsKey('루틴 인덱스') &&
+          doc.containsKey('오늘 총 볼륨') &&
+          doc.containsKey('날짜')) {
+        int index = doc['루틴 인덱스'];
+        String date = doc['날짜'];
+        int volume = doc['오늘 총 볼륨'];
+
+        chartData.putIfAbsent(index, () => {});
+        chartData[index]![date] = volume;
+      }
+    }
+
+    return chartData;
+  }
+
+  // 날짜 선택 다이얼로그
   void _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -259,288 +233,346 @@ class _CalenderPageState extends State<CalenderPage> {
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _fetchRoutineData(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('오류 발생: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                      child: Text(
-                    '데이터가 없습니다.',
-                    style: TextStyle(color: Colors.white),
-                  ));
-                }
-                var data = snapshot.data!;
-                return ListView.builder(
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                    var routine = data[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '오늘 한 루틴 이름: ${routine['오늘 한 루틴이름']}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold, // 글자를 두껍게
-                                  fontSize: 15, // 글자 크기를 20으로 설정
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.white),
-                                onPressed: () {
-                                  _deleteRoutine(routine['documentId']);
-                                },
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '오늘 총 운동 세트수: ${routine['오늘 총 세트수']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '오늘 총 운동 볼륨: ${routine['오늘 총 볼륨']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '운동 시작 시간: ${routine['운동 시작 시간']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            '운동 종료 시간: ${routine['운동 종료 시간']}',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          SizedBox(height: 16),
+                future: _fetchRoutineData(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('오류 발생: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(
+                        child: Text(
+                      '데이터가 없습니다.',
+                      style: TextStyle(color: Colors.white),
+                    ));
+                  }
+                  var data = snapshot.data!;
+                  return FutureBuilder<List<String>>(
+                      future: _routineNamesFuture,
+                      builder: (context, nameSnapshot) {
+                        List<String> routineNames = nameSnapshot.data ?? [];
+                        return ListView.builder(
+                          itemCount: data.length,
+                          itemBuilder: (context, index) {
+                            var routine = data[index];
+                            int? routineIndex = routine['루틴 인덱스'];
+                            String title = routine['오늘 한 루틴이름'];
 
-
-
-                          FutureBuilder<Map<String, Map<String, int>>>(
-                            future:
-                                _fetchRoutineChartData(routine['오늘 한 루틴이름']),
-                            builder: (context, chartSnapshot) {
-                              if (chartSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Center(
-                                    child: CircularProgressIndicator());
+                            if (routineIndex != null) {
+                              for (var name in routineNames) {
+                                final parts = name.split('-');
+                                if (parts.length == 2 && int.tryParse(parts[1]) == routineIndex) {
+                                  title = parts[0]; // '-' 왼쪽
+                                  break;
+                                }
                               }
-                              if (chartSnapshot.hasError) {
-                                return Center(
-                                    child:
-                                        Text('오류 발생: ${chartSnapshot.error}'));
-                              }
-                              if (!chartSnapshot.hasData ||
-                                  chartSnapshot.data!.isEmpty) {
-                                return Center(
-                                    child: Text(
-                                  '차트 데이터가 없습니다.',
-                                  style: TextStyle(color: Colors.white),
-                                ));
-                              }
-
-                              Map<String, Map<String, int>> routineData =
-                                  chartSnapshot.data!;
-                              if (!routineData
-                                  .containsKey(routine['오늘 한 루틴이름'])) {
-                                return Center(
-                                    child: Text(
-                                  '차트 데이터가 없습니다.',
-                                  style: TextStyle(color: Colors.white),
-                                ));
-                              }
-
-                              Map<String, int> data =
-                                  routineData[routine['오늘 한 루틴이름']]!;
-
-                              // 날짜별로 정렬
-                              var sortedEntries = data.entries.toList()
-                                ..sort((a, b) =>
-                                    DateTime.parse(a.key).compareTo(DateTime.parse(b.key)));
-
-                              // 정렬된 데이터를 기반으로 X축과 Y축 값을 추출
-                              List<String> xLabels = sortedEntries
-                                  .map((entry) =>
-                                  DateFormat('MM/dd').format(DateTime.parse(entry.key)))
-                                  .toList();
-                              List<double> yValues = sortedEntries
-                                  .map((entry) => entry.value.toDouble())
-                                  .toList();
-
-                              // Y축 최소값과 최대값 계산
-                              double minY = yValues.reduce((a, b) => a < b ? a : b);
-                              double maxY = yValues.reduce((a, b) => a > b ? a : b);
-
-                              // FlSpot 데이터 생성
-                              List<FlSpot> spots = [];
-                              for (int i = 0; i < data.length; i++) {
-                                spots.add(FlSpot(i.toDouble(), yValues[i]));
-                              }
-
-                              return SizedBox(
-                                height: 250, // 높이를 살짝 늘림
-                                child: LineChart(
-                                  LineChartData(
-                                    backgroundColor: Colors.transparent,
-                                    gridData: FlGridData(
-                                      show: true,
-                                      getDrawingHorizontalLine: (value) => FlLine(
-                                        color: Colors.grey.shade800, // 수평선 색상
-                                        strokeWidth: 0.5,
-                                      ),
-                                      getDrawingVerticalLine: (value) => FlLine(
-                                        color: Colors.grey.shade800, // 수직선 색상
-                                        strokeWidth: 0.5,
-                                      ),
-                                    ),
-                                    titlesData: FlTitlesData(
-                                      bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: false,
-                                          getTitlesWidget: (value, meta) {
-                                            if (value.toInt() < xLabels.length) {
-                                              return Text(
-                                                xLabels[value.toInt()],
-                                                style: TextStyle(color: Colors.white, fontSize: 12),
-                                              );
-                                            }
-                                            return Text('');
-                                          },
-                                          interval: 1,
-                                          reservedSize: 28, // 여백 추가
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '오늘 한 루틴 이름: $title',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          // 글자를 두껍게
+                                          fontSize: 15, // 글자 크기를 20으로 설정
                                         ),
                                       ),
-                                      leftTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: false ,
-                                          getTitlesWidget: (value, meta) {
-                                            return Text(
-                                              '${value.toInt()}',
-                                              style: TextStyle(color: Colors.white70, fontSize: 12),
-                                            );
-                                          },
-                                          interval: 1,
-                                          reservedSize: 32,
-                                        ),
-                                      ),
-                                      rightTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                      topTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                    ),
-                                    borderData: FlBorderData(
-                                      show: true,
-                                      border: Border(
-                                        bottom: BorderSide(color: Colors.white54, width: 1),
-                                        left: BorderSide(color: Colors.white54, width: 1),
-                                        right: BorderSide.none,
-                                        top: BorderSide.none,
-                                      ),
-                                    ),
-                                    minX: 0,
-                                    maxX: (yValues.length - 1).toDouble(),
-                                    minY: minY,
-                                    maxY: maxY,
-                                    lineBarsData: [
-                                      LineChartBarData(
-                                        spots: spots,
-                                        isCurved: true, // 부드러운 곡선
-                                        barWidth: 4, // 선 굵기
-                                        isStrokeCapRound: true,
-                                        gradient: LinearGradient(
-                                          colors: [Colors.cyan, Colors.blueAccent], // 선 그래디언트
-                                        ),
-                                        belowBarData: BarAreaData(
-                                          show: true,
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.cyan.withOpacity(0.3),
-                                              Colors.transparent,
-                                            ],
-                                          ),
-                                        ),
-                                        dotData: FlDotData(
-                                          show: true,
-                                          getDotPainter: (spot, percent, barData, index) {
-                                            return FlDotCirclePainter(
-                                              radius: 4, // 점 크기
-                                              color: Colors.cyan,
-
-                                            );
-                                          },
-                                        ),
+                                      IconButton(
+                                        icon: Icon(Icons.delete,
+                                            color: Colors.white),
+                                        onPressed: () {
+                                          _deleteRoutine(routine['documentId']);
+                                        },
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                          SizedBox(height: 16),
-
-                          FutureBuilder<Map<String, List<Map<String, int>>>>(
-                            future: fetchRoutineDetails(routine['오늘 한 루틴이름']),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return Center(child: CircularProgressIndicator());
-                              }
-                              if (snapshot.hasError) {
-                                return Center(child: Text('오류 발생: ${snapshot.error}'));
-                              }
-                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                return Center(child: Text('데이터가 없습니다.'));
-                              }
-
-                              var groupedExercises = snapshot.data!;
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: groupedExercises.entries.map((entry) {
-                                  String exerciseName = entry.key;
-                                  List<Map<String, int>> details = entry.value;
-
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '$exerciseName',
-                                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                        ...details.map((detail) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                                  Text(
+                                    '오늘 총 운동 세트수: ${routine['오늘 총 세트수']}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Text(
+                                    '오늘 총 운동 볼륨: ${routine['오늘 총 볼륨']}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Text(
+                                    '운동 시작 시간: ${routine['운동 시작 시간']}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  Text(
+                                    '운동 종료 시간: ${routine['운동 종료 시간']}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  SizedBox(height: 16),
+                                  FutureBuilder<Map<int, Map<String, int>>>(
+                                    future: _buildChartData(),
+                                    builder: (context, chartSnapshot) {
+                                      if (chartSnapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Center(
+                                            child: CircularProgressIndicator());
+                                      }
+                                      if (chartSnapshot.hasError) {
+                                        return Center(
                                             child: Text(
-                                              ' 무게: ${detail['무게']}kg, 횟수: ${detail['횟수']}',
-                                              style: TextStyle(color: Colors.white, fontSize: 14),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              );
-                            },
-                          )
+                                                '오류 발생: ${chartSnapshot.error}'));
+                                      }
+                                      if (!chartSnapshot.hasData ||
+                                          chartSnapshot.data!.isEmpty) {
+                                        return Center(
+                                            child: Text(
+                                          '차트 데이터가 없습니다.',
+                                          style: TextStyle(color: Colors.white),
+                                        ));
+                                      }
 
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                                      Map<int, Map<String, int>> routineData =
+                                          chartSnapshot.data!;
+                                      int? index = routine['루틴 인덱스'];
+                                      if (index == null ||
+                                          !routineData.containsKey(index)) {
+                                        return Center(
+                                            child: Text(
+                                          '차트 데이터가 없습니다.',
+                                          style: TextStyle(color: Colors.white),
+                                        ));
+                                      }
+
+                                      Map<String, int> data =
+                                          routineData[index]!;
+
+                                      // 날짜별로 정렬
+                                      var sortedEntries = data.entries.toList()
+                                        ..sort((a, b) => DateTime.parse(a.key)
+                                            .compareTo(DateTime.parse(b.key)));
+
+                                      // 정렬된 데이터를 기반으로 X축과 Y축 값을 추출
+                                      List<String> xLabels = sortedEntries
+                                          .map((entry) => DateFormat('MM/dd')
+                                              .format(
+                                                  DateTime.parse(entry.key)))
+                                          .toList();
+                                      List<double> yValues = sortedEntries
+                                          .map(
+                                              (entry) => entry.value.toDouble())
+                                          .toList();
+
+                                      // Y축 최소값과 최대값 계산
+                                      double minY = yValues
+                                          .reduce((a, b) => a < b ? a : b);
+                                      double maxY = yValues
+                                          .reduce((a, b) => a > b ? a : b);
+
+                                      // FlSpot 데이터 생성
+                                      List<FlSpot> spots = [];
+                                      for (int i = 0; i < data.length; i++) {
+                                        spots.add(
+                                            FlSpot(i.toDouble(), yValues[i]));
+                                      }
+
+                                      return SizedBox(
+                                        height: 250, // 높이를 살짝 늘림
+                                        child: LineChart(
+                                          LineChartData(
+                                            backgroundColor: Colors.transparent,
+                                            gridData: FlGridData(
+                                              show: true,
+                                              getDrawingHorizontalLine:
+                                                  (value) => FlLine(
+                                                color: Colors.grey.shade800,
+                                                // 수평선 색상
+                                                strokeWidth: 0.5,
+                                              ),
+                                              getDrawingVerticalLine: (value) =>
+                                                  FlLine(
+                                                color: Colors.grey.shade800,
+                                                // 수직선 색상
+                                                strokeWidth: 0.5,
+                                              ),
+                                            ),
+                                            titlesData: FlTitlesData(
+                                              bottomTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: false,
+                                                  getTitlesWidget:
+                                                      (value, meta) {
+                                                    if (value.toInt() <
+                                                        xLabels.length) {
+                                                      return Text(
+                                                        xLabels[value.toInt()],
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12),
+                                                      );
+                                                    }
+                                                    return Text('');
+                                                  },
+                                                  interval: 1,
+                                                  reservedSize: 28, // 여백 추가
+                                                ),
+                                              ),
+                                              leftTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: false,
+                                                  getTitlesWidget:
+                                                      (value, meta) {
+                                                    return Text(
+                                                      '${value.toInt()}',
+                                                      style: TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 12),
+                                                    );
+                                                  },
+                                                  interval: 1,
+                                                  reservedSize: 32,
+                                                ),
+                                              ),
+                                              rightTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false),
+                                              ),
+                                              topTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false),
+                                              ),
+                                            ),
+                                            borderData: FlBorderData(
+                                              show: true,
+                                              border: Border(
+                                                bottom: BorderSide(
+                                                    color: Colors.white54,
+                                                    width: 1),
+                                                left: BorderSide(
+                                                    color: Colors.white54,
+                                                    width: 1),
+                                                right: BorderSide.none,
+                                                top: BorderSide.none,
+                                              ),
+                                            ),
+                                            minX: 0,
+                                            maxX:
+                                                (yValues.length - 1).toDouble(),
+                                            minY: minY,
+                                            maxY: maxY,
+                                            lineBarsData: [
+                                              LineChartBarData(
+                                                spots: spots,
+                                                isCurved: true,
+                                                // 부드러운 곡선
+                                                barWidth: 4,
+                                                // 선 굵기
+                                                isStrokeCapRound: true,
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.cyan,
+                                                    Colors.blueAccent
+                                                  ], // 선 그래디언트
+                                                ),
+                                                belowBarData: BarAreaData(
+                                                  show: true,
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.cyan
+                                                          .withOpacity(0.3),
+                                                      Colors.transparent,
+                                                    ],
+                                                  ),
+                                                ),
+                                                dotData: FlDotData(
+                                                  show: true,
+                                                  getDotPainter: (spot, percent,
+                                                      barData, index) {
+                                                    return FlDotCirclePainter(
+                                                      radius: 4, // 점 크기
+                                                      color: Colors.cyan,
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  SizedBox(height: 16),
+                                  routine['운동 목록'] != null &&
+                                          routine['운동 목록'].isNotEmpty
+                                      ? Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: routine['운동 목록']
+                                              .map<Widget>((exercise) {
+                                            String exerciseName =
+                                                exercise['운동 이름'] ?? '운동 이름 없음';
+                                            List<dynamic> sets =
+                                                exercise['세트'] ?? [];
+
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 16.0),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    exerciseName,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  ...sets
+                                                      .asMap()
+                                                      .entries
+                                                      .map<Widget>((entry) {
+                                                    int setIndex = entry.key;
+                                                    var set = entry.value;
+
+                                                    String reps =
+                                                        set['reps'] ?? '0';
+                                                    String weight =
+                                                        set['weight'] ?? '0';
+
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 8.0,
+                                                              top: 4.0),
+                                                      child: Text(
+                                                        '세트 ${setIndex + 1}: 무게 ${weight}kg, 횟수 ${reps}회',
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 14),
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                        )
+                                      : Text(
+                                          '운동 기록이 없습니다.',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      });
+                }),
           ),
         ],
       ),

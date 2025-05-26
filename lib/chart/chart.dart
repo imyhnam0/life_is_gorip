@@ -23,11 +23,10 @@ class _RoutineChartState extends State<RoutineChart> {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
   }
-
+  //사용자가 만든 루틴이름들 불러오는 함수
   Future<List<String>> fetchCollectionNames() async {
     //루틴 이름 불러오는 거 저장
     List<String> names = [];
-
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -46,7 +45,7 @@ class _RoutineChartState extends State<RoutineChart> {
 
     return names;
   }
-
+  //루틴별 날짜별 운동 볼륨
   Future<Map<String, Map<String, int>>> _RoutineChartGet() async {
     var db = FirebaseFirestore.instance;
     Map<String, Map<String, int>> routineData = {};
