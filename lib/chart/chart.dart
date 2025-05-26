@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'searchroutine.dart';
 
 class RoutineChart extends StatefulWidget {
   @override
@@ -45,6 +46,37 @@ class _RoutineChartState extends State<RoutineChart> {
 
     return names;
   }
+
+
+
+  // 루틴 이름을 가져오는 함수
+  Future<List<String>> fetchRoutineNames() async {
+    final uid = Provider.of<UserProvider>(context, listen: false).uid;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('Routine')
+        .doc('Routinename')
+        .get();
+
+    if (doc.exists && doc.data() != null && doc.data()!['names'] != null) {
+      return List<String>.from(doc.data()!['names']);
+    } else {
+      return [];
+    }
+  }
+
+  Future<String?> getRoutineNameByIndex(int index) async {
+    List<String> names = await fetchRoutineNames();
+    for (String name in names) {
+      final parts = name.split('-');
+      if (parts.length == 2 && int.tryParse(parts[1]) == index) {
+        return parts[0]; // 루틴 이름만 반환
+      }
+    }
+    return null; // 해당 인덱스가 없을 경우
+  }
+
   //루틴별 날짜별 운동 볼륨
   Future<Map<String, Map<String, int>>> _RoutineChartGet() async {
     var db = FirebaseFirestore.instance;
@@ -61,9 +93,9 @@ class _RoutineChartState extends State<RoutineChart> {
 
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
-        // print('👉 문서: ${doc.id}');
-        // print('👉 data.keys: ${data.keys}');
-        String routineName = data['오늘 한 루틴이름'];
+        int index = data['루틴 인덱스']; // Firestore에서 가져온 인덱스
+        String? routineName = await getRoutineNameByIndex(index);
+        if (routineName == null) continue;
         int volume = data['오늘 총 볼륨'] ?? 0;
         String formattedDate = data['날짜'];
 
@@ -133,13 +165,43 @@ class _RoutineChartState extends State<RoutineChart> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
-          title: Text(
-            '이름 목록',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+          title:Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '이름 목록',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white70),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => SearchRoutinePage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '운동 종목 검색 버튼',
+                    style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
           ),
           content: FutureBuilder<List<String>>(
             future: fetchCollectionNames(),
@@ -214,7 +276,7 @@ class _RoutineChartState extends State<RoutineChart> {
     );
   }
 
-  Future<void> _deleteRoutineData(String routineName) async {
+  Future<void> _deleteRoutineData(String routineIndex) async {
   var db = FirebaseFirestore.instance;
 
   try {
@@ -224,7 +286,7 @@ class _RoutineChartState extends State<RoutineChart> {
         .collection('Calender')
         .doc('health')
         .collection('routines')
-        .where('오늘 한 루틴이름', isEqualTo: routineName)
+        .where('루틴 인덱스', isEqualTo: int.parse(routineIndex))
         .get();
 
     for (var doc in snapshot.docs) {
@@ -246,7 +308,7 @@ class _RoutineChartState extends State<RoutineChart> {
   }
 }
 
-
+  //@@@@@@@@@@@@여기까지 수정
   void _showChartOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -257,7 +319,7 @@ class _RoutineChartState extends State<RoutineChart> {
             borderRadius: BorderRadius.circular(15.0),
           ),
           title: Text(
-            '차트 선택',
+            'Choose Chart',
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -294,6 +356,8 @@ class _RoutineChartState extends State<RoutineChart> {
       },
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -378,15 +442,13 @@ class _RoutineChartState extends State<RoutineChart> {
           return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No data available'));
+        } else if (!snapshot.hasData || snapshot.data!.values.every((map) => map.isEmpty)) {
+          return Center(child: Text('루틴 데이터가 없습니다.', style: TextStyle(color: Colors.white)));
         }
 
         Map<String, Map<String, int>> routineData = snapshot.data!;
 
         if (selectname != null && routineData.containsKey(selectname)) {
-          print('🔥 selectname: $selectname');
-          print('🔥 routineData keys: ${routineData.keys}');
 
           return _buildChart(selectname!, routineData[selectname]!);
         } else {
@@ -400,6 +462,7 @@ class _RoutineChartState extends State<RoutineChart> {
     );
   }
 
+
   Widget _buildWeightChart() {
     return FutureBuilder<Map<String, Map<String, double>>>(
       future: _WeightChartGet(),
@@ -407,9 +470,9 @@ class _RoutineChartState extends State<RoutineChart> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No data available'));
+          return Center(child: Text('오류: ${snapshot.error}', style: TextStyle(color: Colors.white)));
+        } else if (!snapshot.hasData || snapshot.data!.values.every((map) => map.isEmpty)) {
+          return Center(child: Text('몸무게 데이터가 없습니다.', style: TextStyle(color: Colors.white)));
         }
 
         Map<String, Map<String, double>> data = snapshot.data!;
@@ -712,9 +775,21 @@ class _RoutineChartState extends State<RoutineChart> {
                   Spacer(),
                   IconButton(
                     icon: Icon(Icons.delete, color: Colors.grey),
-                    onPressed: () {
-                      _deleteRoutineData(routineName);
+                    onPressed: () async {
+                      List<String> names = await fetchRoutineNames();
+                      String? matched = names.firstWhere(
+                            (element) => element.split('-')[0] == routineName,
+                        orElse: () => '',
+                      );
+
+                      if (matched.isNotEmpty) {
+                        final index = matched.split('-').last;
+                        _deleteRoutineData(index);
+                      } else {
+                        print('해당 루틴 이름에 대한 인덱스를 찾을 수 없습니다.');
+                      }
                     },
+
                   ),
                 ],
               ),
