@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -93,8 +91,10 @@ class _RoutineChartState extends State<RoutineChart> {
 
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
-        int index = data['루틴 인덱스']; // Firestore에서 가져온 인덱스
+        int? index = data['루틴 인덱스'];
+        if (index == null) continue; // null이면 이 문서는 스킵
         String? routineName = await getRoutineNameByIndex(index);
+
         if (routineName == null) continue;
         int volume = data['오늘 총 볼륨'] ?? 0;
         String formattedDate = data['날짜'];
@@ -635,11 +635,11 @@ class _RoutineChartState extends State<RoutineChart> {
               gridData: FlGridData(
                 show: true,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.blueGrey.shade700.withOpacity(0.5), // 수평선 색상
+                  color: Colors.blueGrey.shade700, // 수평선 색상
                   strokeWidth: 0.5,
                 ),
                 getDrawingVerticalLine: (value) => FlLine(
-                  color: Colors.blueGrey.shade700.withOpacity(0.5), // 수직선 색상
+                  color: Colors.blueGrey.shade700, // 수직선 색상
                   strokeWidth: 0.5,
                 ),
               ),
@@ -699,7 +699,6 @@ class _RoutineChartState extends State<RoutineChart> {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        color.withOpacity(0.3),
                         Colors.transparent,
                       ],
                     ),
@@ -914,7 +913,7 @@ class _RoutineChartState extends State<RoutineChart> {
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
-                colors: [Colors.blue.withOpacity(0.3), Colors.transparent],
+                colors: [Colors.blue, Colors.transparent],
               ),
             ),
             dotData: FlDotData(
