@@ -5,6 +5,7 @@ import 'create_routine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RoutinePage extends StatefulWidget {
   const RoutinePage({super.key});
@@ -49,6 +50,115 @@ class _RoutinePageState extends State<RoutinePage>
     nameController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> saveRoutineName() async {
+    final db = FirebaseFirestore.instance;
+
+    try {
+      final docRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Routinename');
+
+      final snapshot = await docRef.get();
+
+      List<String> names = [];
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        names = List<String>.from(data['names'] ?? []);
+      }
+
+      // 🔍 widget.myroutinename과 -기준 앞부분이 같은 게 있는지 확인
+      final hasSameBase = names.any((name) {
+        final parts = name.split('-');
+        return parts.length > 1 && parts.first == _title;
+      });
+
+      if (hasSameBase) {
+        print('같은 루틴 이름이 이미 존재하므로 저장하지 않음');
+        return;
+      }
+
+      // 전체 루틴 이름 중 가장 큰 인덱스를 찾기
+      int nextIndex = 1;
+      final regExp = RegExp(r'-(\d+)$');
+      for (final key in names) {
+        final match = regExp.firstMatch(key);
+        if (match != null) {
+          final number = int.tryParse(match.group(1) ?? '');
+          if (number != null && number >= nextIndex) {
+            nextIndex = number + 1;
+          }
+        }
+      }
+
+      // 새 루틴 키 생성
+      final newKey = '${_title}-$nextIndex';
+
+      names.add(newKey);
+      await docRef.set({'names': names}, SetOptions(merge: true));
+      print('$newKey 루틴 저장 완료');
+    } catch (e) {
+      print('Error saving routine: $e');
+    }
+  }
+
+  Future<void> saveRoutineData() async {
+    var db = FirebaseFirestore.instance;
+
+    try {
+      DocumentReference myRoutineRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('Myroutine');
+
+      await myRoutineRef.set({_title: []}, SetOptions(merge: true));
+
+      await saveRoutineName();
+
+      final orderRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('Routine')
+          .doc('RoutineOrder');
+
+      final orderSnap = await orderRef.get();
+      List<String> orderTitles = [];
+
+      if (orderSnap.exists) {
+        orderTitles = List<String>.from(orderSnap['titles'] ?? []);
+      }
+
+      if (!orderTitles.contains(_title)) {
+        orderTitles.add(_title);
+        await orderRef.set({'titles': orderTitles}, SetOptions(merge: true));
+        print('Order 문서에 루틴 순서 추가됨');
+      } else {
+        print('Order 문서에 이미 존재하는 루틴입니다');
+      }
+    } catch (e) {
+      print('Error adding document: $e');
+    }
+  }
+
+  //저장한 루틴세부 이름들을 가져오는 함수(예:턱걸이, 바벨로우)
+  Future<List<String>> _getRoutineDetails() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final snap = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("Routine")
+        .doc("Routinename")
+        .get();
+
+    if (snap.exists && snap.data()!.containsKey('details')) {
+      return List<String>.from(snap['details']);
+    }
+    return [];
   }
 
   Future<void> _updateRoutineTitle(String newTitle) async {
@@ -135,7 +245,8 @@ class _RoutinePageState extends State<RoutinePage>
 
       DocumentSnapshot myroutineSnap = await myroutineRef.get();
       if (myroutineSnap.exists) {
-        Map<String, dynamic> data = myroutineSnap.data() as Map<String, dynamic>;
+        Map<String, dynamic> data =
+            myroutineSnap.data() as Map<String, dynamic>;
         if (data.containsKey(title)) {
           data.remove(title);
           await myroutineRef.set(data);
@@ -176,7 +287,6 @@ class _RoutinePageState extends State<RoutinePage>
       print('❌ deleteAllData 오류: $e');
     }
   }
-
 
   Future<void> myCollectionName() async {
     try {
@@ -260,8 +370,9 @@ class _RoutinePageState extends State<RoutinePage>
                   '확인',
                   style: TextStyle(color: Colors.white),
                 ),
-                onPressed: () {
-                  _updateRoutineTitle(nameController.text);
+                onPressed: () async {
+                  await _updateRoutineTitle(nameController.text);
+                  await saveRoutineData();
                   Navigator.of(context).pop();
                 },
               ),
@@ -335,10 +446,10 @@ class _RoutinePageState extends State<RoutinePage>
                 },
               ),
               IconButton(
-                icon: Icon(
-                  Icons.save,
-                  color: Colors.white,
-                ),
+                  icon: Icon(
+                    Icons.save,
+                    color: Colors.white,
+                  ),
                   onPressed: () async {
                     if (collectionNames.isEmpty) {
                       showDialog(
@@ -350,13 +461,15 @@ class _RoutinePageState extends State<RoutinePage>
                             backgroundColor: Colors.cyan.shade900,
                             actions: <Widget>[
                               TextButton(
-                                child: Text('아니오', style: TextStyle(color: Colors.white)),
+                                child: Text('아니오',
+                                    style: TextStyle(color: Colors.white)),
                                 onPressed: () {
                                   Navigator.of(context).pop(); // 다이얼로그 닫기
                                 },
                               ),
                               TextButton(
-                                child: Text('예', style: TextStyle(color: Colors.white)),
+                                child: Text('예',
+                                    style: TextStyle(color: Colors.white)),
                                 onPressed: () async {
                                   await deleteAllData(_title);
                                   Navigator.of(context).pop(); // 다이얼로그 닫기
@@ -377,16 +490,19 @@ class _RoutinePageState extends State<RoutinePage>
                             backgroundColor: Colors.cyan.shade900,
                             actions: <Widget>[
                               TextButton(
-                                child: Text('아니오', style: TextStyle(color: Colors.white)),
+                                child: Text('아니오',
+                                    style: TextStyle(color: Colors.white)),
                                 onPressed: () {
                                   Navigator.of(context).pop(); // 다이얼로그 닫기
                                 },
                               ),
                               TextButton(
-                                child: Text('예', style: TextStyle(color: Colors.white)),
+                                child: Text('예',
+                                    style: TextStyle(color: Colors.white)),
                                 onPressed: () {
                                   Navigator.of(context).pop(); // 다이얼로그 닫기
-                                  Navigator.of(context).pop(true); // 이전 페이지로 값 전달
+                                  Navigator.of(context)
+                                      .pop(true); // 이전 페이지로 값 전달
                                 },
                               ),
                             ],
@@ -394,9 +510,7 @@ class _RoutinePageState extends State<RoutinePage>
                         },
                       );
                     }
-                  }
-
-              ),
+                  }),
             ],
           ),
         ],
@@ -406,7 +520,7 @@ class _RoutinePageState extends State<RoutinePage>
           color: Colors.blueGrey.shade900,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black,
               spreadRadius: 2,
               blurRadius: 7,
               offset: Offset(0, 3),
@@ -501,34 +615,303 @@ class _RoutinePageState extends State<RoutinePage>
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Add some space between the buttons
           FloatingActionButton.extended(
             heroTag: null,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateRoutinePage(
-                    myroutinename: _title,
-                    clickroutinename: "",
-                  ),
-                ),
-              ).then((value) {
-                if (value == true) {
-                  myCollectionName();
-                }
-              });
-            },
-            icon: Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
-            label: Text(
-              "루틴 생성",
-              style: TextStyle(color: Colors.white),
-            ),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text("루틴 추가", style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.cyan.shade700,
-          ), // Add some space between the buttons
+            onPressed: () async {
+              /// 다이얼로그 열기 전에 Firestore 데이터 가져옴
+              final routineList = await _getRoutineDetails();
 
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) {
+                  return StatefulBuilder(
+                    // → setState() 로 리스트 즉시 갱신하기 위함
+                    builder: (ctx, setStateDialog) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      backgroundColor: Colors.blueGrey.shade200,
+                      title: Text(
+                        "내 루틴 목록",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.blueGrey.shade800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: routineList.map((name) {
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blueGrey.shade900,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(Icons.add,
+                                              color: Colors.green),
+                                          onPressed: () async {
+                                            final routineName =
+                                                name; // 예: '턱걸이', '바벨로우'
+
+                                            final db =
+                                                FirebaseFirestore.instance;
+                                            final myRoutineRef = db
+                                                .collection('users')
+                                                .doc(uid)
+                                                .collection('Routine')
+                                                .doc('Myroutine');
+
+                                            final snapshot =
+                                                await myRoutineRef.get();
+
+                                            Map<String, dynamic> data = {};
+                                            if (snapshot.exists) {
+                                              data = snapshot.data()
+                                                  as Map<String, dynamic>;
+                                            }
+
+                                            // 기존 루틴이 있는지 확인하고 불러오기
+                                            List<dynamic> myRoutineList = [];
+                                            if (data.containsKey(_title)) {
+                                              myRoutineList =
+                                                  List<dynamic>.from(
+                                                      data[_title]);
+                                            }
+
+                                            // 새로운 루틴 항목 추가 (reps, weight 빈값)
+                                            myRoutineList.add({
+                                              routineName: {
+                                                "exercises": [
+                                                  {"reps": "", "weight": ""}
+                                                ]
+                                              }
+                                            });
+
+                                            // Firestore에 반영
+                                            await myRoutineRef.set(
+                                                {_title: myRoutineList},
+                                                SetOptions(merge: true));
+
+                                            // UI 갱신
+                                            await myCollectionName();
+
+                                            print(
+                                                '✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.delete,
+                                              color: Colors.red),
+                                          onPressed: () async {
+                                            final uid = FirebaseAuth
+                                                .instance.currentUser!.uid;
+                                            final docRef = FirebaseFirestore
+                                                .instance
+                                                .collection("users")
+                                                .doc(uid)
+                                                .collection("Routine")
+                                                .doc("Routinename");
+
+                                            await docRef.update({
+                                              "details":
+                                                  FieldValue.arrayRemove([name])
+                                            });
+
+                                            setStateDialog(() {
+                                              routineList.remove(name);
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      actions: [
+                        /// ▶ 루틴 이름 입력용 두 번째 다이얼로그
+                        TextButton.icon(
+                          icon: Icon(Icons.add, color: Colors.white),
+                          label: Text("루틴 생성",
+                              style: TextStyle(color: Colors.white)),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.cyan.shade700,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () async {
+                            String? errorText; // 에러 메시지 상태
+                            final txt = TextEditingController();
+
+                            final result = await showDialog(
+                              context: ctx,
+                              builder: (_) => StatefulBuilder(
+                                builder: (context, setStateDialog) {
+                                  return AlertDialog(
+                                    backgroundColor: Colors.blueGrey.shade100,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    title: Text(
+                                      "새 루틴 이름 입력",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueGrey.shade900),
+                                    ),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          controller: txt,
+                                          decoration: InputDecoration(
+                                            hintText: "예) 바벨로우, 턱걸이",
+                                            prefixIcon:
+                                                Icon(Icons.fitness_center),
+                                            errorText: errorText,
+                                            // 여기서 에러 메시지 띄움
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color:
+                                                      Colors.blueGrey.shade700),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                  color: Colors.cyan.shade700),
+                                            ),
+                                          ),
+                                          autofocus: true,
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                          backgroundColor:
+                                              Colors.blueGrey.shade300,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text("취소"),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.cyan.shade700,
+                                        ),
+                                        child: Text("저장",
+                                            style:
+                                                TextStyle(color: Colors.white)),
+                                        onPressed: () async {
+                                          final added = txt.text.trim();
+
+                                          if (added.isEmpty) {
+                                            setStateDialog(() =>
+                                                errorText = "⚠️ 값을 입력해주세요");
+                                            return;
+                                          }
+
+                                          if (routineList.contains(added)) {
+                                            setStateDialog(() => errorText =
+                                                "⚠️ 같은 이름의 루틴이 존재합니다");
+                                            return;
+                                          }
+
+                                          // Firestore에 저장
+                                          final uid = FirebaseAuth
+                                              .instance.currentUser!.uid;
+                                          final docRef = FirebaseFirestore
+                                              .instance
+                                              .collection("users")
+                                              .doc(uid)
+                                              .collection("Routine")
+                                              .doc("Routinename");
+
+                                          await docRef.set(
+                                            {
+                                              "details":
+                                                  FieldValue.arrayUnion([added])
+                                            },
+                                            SetOptions(merge: true),
+                                          );
+
+                                          setStateDialog(() {
+                                            routineList.add(added);
+                                          });
+                                          Navigator.pop(context, true);
+                                          // 성공 시 닫기
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                            if (result == true) {
+                              final updatedList = await _getRoutineDetails();
+                              setStateDialog(() {
+                                routineList.clear();
+                                routineList.addAll(updatedList);
+                              });
+                            }
+                          },
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.blueGrey.shade300,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () => Navigator.pop(ctx),
+                          child:
+                              Text("닫기", style: TextStyle(color: Colors.black)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

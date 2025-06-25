@@ -100,8 +100,9 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
 
         if (data.containsKey(documentId)) {
           // Remove the entire collection (_title)
-          data.remove(documentId);
-          await docRef.set(data);
+          await docRef.update({
+            documentId: FieldValue.delete()
+          });
         }
       }
 
@@ -297,7 +298,7 @@ class _SaveRoutinePageState extends State<SaveRoutinePage> {
           color: Colors.blueGrey.shade900,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black,
               spreadRadius: 2,
               blurRadius: 7,
               offset: Offset(0, 3),
