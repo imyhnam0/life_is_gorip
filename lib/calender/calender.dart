@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class CalenderPage extends StatefulWidget {
   const CalenderPage({super.key});
@@ -16,12 +17,36 @@ class _CalenderPageState extends State<CalenderPage> {
   String? uid;
   DateTime selectedDate = DateTime.now();
   late Future<List<String>> _routineNamesFuture;
+  Map<DateTime, List<Map<String, dynamic>>> _eventMap = {};
+
 
   void initState() {
     super.initState();
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     _routineNamesFuture = fetchRoutineNames();
+    _loadEventDates();
   }
+
+  Future<void> _loadEventDates() async {
+    List<Map<String, dynamic>> allData = await _fetchAllRoutineData();
+    Map<DateTime, List<Map<String, dynamic>>> events = {};
+
+    for (var item in allData) {
+      if (item.containsKey('날짜')) {
+        DateTime parsedDate = DateTime.parse(item['날짜']);
+        DateTime normalizedDate = DateTime(parsedDate.year, parsedDate.month, parsedDate.day); // ✅ 시간 제거
+        events.update(normalizedDate, (existing) => [...existing, item], ifAbsent: () => [item]);
+      }
+    }
+
+    setState(() {
+      _eventMap = events;
+    });
+
+    print("🔴 이벤트 날짜들: ${_eventMap.keys}");
+  }
+
+
 
   // 루틴 삭제 함수
   Future<void> _deleteRoutine(String documentId) async {
@@ -143,32 +168,67 @@ class _CalenderPageState extends State<CalenderPage> {
 
   // 날짜 선택 다이얼로그
   void _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    await showDialog(
       context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: Colors.blueGrey.shade700,
-              onPrimary: Colors.white,
-              surface: Colors.grey,
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: Colors.black,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          contentPadding: EdgeInsets.all(8),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return SizedBox(
+                width: double.maxFinite,
+                child: TableCalendar(
+                  focusedDay: selectedDate,
+                  firstDay: DateTime(2000),
+                  lastDay: DateTime(2100),
+                  selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+                  onDaySelected: (selected, focused) {
+                    setState(() {
+                      selectedDate = selected;
+                    });
+                    Navigator.pop(context); // 다이얼로그 닫기
+                  },
+                  calendarStyle: CalendarStyle(
+                    markerDecoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    markersAlignment: Alignment.bottomCenter,
+                    selectedDecoration: BoxDecoration(
+                      color: Colors.cyan,
+                      shape: BoxShape.circle,
+                    ),
+                    todayDecoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    defaultTextStyle: TextStyle(color: Colors.white),
+                    weekendTextStyle: TextStyle(color: Colors.white70),
+                  ),
+                  eventLoader: (day) {
+                    return _eventMap[DateTime(day.year, day.month, day.day)] ?? [];
+                  },
+                  headerStyle: HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                    titleTextStyle: TextStyle(color: Colors.white),
+                    leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
+                    rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+                  ),
+                  daysOfWeekStyle: DaysOfWeekStyle(
+                    weekdayStyle: TextStyle(color: Colors.grey[300]),
+                    weekendStyle: TextStyle(color: Colors.grey[400]),
+                  ),
+                ),
+              );
+            },
           ),
-          child: child!,
         );
       },
     );
-    if (pickedDate != null && pickedDate != selectedDate) {
-      setState(() {
-        selectedDate = pickedDate;
-      });
-    }
   }
+
 
   @override
   Widget build(BuildContext context) {
