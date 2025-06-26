@@ -91,14 +91,32 @@ Future<void> _login() async {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/cat.png'),
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.center,
-                  scale: 1.2,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.grey.shade900,
+                    Colors.black,
+                    Colors.blueGrey.shade900,
+                  ],
+                ),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.6),
+                    blurRadius: 10,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Opacity(
+                opacity: 0.05,
+                child: CustomPaint(
+                  painter: DiagonalLinePainter(),
                 ),
               ),
             ),
+
           ),
           Center(
             child: SingleChildScrollView(
@@ -217,4 +235,25 @@ Future<void> _login() async {
       backgroundColor: Colors.blueGrey.shade100,
     );
   }
+}
+
+class DiagonalLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 1;
+
+    const spacing = 20.0;
+    for (double i = -size.height; i < size.width; i += spacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

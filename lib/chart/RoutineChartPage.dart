@@ -48,8 +48,8 @@ class _RoutineChartPageState extends State<RoutineChartPage> {
               final sets = item['세트'];
               if (sets is List) {
                 for (var s in sets) {
-                  int reps = int.tryParse(s['reps'].toString()) ?? 0;
-                  int weight = int.tryParse(s['weight'].toString()) ?? 0;
+                  double reps = double.tryParse(s['reps'].toString()) ?? 0;
+                  double weight = double.tryParse(s['weight'].toString()) ?? 0;
 
                   result[date] = (result[date] ?? [])..add({
                     '운동 이름': item['운동 이름'],
@@ -113,6 +113,7 @@ class _RoutineChartPageState extends State<RoutineChartPage> {
                         final totalVolume = sets
                             .map((s) => (s['reps'] ?? 0) * (s['weight'] ?? 0))
                             .fold<num>(0, (a, b) => a + b);
+
 
                         return FlSpot(index.toDouble(),
                             totalVolume.toDouble());

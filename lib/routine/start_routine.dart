@@ -790,31 +790,58 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                                                     },
                                                   ),
                                                   IconButton(
-                                                    icon: Icon(Icons.delete,
-                                                        color: Colors.red),
+                                                    icon: Icon(Icons.delete, color: Colors.red),
                                                     onPressed: () async {
-                                                      final uid = FirebaseAuth
-                                                          .instance
-                                                          .currentUser!
-                                                          .uid;
-                                                      final docRef =
-                                                      FirebaseFirestore.instance
-                                                          .collection("users")
-                                                          .doc(uid)
-                                                          .collection("Routine")
-                                                          .doc("Routinename");
+                                                      final confirm = await showDialog<bool>(
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return AlertDialog(
+                                                            backgroundColor: Colors.white,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius: BorderRadius.circular(16),
+                                                            ),
+                                                            title: Text(
+                                                              '정말 삭제하시겠습니까?',
+                                                              style: TextStyle(fontWeight: FontWeight.bold),
+                                                            ),
+                                                            content: Text('"$name" 루틴을 삭제하면 되돌릴 수 없습니다.'),
+                                                            actions: [
+                                                              TextButton(
+                                                                child: Text('아니오', style: TextStyle(color: Colors.grey)),
+                                                                onPressed: () => Navigator.of(context).pop(false),
+                                                              ),
+                                                              ElevatedButton(
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: Colors.redAccent,
+                                                                ),
+                                                                child: Text('예', style: TextStyle(color: Colors.white)),
+                                                                onPressed: () => Navigator.of(context).pop(true),
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      );
 
-                                                      await docRef.update({
-                                                        "details":
-                                                        FieldValue.arrayRemove(
-                                                            [name])
-                                                      });
+                                                      if (confirm == true) {
+                                                        final uid = FirebaseAuth.instance.currentUser!.uid;
+                                                        final docRef = FirebaseFirestore.instance
+                                                            .collection("users")
+                                                            .doc(uid)
+                                                            .collection("Routine")
+                                                            .doc("Routinename");
 
-                                                      setStateDialog(() {
-                                                        routineList.remove(name);
-                                                      });
+                                                        await docRef.update({
+                                                          "details": FieldValue.arrayRemove([name])
+                                                        });
+
+                                                        setStateDialog(() {
+                                                          routineList.remove(name);
+                                                          filteredRoutineList.remove(name);
+                                                        });
+                                                      }
                                                     },
                                                   ),
+
                                                 ],
                                               )
                                             ],
@@ -941,6 +968,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
 
                                               setStateDialog(() {
                                                 routineList.add(added);
+                                                filteredRoutineList.add(added);
                                               });
                                               Navigator.pop(context, true);
                                               // 성공 시 닫기

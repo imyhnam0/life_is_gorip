@@ -12,7 +12,6 @@ import 'routine/start_routine.dart';
 import 'chart/chart.dart';
 import 'login&signup/loginpage.dart';
 import 'services/user_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'friendship/friendship.dart';
 import 'mypage/myinfo.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -126,6 +125,8 @@ class _HomepageState extends State<Homepage> {
   String bodyFat = '0';
   List<String> filteredCollectionNames = [];
   List<String> modifiedCollectionNames = [];
+  String latestDate = '';
+
 
   @override
   void initState() {
@@ -206,22 +207,40 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> loadMe() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      weight = prefs.getString('weight') ?? '0';
-      muscleMass = prefs.getString('muscleMass') ?? '0';
-      bodyFat = prefs.getString('bodyFat') ?? '0';
-    });
+    try {
+      final db = FirebaseFirestore.instance;
+      final snapshot = await db
+          .collection('users')
+          .doc(uid)
+          .collection('Calender')
+          .doc('body')
+          .collection('weight')
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        setState(() {
+          weight = data['weight'] ?? '0';
+          muscleMass = data['muscleMass'] ?? '0';
+          bodyFat = data['bodyFat'] ?? '0';
+          latestDate = data['date'] ?? '';
+        });
+      } else {
+        setState(() {
+          weight = '0';
+          muscleMass = '0';
+          bodyFat = '0';
+        });
+      }
+    } catch (e) {
+      print('🔥 Firestore에서 로딩 중 오류: $e');
+    }
   }
 
-  Future<void> saveMe(String weight, String muscleMass, String bodyFat) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('weight', weight);
-    await prefs.setString('muscleMass', muscleMass);
-    await prefs.setString('bodyFat', bodyFat);
-    loadMe();
 
-    // Firestore에 데이터 저장
+  Future<void> saveMe(String weight, String muscleMass, String bodyFat) async {
     var db = FirebaseFirestore.instance;
     String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
@@ -231,14 +250,18 @@ class _HomepageState extends State<Homepage> {
         .collection('Calender')
         .doc('body')
         .collection('weight')
-        .doc(todayDate) // 오늘 날짜를 문서 ID로 사용
+        .doc(todayDate)
         .set({
       'date': todayDate,
       'weight': weight,
       'muscleMass': muscleMass,
       'bodyFat': bodyFat,
     });
+
+    // 저장 후 최신 데이터 다시 로드
+    await loadMe();
   }
+
 
   void showMeDialog() {
     showDialog(
@@ -469,7 +492,7 @@ class _HomepageState extends State<Homepage> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              'Today date: ${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}',
+                                              'Record date: ${latestDate.replaceAll('-', '. ')}',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16,

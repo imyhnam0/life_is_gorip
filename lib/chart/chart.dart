@@ -699,10 +699,14 @@ class _RoutineChartState extends State<RoutineChart> {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.transparent,
+                        color.withOpacity(0.4),
+                        color.withOpacity(0.0),
                       ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
                   ),
+
                   dotData: FlDotData(
                     show: true, // 점 표시
                     getDotPainter: (spot, percent, barData, index) {

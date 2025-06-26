@@ -5,6 +5,7 @@ import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'map.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class InvitePage extends StatefulWidget {
   const InvitePage({super.key});
@@ -235,13 +236,13 @@ class _InvitePageState extends State<InvitePage> {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              child: Text('가져오기', style: TextStyle(color: Colors.white)),
-              onPressed: () {
-                _fetchAndSaveFriendRoutine(friendUid, friendName, routineName);
-                Navigator.of(context).pop();
-              },
-            ),
+            // TextButton(
+            //   child: Text('가져오기', style: TextStyle(color: Colors.white)),
+            //   onPressed: () {
+            //     _fetchAndSaveFriendRoutine(friendUid, friendName, routineName);
+            //     Navigator.of(context).pop();
+            //   },
+            // ),
           ],
         );
       },
@@ -352,30 +353,95 @@ class _InvitePageState extends State<InvitePage> {
   }
 
   void _showFriendCalendar(String friendUid) async {
-    final DateTime? pickedDate = await showDatePicker(
+    final db = FirebaseFirestore.instance;
+    DateTime _focusedDay = DateTime.now();
+    DateTime? _selectedDay;
+    Set<DateTime> _markedDays = {};
+
+    // 기록 있는 날짜 수집
+    QuerySnapshot snapshot = await db
+        .collection('users')
+        .doc(friendUid)
+        .collection('Calender')
+        .doc('health')
+        .collection('routines')
+        .get();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      if (data['날짜'] != null) {
+        final date = DateTime.parse(data['날짜']);
+        _markedDays.add(DateTime(date.year, date.month, date.day));
+      }
+    }
+
+    showDialog(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: Colors.blueGrey.shade700,
-              onPrimary: Colors.white,
-              surface: Colors.grey,
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: Colors.black,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: child!,
+          content: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            child: TableCalendar(
+              //locale: 'ko_KR',
+              firstDay: DateTime(2000),
+              lastDay: DateTime(2100),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.blueGrey,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.teal,
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Colors.red, // 기록 있는 날짜에 마커 표시
+                  shape: BoxShape.circle,
+                ),
+                markersMaxCount: 1,
+              ),
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, day, events) {
+                  final isMarked = _markedDays.contains(DateTime(day.year, day.month, day.day));
+                  if (isMarked) {
+                    return Positioned(
+                      bottom: 1,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
+              ),
+              onDaySelected: (selectedDay, focusedDay) {
+                Navigator.pop(context);
+                _fetchFriendRoutineData(friendUid, selectedDay);
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('닫기', style: TextStyle(color: Colors.white70)),
+            ),
+          ],
         );
       },
     );
-
-    if (pickedDate != null) {
-      _fetchFriendRoutineData(friendUid, pickedDate);
-    }
   }
 
   Future<void> _fetchFriendRoutineData(String friendUid, DateTime date) async {
@@ -435,7 +501,12 @@ class _InvitePageState extends State<InvitePage> {
                             color: Colors.white, fontFamily: 'Oswald'),
                       ),
                       Text(
-                        '총 시간: ${routine['오늘 총 시간']}',
+                        '운동 시작 시간: ${routine['운동 시작 시간']}',
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'Oswald'),
+                      ),
+                      Text(
+                        '운동 종료 시간: ${routine['운동 종료 시간']}',
                         style: TextStyle(
                             color: Colors.white, fontFamily: 'Oswald'),
                       ),
@@ -458,40 +529,61 @@ class _InvitePageState extends State<InvitePage> {
     );
   }
 
-  void _showFriendOptions(String friendUid, friendName) {
-    showModalBottomSheet(
+  void _showFriendOptions(String friendUid, String friendName) {
+    showDialog(
       context: context,
-      backgroundColor: Colors.blueGrey.shade900,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
       builder: (BuildContext context) {
-        return Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: Icon(Icons.schedule, color: Colors.white),
-              title: Text('친구 일정',
-                  style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
-              onTap: () {
-                Navigator.pop(context);
-                _showFriendCalendar(friendUid);
-                // Perform action for 친구 일정
-              },
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            '친구 옵션',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Oswald',
             ),
-            ListTile(
-              leading: Icon(Icons.fitness_center, color: Colors.white),
-              title: Text('친구 루틴',
-                  style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
-              onTap: () {
-                Navigator.pop(context);
-                friendroutineName(friendUid, friendName);
-              },
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.schedule, color: Colors.white),
+                title: const Text('친구 일정',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showFriendCalendar(friendUid);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.fitness_center, color: Colors.white),
+                title: const Text('친구 루틴',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Oswald')),
+                onTap: () {
+                  Navigator.pop(context);
+                  friendroutineName(friendUid, friendName);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '닫기',
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
           ],
         );
       },
     );
   }
+
 
   // 친구 삭제 함수
   Future<void> removeFriend(Map<String, String> friend) async {
@@ -615,27 +707,70 @@ class _InvitePageState extends State<InvitePage> {
           },
         ),
         actions: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FriendRequestsPage(userId: Myuid!),
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(Myuid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              bool hasRequests = false;
+
+              if (snapshot.hasData) {
+                var data = snapshot.data!.data() as Map<String, dynamic>;
+                List<dynamic>? requests = data['friendRequests'];
+                hasRequests = requests != null && requests.isNotEmpty;
+              }
+
+              return Stack(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FriendRequestsPage(userId: Myuid!),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.mail_outline, color: Colors.white),
+                    label: const Text(
+                      '요청 목록',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        fontSize: 16,
+                        fontFamily: 'Oswald',
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Colors.white),
+                      ),
+                    ),
                   ),
-                );
-              },
-              child: const Text(
-                '요청 목록',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          )
+                  if (hasRequests)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
+
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -748,88 +883,104 @@ class _InvitePageState extends State<InvitePage> {
                                   ),
                                   Row(
                                     children: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 20, vertical: 10),
-                                          backgroundColor: isExercising
-                                              ? Colors.green
-                                              : Colors.grey,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          elevation: 5,
-                                        ),
+                                      _buildFriendActionButton(
+                                        label: isExercising ? '운동 중' : '쉬는 중',
+                                        backgroundColor: isExercising ? Colors.green : Colors.grey.shade600,
+                                        textColor: Colors.white,
                                         onPressed: isExercising
-                                            ? () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        MapPage(
-                                                            friendUid:
-                                                                friend['uid']!),
-                                                  ),
-                                                );
-                                              }
-                                            : null, // 쉬는 중이면 비활성화
-                                        child: Text(
-                                          isExercising ? '운동 중' : '쉬는 중',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.white,
+                                            ? () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MapPage(friendUid: friend['uid']!),
                                           ),
-                                        ),
+                                        )
+                                            : null,
                                       ),
-                                      const SizedBox(width: 10),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 20, vertical: 10),
-                                          backgroundColor: Colors.black,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          elevation: 5,
-                                        ),
-                                        onPressed: () {
-                                          _showFriendOptions(
-                                              friend['uid']!,
-                                              friend[
-                                                  'name']!); // friendUid와 friendName 전달
-                                        },
-                                        child: const Text(
-                                          '목록',
-                                          style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white),
-                                        ),
+                                      const SizedBox(width: 8),
+                                      _buildFriendActionButton(
+                                        label: '목록',
+                                        backgroundColor: Colors.blueGrey.shade800,
+                                        textColor: Colors.white,
+                                        onPressed: () => _showFriendOptions(friend['uid']!, friend['name']!),
                                       ),
-                                      SizedBox(width: 10),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 20, vertical: 10),
-                                          backgroundColor: Colors.grey,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          elevation: 5,
-                                        ),
+                                      const SizedBox(width: 8),
+                                      _buildFriendActionButton(
+                                        label: '삭제',
+                                        backgroundColor: Colors.blueGrey.shade200,
+                                        textColor: Colors.red.shade600,
                                         onPressed: () async {
-                                          await removeFriend(friend);
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                backgroundColor: Colors.blueGrey.shade900,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                                title: Row(
+                                                  children: [
+                                                    Icon(Icons.warning_amber_rounded, color: Colors.red.shade400),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      '삭제 확인',
+                                                      style: TextStyle(
+                                                        fontSize: 20,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white,
+                                                        letterSpacing: 1.0,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                content: const Text(
+                                                  '정말 이 친구를 삭제하시겠습니까?',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                                actionsPadding: const EdgeInsets.only(right: 16, bottom: 8),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(false),
+                                                    style: TextButton.styleFrom(
+                                                      foregroundColor: Colors.white,
+                                                    ),
+                                                    child: const Text('취소'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.red.shade400,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      elevation: 6,
+                                                    ),
+                                                    onPressed: () => Navigator.of(context).pop(true),
+                                                    child: const Text(
+                                                      '삭제',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        letterSpacing: 1.2,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+
+                                          if (confirm == true) {
+                                            await removeFriend(friend);
+                                          }
                                         },
-                                        child: const Text(
-                                          '삭제',
-                                          style: TextStyle(
-                                              fontSize: 14, color: Colors.red),
-                                        ),
+
                                       ),
                                     ],
                                   ),
+
                                 ],
                               ),
                             );
@@ -841,7 +992,7 @@ class _InvitePageState extends State<InvitePage> {
                   padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
+                      backgroundColor: Colors.blueGrey.shade100,
                       padding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 40),
                       shape: RoundedRectangleBorder(
@@ -855,21 +1006,21 @@ class _InvitePageState extends State<InvitePage> {
                         builder: (context) {
                           return AlertDialog(
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            backgroundColor:
-                                Colors.deepPurpleAccent.withOpacity(0.9),
-                            title: const Text(
+                            backgroundColor: Colors.blueGrey.shade900,
+                            title: Text(
                               '친구 추가',
                               style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white,
+                                letterSpacing: 1.2,
                                 shadows: [
                                   Shadow(
-                                    blurRadius: 5.0,
-                                    color: Colors.black45,
-                                    offset: Offset(2, 2),
+                                    blurRadius: 12.0,
+                                    color: Colors.blueGrey.shade900,
+                                    offset: Offset(0, 3),
                                   ),
                                 ],
                               ),
@@ -923,7 +1074,7 @@ class _InvitePageState extends State<InvitePage> {
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.indigoAccent,
+                                  backgroundColor: Colors.blueGrey.shade400,
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 20, vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -945,11 +1096,23 @@ class _InvitePageState extends State<InvitePage> {
                         },
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       '친구 추가',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey.shade900, // 베이스 컬러
+                        letterSpacing: 1.1,
+                        shadows: [
+                          Shadow(
+                            color: Colors.blueGrey.shade100,
+                            blurRadius: 4,
+                            offset: Offset(1, 1),
+                          ),
+                        ],
+                      ),
                     ),
+
                   ),
                 ),
               ],
@@ -960,3 +1123,33 @@ class _InvitePageState extends State<InvitePage> {
     );
   }
 }
+
+Widget _buildFriendActionButton({
+  required String label,
+  required Color backgroundColor,
+  required Color textColor,
+  required VoidCallback? onPressed,
+}) {
+  return ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      backgroundColor: backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 6,
+    ),
+    onPressed: onPressed,
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        fontFamily: 'Oswald',
+        color: textColor,
+        letterSpacing: 1.0,
+      ),
+    ),
+  );
+}
+
