@@ -20,9 +20,10 @@ class _RoutinePageState extends State<RoutinePage>
   String _title = '';
   List<String> collectionNames = [];
   late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? uid;
+  String? errorMessage;
+
 
   @override
   void initState() {
@@ -32,13 +33,6 @@ class _RoutinePageState extends State<RoutinePage>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _offsetAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(0.1, 0.0),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticIn,
-    ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showNameInputDialog(context);
     });
@@ -51,6 +45,10 @@ class _RoutinePageState extends State<RoutinePage>
     _controller.dispose();
     super.dispose();
   }
+
+
+
+
 
   Future<void> saveRoutineName() async {
     final db = FirebaseFirestore.instance;
@@ -115,9 +113,17 @@ class _RoutinePageState extends State<RoutinePage>
           .doc(uid)
           .collection('Routine')
           .doc('Myroutine');
+      // 🛑 먼저 동일한 루틴 이름이 이미 존재하는지 확인
+      final snapshot = await myRoutineRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        if (data.containsKey(_title)) {
+          // 이미 존재하면 예외를 던져서 catch로 이동
+          throw Exception('이미 존재하는 루틴입니다');
+        }
+      }
 
       await myRoutineRef.set({_title: []}, SetOptions(merge: true));
-
       await saveRoutineName();
 
       final orderRef = db
@@ -159,41 +165,6 @@ class _RoutinePageState extends State<RoutinePage>
       return List<String>.from(snap['details']);
     }
     return [];
-  }
-
-  Future<void> _updateRoutineTitle(String newTitle) async {
-    try {
-      DocumentReference docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('Routine')
-          .doc('Myroutine');
-
-      DocumentSnapshot documentSnapshot = await docRef.get();
-
-      if (documentSnapshot.exists) {
-        var data = documentSnapshot.data() as Map<String, dynamic>;
-
-        if (data.containsKey(_title)) {
-          List<dynamic> myRoutineList = data[_title];
-
-          // Remove the old title
-          await docRef.update({_title: FieldValue.delete()});
-
-          // Add the new title with the same list
-          data.remove(_title);
-          data[newTitle] = myRoutineList;
-
-          await docRef.set(data, SetOptions(merge: true));
-        }
-      }
-
-      setState(() {
-        _title = newTitle;
-      });
-    } catch (e) {
-      print('Error updating document: $e');
-    }
   }
 
   Future<void> deleteData(String routineTitle) async {
@@ -325,63 +296,108 @@ class _RoutinePageState extends State<RoutinePage>
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return SlideTransition(
-          position: _offsetAnimation,
-          child: AlertDialog(
-            backgroundColor: Colors.cyan.shade900,
-            title: Text(
-              '루틴 이름 생성',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: Form(
-              key: _formKey,
-              child: TextFormField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  hintText: "이름을 입력하세요",
-                  hintStyle: TextStyle(color: Colors.grey),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: Colors.cyan.shade900,
+              title: Text(
+                '루틴 이름 생성',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        hintText: "이름을 입력하세요",
+                        hintStyle: TextStyle(color: Colors.grey),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.black),
+                        ),
+                        fillColor: Colors.white,
+                        filled: true,
+                        errorText: errorMessage,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '이름을 입력해주세요';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          errorMessage!,
+                          style: TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text(
+                    '취소',
+                    style: TextStyle(color: Colors.white),
                   ),
-                  fillColor: Colors.white,
-                  filled: true,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '이름을 입력해주세요';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                child: Text(
-                  '취소',
-                  style: TextStyle(color: Colors.white),
+                TextButton(
+                  child: Text(
+                    '확인',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    final inputTitle = nameController.text.trim();
+                    if (inputTitle.isEmpty) {
+                      setStateDialog(() {
+                        errorMessage = '이름을 입력해주세요';
+                      });
+                      return;
+                    }
+
+                    final db = FirebaseFirestore.instance;
+                    final myRoutineRef = db
+                        .collection('users')
+                        .doc(uid)
+                        .collection('Routine')
+                        .doc('Myroutine');
+
+                    final snapshot = await myRoutineRef.get();
+                    if (snapshot.exists) {
+                      final data = snapshot.data() as Map<String, dynamic>;
+                      if (data.containsKey(inputTitle)) {
+                        setStateDialog(() {
+                          errorMessage = '이미 존재하는 이름입니다';
+                        });
+                        return;
+                      }
+                    }
+
+                    setState(() {
+                      _title = inputTitle;
+                      errorMessage = null;
+                    });
+                    await saveRoutineData();
+                    Navigator.of(context).pop();
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop(); // 대화상자 닫기
-                },
-              ),
-              TextButton(
-                child: Text(
-                  '확인',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onPressed: () async {
-                  await _updateRoutineTitle(nameController.text);
-                  await saveRoutineData();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         );
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -436,15 +452,15 @@ class _RoutinePageState extends State<RoutinePage>
         actions: [
           Row(
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  _showNameInputDialog(context);
-                },
-              ),
+              // IconButton(
+              //   icon: Icon(
+              //     Icons.edit,
+              //     color: Colors.white,
+              //   ),
+              //   onPressed: () {
+              //     _showNameInputDialog(context);
+              //   },
+              // ),
               IconButton(
                   icon: Icon(
                     Icons.save,
@@ -553,7 +569,7 @@ class _RoutinePageState extends State<RoutinePage>
           children: [
             for (int index = 0; index < collectionNames.length; index++)
               Padding(
-                key: Key('$index'),
+                key: ValueKey(collectionNames[index]),
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
@@ -624,6 +640,8 @@ class _RoutinePageState extends State<RoutinePage>
             onPressed: () async {
               /// 다이얼로그 열기 전에 Firestore 데이터 가져옴
               final routineList = await _getRoutineDetails();
+              List<String> filteredRoutineList = List.from(routineList);
+              String searchQuery = '';
 
               showDialog(
                 context: context,
@@ -645,119 +663,217 @@ class _RoutinePageState extends State<RoutinePage>
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: routineList.map((name) {
-                            return Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        name,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.blueGrey.shade900,
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.add,
-                                              color: Colors.green),
-                                          onPressed: () async {
-                                            final routineName =
-                                                name; // 예: '턱걸이', '바벨로우'
-
-                                            final db =
-                                                FirebaseFirestore.instance;
-                                            final myRoutineRef = db
-                                                .collection('users')
-                                                .doc(uid)
-                                                .collection('Routine')
-                                                .doc('Myroutine');
-
-                                            final snapshot =
-                                                await myRoutineRef.get();
-
-                                            Map<String, dynamic> data = {};
-                                            if (snapshot.exists) {
-                                              data = snapshot.data()
-                                                  as Map<String, dynamic>;
-                                            }
-
-                                            // 기존 루틴이 있는지 확인하고 불러오기
-                                            List<dynamic> myRoutineList = [];
-                                            if (data.containsKey(_title)) {
-                                              myRoutineList =
-                                                  List<dynamic>.from(
-                                                      data[_title]);
-                                            }
-
-                                            // 새로운 루틴 항목 추가 (reps, weight 빈값)
-                                            myRoutineList.add({
-                                              routineName: {
-                                                "exercises": [
-                                                  {"reps": "", "weight": ""}
-                                                ]
-                                              }
-                                            });
-
-                                            // Firestore에 반영
-                                            await myRoutineRef.set(
-                                                {_title: myRoutineList},
-                                                SetOptions(merge: true));
-
-                                            // UI 갱신
-                                            await myCollectionName();
-
-                                            print(
-                                                '✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: Icon(Icons.delete,
-                                              color: Colors.red),
-                                          onPressed: () async {
-                                            final uid = FirebaseAuth
-                                                .instance.currentUser!.uid;
-                                            final docRef = FirebaseFirestore
-                                                .instance
-                                                .collection("users")
-                                                .doc(uid)
-                                                .collection("Routine")
-                                                .doc("Routinename");
-
-                                            await docRef.update({
-                                              "details":
-                                                  FieldValue.arrayRemove([name])
-                                            });
-
-                                            setStateDialog(() {
-                                              routineList.remove(name);
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    )
-                                  ],
+                      content: ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: 400),
+                        child: Column(children: [
+                          // ✅ 검색창 추가
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10.0),
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: '루틴 이름 검색...',
+                                prefixIcon: Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
+                              onChanged: (query) {
+                                setStateDialog(() {
+                                  searchQuery = query.trim();
+                                  filteredRoutineList = routineList
+                                      .where((name) => name
+                                          .toLowerCase()
+                                          .contains(searchQuery.toLowerCase()))
+                                      .toList();
+                                });
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: filteredRoutineList.map((name) {
+                                  return Card(
+                                    elevation: 3,
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 10),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.blueGrey.shade900,
+                                              ),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.add,
+                                                    color: Colors.green),
+                                                onPressed: () async {
+                                                  final routineName =
+                                                      name; // 예: '턱걸이', '바벨로우'
+
+                                                  final db = FirebaseFirestore
+                                                      .instance;
+                                                  final myRoutineRef = db
+                                                      .collection('users')
+                                                      .doc(uid)
+                                                      .collection('Routine')
+                                                      .doc('Myroutine');
+
+                                                  final snapshot =
+                                                      await myRoutineRef.get();
+
+                                                  Map<String, dynamic> data =
+                                                      {};
+                                                  if (snapshot.exists) {
+                                                    data = snapshot.data()
+                                                        as Map<String, dynamic>;
+                                                  }
+
+                                                  // 기존 루틴이 있는지 확인하고 불러오기
+                                                  List<dynamic> myRoutineList =
+                                                      [];
+                                                  if (data
+                                                      .containsKey(_title)) {
+                                                    myRoutineList =
+                                                        List<dynamic>.from(
+                                                            data[_title]);
+                                                  }
+                                                  final exists = myRoutineList.any((element) {
+                                                    return element.containsKey(routineName);
+                                                  });
+
+                                                  if (exists) {
+                                                    print('⚠️ "$routineName" 이미 존재합니다.');
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) => AlertDialog(
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(20),
+                                                        ),
+                                                        backgroundColor: Colors.white,
+                                                        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                                                        content: Column(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          children: [
+                                                            Icon(Icons.warning_amber_rounded, size: 40, color: Colors.redAccent),
+                                                            SizedBox(height: 12),
+                                                            Text(
+                                                              '이미 추가된 루틴입니다',
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.black87,
+                                                              ),
+                                                              textAlign: TextAlign.center,
+                                                            ),
+                                                            SizedBox(height: 6),
+                                                            Text(
+                                                              '"$routineName"',
+                                                              style: TextStyle(
+                                                                fontSize: 14,
+                                                                color: Colors.black54,
+                                                              ),
+                                                              textAlign: TextAlign.center,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        actionsAlignment: MainAxisAlignment.center,
+                                                        actions: [
+                                                          ElevatedButton(
+                                                            onPressed: () => Navigator.of(context).pop(),
+                                                            style: ElevatedButton.styleFrom(
+                                                              backgroundColor: Colors.redAccent,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(12),
+                                                              ),
+                                                            ),
+                                                            child: Text('확인', style: TextStyle(color: Colors.white)),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+
+                                                    return;
+                                                  }
+
+
+                                                  // 새로운 루틴 항목 추가 (reps, weight 빈값)
+                                                  myRoutineList.add({
+                                                    routineName: {
+                                                      "exercises": [
+                                                        {
+                                                          "reps": "",
+                                                          "weight": ""
+                                                        }
+                                                      ]
+                                                    }
+                                                  });
+
+                                                  // Firestore에 반영
+                                                  await myRoutineRef.set(
+                                                      {_title: myRoutineList},
+                                                      SetOptions(merge: true));
+
+                                                  // UI 갱신
+                                                  await myCollectionName();
+
+                                                  print(
+                                                      '✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.delete,
+                                                    color: Colors.red),
+                                                onPressed: () async {
+                                                  final uid = FirebaseAuth
+                                                      .instance
+                                                      .currentUser!
+                                                      .uid;
+                                                  final docRef =
+                                                      FirebaseFirestore.instance
+                                                          .collection("users")
+                                                          .doc(uid)
+                                                          .collection("Routine")
+                                                          .doc("Routinename");
+
+                                                  await docRef.update({
+                                                    "details":
+                                                        FieldValue.arrayRemove(
+                                                            [name])
+                                                  });
+
+                                                  setStateDialog(() {
+                                                    routineList.remove(name);
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ]),
                       ),
                       actions: [
                         /// ▶ 루틴 이름 입력용 두 번째 다이얼로그

@@ -191,9 +191,9 @@ class _RoutineChartState extends State<RoutineChart> {
                     );
                   },
                   child: Text(
-                    '운동 종목 검색 버튼',
+                    '운동 종목 차트',
                     style: TextStyle(
-                      color: Colors.cyanAccent,
+                      color: Colors.red,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
