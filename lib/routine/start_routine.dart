@@ -8,6 +8,7 @@ import '../services/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 
 class StartRoutinePage extends StatefulWidget {
@@ -20,6 +21,25 @@ class StartRoutinePage extends StatefulWidget {
 }
 
 class _StartRoutinePageState extends State<StartRoutinePage> {
+  static const platform = MethodChannel('com.imyh.nam/watch');
+
+  // 운동 시작 버튼 안에서 실행
+  void _sendRoutineToWatch() async {
+    try {
+      // Firestore에서 불러온 운동 리스트와 세트 정보
+      final routineData = {
+        "action": "startRoutine",
+        "routineName": _title,
+        "exercises": collectionNames, // 예: ["덤벨슈러그", "렛풀"]
+      };
+
+      await platform.invokeMethod("startRoutine", routineData);
+      print("✅ 워치로 루틴 데이터 전송 완료: $routineData");
+    } catch (e) {
+      print("❌ 워치로 전송 실패: $e");
+    }
+  }
+
   TextEditingController nameController = TextEditingController();
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
@@ -785,8 +805,14 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                                                       // UI 갱신
                                                       await myCollectionName();
 
-                                                      print(
-                                                          '✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                                      print('✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text('루틴 "$routineName" 추가 완료!'),
+                                                          duration: Duration(seconds: 2),
+                                                          backgroundColor: Colors.green,
+                                                        ),
+                                                      );
                                                     },
                                                   ),
                                                   IconButton(
@@ -1026,6 +1052,7 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                 onPressed: () async {
                   try {
                     await saveUserLocationAndState(uid!); // 현재 위치 저장
+                    _sendRoutineToWatch();
                     print("운동 상태와 위치 저장 완료!");
                   } catch (e) {
                     print("위치 저장 중 오류: $e");

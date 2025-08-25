@@ -370,131 +370,131 @@ class _StartRoutineNamePlayState extends State<StartRoutineNamePlay> {
             SingleChildScrollView(
               child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blueGrey.shade600,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 7,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: Colors.blueGrey.shade500,
-                        width: 2,
-                      ),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              text: 'Time: ',
-                              style: TextStyle(
-                                  fontSize: 40,
-                                  fontFamily: 'Oswald',
-                                  color: Colors.black), // 기본 텍스트 스타일
-                              children: <TextSpan>[
-                                TextSpan(
-                                    text: '$_remainingTime',
-                                    style: TextStyle(
-                                        color: Colors.white)), // 강조할 부분
-                                TextSpan(text: ' Seconds'),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _cancelTimer,
-                                child: Text(
-                                  '취소',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey,
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              Column(
-                                children: [
-                                  Text('Minute',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontFamily: 'Oswald',
-                                      )),
-                                  Container(
-                                    height: 150,
-                                    width: 100,
-                                    child: CupertinoPicker(
-                                      itemExtent: 32.0,
-                                      onSelectedItemChanged: (int index) {
-                                        setState(() {
-                                          _minutes = index;
-                                        });
-                                      },
-                                      children: List<Widget>.generate(60,
-                                          (int index) {
-                                        return Center(
-                                          child: Text(
-                                              '${index.toString().padLeft(2, '0')}'),
-                                        );
-                                      }),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(':', style: TextStyle(fontSize: 20)),
-                              Column(
-                                children: [
-                                  Text('Seconds',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontFamily: 'Oswald',
-                                      )),
-                                  Container(
-                                    height: 150,
-                                    width: 100,
-                                    child: CupertinoPicker(
-                                      itemExtent: 32.0,
-                                      onSelectedItemChanged: (int index) {
-                                        setState(() {
-                                          _seconds = index;
-                                        });
-                                      },
-                                      children: List<Widget>.generate(60,
-                                          (int index) {
-                                        return Center(
-                                          child: Text(
-                                              '${index.toString().padLeft(2, '0')}'),
-                                        );
-                                      }),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(width: 10),
-                              ElevatedButton(
-                                onPressed: _startTimer,
-                                child: Text(
-                                  '시작',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.blueGrey.shade600,
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.black.withOpacity(0.5),
+                  //         spreadRadius: 2,
+                  //         blurRadius: 7,
+                  //         offset: Offset(0, 3),
+                  //       ),
+                  //     ],
+                  //     border: Border.all(
+                  //       color: Colors.blueGrey.shade500,
+                  //       width: 2,
+                  //     ),
+                  //   ),
+                  //   child: Center(
+                  //     child: Column(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Text.rich(
+                  //           TextSpan(
+                  //             text: 'Time: ',
+                  //             style: TextStyle(
+                  //                 fontSize: 40,
+                  //                 fontFamily: 'Oswald',
+                  //                 color: Colors.black), // 기본 텍스트 스타일
+                  //             children: <TextSpan>[
+                  //               TextSpan(
+                  //                   text: '$_remainingTime',
+                  //                   style: TextStyle(
+                  //                       color: Colors.white)), // 강조할 부분
+                  //               TextSpan(text: ' Seconds'),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //         SizedBox(height: 10),
+                  //         Row(
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: [
+                  //             ElevatedButton(
+                  //               onPressed: _cancelTimer,
+                  //               child: Text(
+                  //                 '취소',
+                  //                 style: TextStyle(color: Colors.white),
+                  //               ),
+                  //               style: ElevatedButton.styleFrom(
+                  //                 backgroundColor: Colors.grey,
+                  //               ),
+                  //             ),
+                  //             SizedBox(width: 10),
+                  //             Column(
+                  //               children: [
+                  //                 Text('Minute',
+                  //                     style: TextStyle(
+                  //                       fontSize: 20,
+                  //                       fontFamily: 'Oswald',
+                  //                     )),
+                  //                 Container(
+                  //                   height: 150,
+                  //                   width: 100,
+                  //                   child: CupertinoPicker(
+                  //                     itemExtent: 32.0,
+                  //                     onSelectedItemChanged: (int index) {
+                  //                       setState(() {
+                  //                         _minutes = index;
+                  //                       });
+                  //                     },
+                  //                     children: List<Widget>.generate(60,
+                  //                         (int index) {
+                  //                       return Center(
+                  //                         child: Text(
+                  //                             '${index.toString().padLeft(2, '0')}'),
+                  //                       );
+                  //                     }),
+                  //                   ),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //             Text(':', style: TextStyle(fontSize: 20)),
+                  //             Column(
+                  //               children: [
+                  //                 Text('Seconds',
+                  //                     style: TextStyle(
+                  //                       fontSize: 20,
+                  //                       fontFamily: 'Oswald',
+                  //                     )),
+                  //                 Container(
+                  //                   height: 150,
+                  //                   width: 100,
+                  //                   child: CupertinoPicker(
+                  //                     itemExtent: 32.0,
+                  //                     onSelectedItemChanged: (int index) {
+                  //                       setState(() {
+                  //                         _seconds = index;
+                  //                       });
+                  //                     },
+                  //                     children: List<Widget>.generate(60,
+                  //                         (int index) {
+                  //                       return Center(
+                  //                         child: Text(
+                  //                             '${index.toString().padLeft(2, '0')}'),
+                  //                       );
+                  //                     }),
+                  //                   ),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //             SizedBox(width: 10),
+                  //             ElevatedButton(
+                  //               onPressed: _startTimer,
+                  //               child: Text(
+                  //                 '시작',
+                  //                 style: TextStyle(color: Colors.white),
+                  //               ),
+                  //               style: ElevatedButton.styleFrom(
+                  //                 backgroundColor: Colors.green,
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   Stack(
                     children: [
                       Container(

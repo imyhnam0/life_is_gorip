@@ -833,8 +833,15 @@ class _RoutinePageState extends State<RoutinePage>
                                                   // UI 갱신
                                                   await myCollectionName();
 
-                                                  print(
-                                                      '✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                                  print('✅ 루틴 "$routineName" 이(가) 추가되었습니다.');
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('루틴 "$routineName" 추가 완료!'),
+                                                      duration: Duration(seconds: 2),
+                                                      backgroundColor: Colors.green,
+                                                    ),
+                                                  );
+
                                                 },
                                               ),
                                               IconButton(
