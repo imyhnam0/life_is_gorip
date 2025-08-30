@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:watch_connectivity/watch_connectivity.dart';
 import 'playroutine.dart';
 import 'create_routine.dart';
 import '../services/user_provider.dart';
@@ -21,35 +22,44 @@ class StartRoutinePage extends StatefulWidget {
 }
 
 class _StartRoutinePageState extends State<StartRoutinePage> {
-  static const platform = MethodChannel('com.imyh.nam/watch');
 
-  // 운동 시작 버튼 안에서 실행
-  void _sendRoutineToWatch() async {
-    try {
-      // Firestore에서 불러온 운동 리스트와 세트 정보
-      final routineData = {
-        "action": "startRoutine",
-        "routineName": _title,
-        "exercises": collectionNames, // 예: ["덤벨슈러그", "렛풀"]
-      };
 
-      await platform.invokeMethod("startRoutine", routineData);
-      print("✅ 워치로 루틴 데이터 전송 완료: $routineData");
-    } catch (e) {
-      print("❌ 워치로 전송 실패: $e");
-    }
-  }
 
   TextEditingController nameController = TextEditingController();
   late String _title = widget.clickroutinename;
   List<String> collectionNames = [];
   String? uid;
+  final _watch = WatchConnectivity();
+  List<Map<String, dynamic>> allRoutineInfo = [];
+  final _log = <String>[];
 
   @override
   void initState() {
     super.initState();
+    _watch.messageStream.listen((e) {
+      setState(() {
+        _log.add('Message from watch: $e');
+      });
+    });
     uid = Provider.of<UserProvider>(context, listen: false).uid;
     myCollectionName();
+  }
+
+  void sendAllRoutineInfoToWatch() {
+    final message = {'allRoutineInfo': allRoutineInfo};
+    _watch.sendMessage(message);
+
+    _log.add("Sent allRoutineInfo: $allRoutineInfo");
+    setState(() {}); // 로그 업데이트
+  }
+
+
+
+  void sendMessageToWatch(String msg) {
+   final message = {'dataMessage': msg};
+   _watch.sendMessage(message);
+   _log.add('Message sent to watch: $msg');
+
   }
 
   //운동 시작할떄 현재 위치를 저장하는 함수
@@ -139,13 +149,25 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
         if (data.containsKey(_title)) {
           final List<dynamic> myRoutineList = data[_title];
 
-          // 각 루틴 항목의 key를 가져오기
-          List<String> names = myRoutineList
-              .map((routine) => routine.keys.first as String)
-              .toList();
+          List<String> names = [];
+          List<Map<String, dynamic>> routineInfos = [];
+
+          for (var routine in myRoutineList) {
+            final exerciseName = routine.keys.first;
+            names.add(exerciseName);
+
+            final exerciseData = routine[exerciseName];
+            if (exerciseData != null && exerciseData['exercises'] != null) {
+              routineInfos.add({
+                "name": exerciseName,
+                "exercises": List<Map<String, dynamic>>.from(exerciseData['exercises']),
+              });
+            }
+          }
 
           setState(() {
-            collectionNames = names;
+            collectionNames = names;       // 기존 운동 이름 리스트
+            allRoutineInfo = routineInfos; // reps/weight까지 포함된 리스트
           });
         }
       }
@@ -153,6 +175,36 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
       print('Error fetching collection names: $e');
     }
   }
+
+  // Future<void> myCollectionName() async {
+  //   try {
+  //     final docRef = FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(uid)
+  //         .collection('Routine')
+  //         .doc('Myroutine');
+  //
+  //     final docSnap = await docRef.get();
+  //
+  //     if (docSnap.exists) {
+  //       final data = docSnap.data() as Map<String, dynamic>;
+  //       if (data.containsKey(_title)) {
+  //         final List<dynamic> myRoutineList = data[_title];
+  //
+  //         // 각 루틴 항목의 key를 가져오기
+  //         List<String> names = myRoutineList
+  //             .map((routine) => routine.keys.first as String)
+  //             .toList();
+  //
+  //         setState(() {
+  //           collectionNames = names;
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching collection names: $e');
+  //   }
+  // }
 
 
   Future<void> saveCollectionNames(List<String> names) async {
@@ -1051,8 +1103,9 @@ class _StartRoutinePageState extends State<StartRoutinePage> {
                 heroTag: null,
                 onPressed: () async {
                   try {
+                    //sendMessageToWatch("드가자잇");
+                    sendAllRoutineInfoToWatch();
                     await saveUserLocationAndState(uid!); // 현재 위치 저장
-                    _sendRoutineToWatch();
                     print("운동 상태와 위치 저장 완료!");
                   } catch (e) {
                     print("위치 저장 중 오류: $e");

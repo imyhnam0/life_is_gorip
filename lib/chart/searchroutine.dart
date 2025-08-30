@@ -55,7 +55,7 @@ class _SearchRoutinePageState extends State<SearchRoutinePage> {
     return Scaffold(
       backgroundColor: Colors.blueGrey.shade900,
       appBar: AppBar(
-        title: Text('루틴 검색', style: TextStyle(color: Colors.white)),
+        title: Text('운동 종목 검색', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.blueGrey.shade900,
         iconTheme: IconThemeData(color: Colors.white),
       ),
@@ -69,7 +69,7 @@ class _SearchRoutinePageState extends State<SearchRoutinePage> {
               onChanged: filter,
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: '운동 루틴명을 입력하세요',
+                hintText: '운동 종목명을 입력하세요',
                 hintStyle: TextStyle(color: Colors.white60),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white),

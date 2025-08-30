@@ -16,6 +16,7 @@ import 'friendship/friendship.dart';
 import 'mypage/myinfo.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'chart/searchroutine.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -823,7 +824,7 @@ class _HomepageState extends State<Homepage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => RoutineChart()),
+                        builder: (context) => SearchRoutinePage()),
                   );
                 },
                 child: Row(
